@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <!-- 定义属性 -->
+    <Properties>
+        <Property name="LOG_HOME">../logs</Property>
+        <Property name="PATTERN">%d{yyyy-MM-dd HH:mm:ss} [%t] %-5level %logger{36} - %msg%n</Property>
+    </Properties>
+
+    <!-- 定义 Appenders -->
+    <Appenders>
+        <!-- 控制台输出 -->
+        <Console name="STDOUT" target="SYSTEM_OUT">
+            <PatternLayout pattern="${PATTERN}"/>
+        </Console>
+
+        <!-- INFO 级别日志文件 -->
+        <RollingFile name="INFO_FILE"
+                     fileName="${LOG_HOME}/info.log"
+                     filePattern="${LOG_HOME}/info.%d{yyyy-MM-dd}.log">
+            <PatternLayout pattern="${PATTERN}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+            </Policies>
+            <DefaultRolloverStrategy max="30"/>
+            <!-- 只记录 INFO 及以上级别 -->
+            <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+        </RollingFile>
+
+        <!-- ERROR 级别日志文件 -->
+        <RollingFile name="ERROR_FILE"
+                     fileName="${LOG_HOME}/error.log"
+                     filePattern="${LOG_HOME}/error.%d{yyyy-MM-dd}.log">
+            <PatternLayout pattern="${PATTERN}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+            </Policies>
+            <DefaultRolloverStrategy max="30"/>
+            <!-- 只记录 ERROR 及以上级别 -->
+            <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+        </RollingFile>
+    </Appenders>
+
+    <!-- 定义 Loggers -->
+    <Loggers>
+        <!-- 根日志器 -->
+        <Root level="INFO">
+            <AppenderRef ref="STDOUT"/>
+            <AppenderRef ref="INFO_FILE"/>
+            <AppenderRef ref="ERROR_FILE"/>
+        </Root>
+
+        <!-- 如需 DEBUG 级别，取消注释以下配置 -->
+        <!--
+        <Root level="DEBUG">
+            <AppenderRef ref="STDOUT"/>
+        </Root>
+        -->
+    </Loggers>
+</Configuration>
