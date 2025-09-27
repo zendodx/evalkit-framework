@@ -19,8 +19,12 @@ Before you begin, please install the following tools:
 
 ### Add Dependencies
 
-```
-
+```xml
+<dependency>
+    <groupId>io.github.zendodx</groupId>
+    <artifactId>eval-fox-all</artifactId>
+    <version>0.0.1</version>
+</dependency>
 ```
 
 ### Prepare Evaluation Orchestration
