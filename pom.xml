@@ -1,0 +1,142 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>io.github.zendodx</groupId>
+    <artifactId>eval-fox-bom</artifactId>
+    <version>0.0.1</version>
+    <packaging>pom</packaging>
+
+    <name>eval-fox-bom</name>
+    <description>eval fox project bom</description>
+    <url>https://github.com/zendodx/eval-fox.git</url>
+
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>zendodx</name>
+            <email>zendodx@hotmail.com</email>
+            <roles>
+                <role>Project Manager</role>
+                <role>Architect</role>
+            </roles>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>https://github.com/zendodx/eval-fox.git</connection>
+        <developerConnection>scm:git@github.com:zendodx/eval-fox.git</developerConnection>
+        <url>https://github.com/zendodx/eval-fox</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <modules>
+        <module>eval-fox-parent</module>
+        <module>eval-fox-common</module>
+        <module>eval-fox-workflow</module>
+        <module>eval-fox-infra</module>
+        <module>eval-fox-eval</module>
+        <module>eval-fox-all</module>
+    </modules>
+
+    <properties>
+        <!-- jdk版本 -->
+        <jdk.version>1.8</jdk.version>
+        <!-- mvn -->
+        <maven.compiler.source>${jdk.version}</maven.compiler.source>
+        <maven.compiler.target>${jdk.version}</maven.compiler.target>
+        <!-- 工程编码 -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <!--插件版本-->
+        <maven-assembly-plugin.version>3.7.1</maven-assembly-plugin.version>
+        <central-publishing-maven-plugin.version>0.4.0</central-publishing-maven-plugin.version>
+        <maven-source-plugin.version>2.2.1</maven-source-plugin.version>
+        <maven-javadoc-plugin.version>2.9.1</maven-javadoc-plugin.version>
+        <maven-gpg-plugin.version>1.5</maven-gpg-plugin.version>
+        <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.evalkit.framework</groupId>
+                <artifactId>eval-fox-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.evalkit.framework</groupId>
+                <artifactId>eval-fox-workflow</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.evalkit.framework</groupId>
+                <artifactId>eval-fox-infra</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.evalkit.framework</groupId>
+                <artifactId>eval-fox-eval</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <plugins>
+            <!-- central发布插件 -->
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>${central-publishing-maven-plugin.version}</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <publishingServerId>zendodx</publishingServerId>
+                    <tokenAuth>true</tokenAuth>
+                </configuration>
+            </plugin>
+            <!-- gpg插件 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>${maven-gpg-plugin.version}</version>
+                <configuration>
+                    <executable>${gpg.executable.path}</executable>
+                    <keyname>zendodx</keyname>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- 单元测试执行器插件 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire-plugin.version}</version>
+                <configuration>
+                    <!-- 包含单元测试 -->
+                    <includes>
+                        <include>**/*Test.java</include>
+                    </includes>
+                    <!-- 排除单元测试 -->
+                    <excludes>
+
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

@@ -1,0 +1,22 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.github.zendodx</groupId>
+        <artifactId>eval-fox-parent</artifactId>
+        <version>0.0.1</version>
+        <relativePath>../eval-fox-parent/pom.xml</relativePath>
+    </parent>
+
+    <artifactId>eval-fox-workflow</artifactId>
+    <packaging>jar</packaging>
+
+    <name>eval-fox-workflow</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.evalkit.framework</groupId>
+            <artifactId>eval-fox-common</artifactId>
+        </dependency>
+    </dependencies>
+</project>

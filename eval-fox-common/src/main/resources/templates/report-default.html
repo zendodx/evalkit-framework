@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${reportName}">评测报告</title>
+    <!-- 先声明一次，后面复用 -->
+    <th:block th:with="cdnDomain=${#strings.isEmpty(cdn) ? 'cdn.jsdelivr.net' : cdn}">
+        <link rel="stylesheet"
+              th:href="@{https://{domain}/npm/json-viewer-js@1.0.8/dist/json-viewer.css(domain=${cdnDomain})}"/>
+        <script th:src="@{https://{domain}/npm/chart.js@4.4.0/dist/chart.umd.min.js(domain=${cdnDomain})}"></script>
+        <script th:src="@{https://{domain}/npm/json-viewer-js@1.0.8/dist/json-viewer.min.js(domain=${cdnDomain})}"></script>
+        <script src="https://pfau-software.de/json-viewer/dist/iife/index.js"></script>
+    </th:block>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        body {
+            font: 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+            color: #333;
+            background: #f5f7fa;
+            display: flex;
+        }
+
+        /* ---------- 左侧 ---------- */
+        .sidebar {
+            width: 240px;
+            background: #fff;
+            border-right: 1px solid #e4e7f1;
+            display: flex;
+            flex-direction: column
+        }
+
+        .filter {
+            padding: 6px 8px;
+            border-bottom: 1px solid #e4e7f1;
+            display: flex;
+            gap: 4px
+        }
+
+        .filter-btn {
+            flex: 1;
+            height: 24px;
+            border: 1px solid #dcdfe6;
+            background: #fff;
+            border-radius: 3px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: .2s
+        }
+
+        .filter-btn:hover {
+            border-color: #409eff
+        }
+
+        .filter-btn.active {
+            background: #409eff;
+            color: #fff;
+            border-color: #409eff
+        }
+
+        .case-list {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 90vh;
+        }
+
+        .case-item {
+            padding: 6px 8px;
+            border-bottom: 1px solid #f0f2f5;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center
+        }
+
+        .case-item:hover {
+            background: #f5f7fa
+        }
+
+        .case-item.active {
+            background: #ecf5ff;
+            color: #409eff
+        }
+
+        .case-title {
+            font-size: 12px;
+            font-weight: 500
+        }
+
+        .case-status {
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 4px
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%
+        }
+
+        .status-dot.pass {
+            background: #67c23a
+        }
+
+        .status-dot.fail {
+            background: #f56c6c
+        }
+
+        .status-dot.evalerror {
+            background: #ff8010
+        }
+
+        /* ---------- 主内容 ---------- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            overflow: hidden;
+            padding-bottom: 24px
+        }
+
+        .detail-header {
+            padding: 8px 12px;
+            border-bottom: 1px solid #e4e7f1;
+            background: #fafbfc;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .detail-content {
+            flex: 1;
+            padding: 8px 12px;
+            overflow-y: auto
+        }
+
+        .detail-section {
+            border: 1px solid #e4e7f1;
+            border-radius: 4px;
+            margin-bottom: 8px
+        }
+
+        .detail-section-header {
+            padding: 6px 8px;
+            background: #f5f7fa;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center
+        }
+
+        .detail-section-content {
+            padding: 6px 8px;
+            font-size: 12px
+        }
+
+        .detail-row {
+            display: flex;
+            padding: 2px 0
+        }
+
+        .detail-label {
+            width: 100px;
+            color: #909399;
+            flex-shrink: 0
+        }
+
+        .detail-value {
+            flex: 1;
+            color: #606266
+        }
+
+        .metric-badge {
+            display: inline-block;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-size: 11px;
+            margin-left: 4px
+        }
+
+        .metric-badge.pass {
+            background: #e1f3d8;
+            color: #67c23a
+        }
+
+        .metric-badge.fail {
+            background: #fde2e2;
+            color: #f56c6c
+        }
+
+        .metric-badge.evalerror {
+            background: #ede1ad;
+            color: #ff8010
+        }
+
+
+        /* 单行展示 */
+        /*pre.json-viewer{max-height:300px;overflow:auto;margin:0;padding:4px;font-size:11px}*/
+        /* 换行展示 */
+        pre.json-viewer {
+            max-height: 300px;
+            overflow: auto;
+            margin: 0;
+            padding: 4px;
+            font-size: 11px;
+            white-space: pre-wrap;
+        }
+
+        /* ---------- 总览 ---------- */
+        .overview {
+            display: flex;
+            flex: 1;
+            overflow: hidden
+        }
+
+        .overview-left {
+            width: 50%;
+            padding: 8px 12px;
+            overflow-y: auto
+        }
+
+        .overview-right {
+            width: 50%;
+            padding: 8px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px
+        }
+
+        .report-name {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 8px
+        }
+
+        .metric-name {
+            font-size: 13px;
+            font-weight: 600;
+            margin: 8px 0 4px 0;
+            padding-left: 4px;
+            border-left: 3px solid #409eff
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns:repeat(auto-fill, minmax(140px, 1fr));
+            gap: 6px
+        }
+
+        .metric-card {
+            padding: 8px;
+            border: 1px solid #e4e7f1;
+            border-radius: 4px;
+            background: #fafbfc
+        }
+
+        .metric-label {
+            font-size: 11px;
+            color: #909399
+        }
+
+        .metric-value {
+            font-size: 13px;
+            font-weight: 600
+        }
+
+        .metric-value.good {
+            color: #67c23a
+        }
+
+        .metric-value.bad {
+            color: #f56c6c
+        }
+
+        .metric-value.evalerror {
+            color: #ff8010
+        }
+
+        .chart-box {
+            flex: 1;
+            background: #fafbfc;
+            border: 1px solid #e4e7f1;
+            border-radius: 4px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column
+        }
+
+        .chart-title {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            text-align: center
+        }
+
+        canvas {
+            max-height: 180px
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #909399;
+            font-size: 12px
+        }
+
+        /* 版权栏 */
+        .footer {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 24px;
+            line-height: 24px;
+            background: #fafbfc;
+            border-top: 1px solid #e4e7f1;
+            font-size: 11px;
+            color: #909399;
+            text-align: center;
+            z-index: 20;
+        }
+
+        /* ---------- 归因卡片 ---------- */
+        .attribute-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            overflow: hidden;
+            padding-bottom: 24px
+        }
+
+        .attribution-header {
+            display: flex;
+            align-items: center;
+            margin: 5px 12px;
+        }
+
+        .attribution-stat {
+            font-size: 13px;
+            color: #666;
+            margin-left: 10px;
+        }
+
+        .attribution-cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 5px 10px;
+        }
+
+        .attribution-card {
+            flex: 0 0 280px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #fff;
+            transition: all .2s;
+        }
+
+        .attribution-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
+        }
+
+        .attribution-card-header {
+            padding: 12px 16px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .attribution-card-header .badge {
+            background: #f2f3f5;
+            color: #333;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+
+        .attribution-card-body {
+            padding: 0 16px 16px;
+            display: none;
+        }
+
+        .attribution-card.expanded .attribution-card-body {
+            display: block;
+        }
+
+        .attribute-case-list {
+            max-height: 160px;
+            overflow: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            padding: 6px;
+            background: #fafafa;
+            font-size: 13px;
+        }
+
+        .attribute-case-list li {
+            margin: 2px 0;
+            word-break: break-all;
+        }
+
+        .attribute-copy-btn {
+            margin-top: 6px;
+            font-size: 12px;
+            padding: 4px 8px;
+            border: 1px solid #bbb;
+            border-radius: 4px;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        .attribute-copy-btn:hover {
+            background: #f2f3f5;
+        }
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <div class="filter">
+        <button class="filter-btn" onclick="renderOverview()">总览</button>
+        <button class="filter-btn" onclick="renderAttribute()">归因</button>
+        <button class="filter-btn active" onclick="filterCases('all')">全部</button>
+        <button class="filter-btn" onclick="filterCases('pass')">通过</button>
+        <button class="filter-btn" onclick="filterCases('fail')">未通过</button>
+    </div>
+    <div class="case-list" id="caseList"></div>
+</div>
+
+<div class="main-content">
+    <!-- 总览 -->
+    <div id="overviewContent" class="overview">
+        <div class="overview-left">
+            <div class="report-name" th:text="${reportName}">评测报告</div>
+            <div class="metric-name">基础指标</div>
+            <div class="metrics-grid" id="basicMetricsGrid"></div>
+            <div class="metric-name">接口调用指标</div>
+            <div class="metrics-grid" id="completionMetricsGrid"></div>
+            <div class="metric-name">评测指标</div>
+            <div class="metrics-grid" id="evalMetricsGrid"></div>
+        </div>
+        <div class="overview-right">
+            <div class="chart-box">
+                <div class="chart-title">通过率趋势</div>
+                <canvas id="passTrendChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <div class="chart-title">指标分布</div>
+                <canvas id="distChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <div class="chart-title">接口TP指标</div>
+                <canvas id="tpChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- 详情 -->
+    <div id="detailContent">
+        <div class="empty-state">选择左侧评测项查看详情</div>
+    </div>
+
+    <!-- 归因 -->
+    <div id="attributeContent" class="attribute-content">
+        <div class="empty-state">选择归因查看详情</div>
+    </div>
+</div>
+
+<!-- 版权栏（新增）-->
+<div class="footer">
+    © 2025 Eval Engine &nbsp;|&nbsp; 评测报告
+</div>
+
+<!-- Script -->
+<script th:inline="javascript">
+    const evaluationData = /*[[${evaluationData}]]*/ [];
+    const metricsData = /*[[${metricsData}]]*/ {};
+    const attributeCountResult = /*[[${attributeCountResult}]]*/ {};
+    let currentFilter = 'all';
+    let selectedCase = null;
+    let passChart, distChart, tpChart;
+
+    /* ---------- 初始化 ---------- */
+    function init() {
+        renderCaseList();
+        renderOverview();
+    }
+
+    /* ---------- 总览 ---------- */
+    function renderOverview() {
+        showPanel('overview');
+        /* 指标卡片 */
+        const basic = [
+            {label: '通过率', v: (metricsData.passRate * 100).toFixed(1) + '%', c: 'good'},
+            {label: '未通过率', v: (metricsData.unPassRate * 100).toFixed(1) + '%', c: 'bad'},
+            {label: '通过数', v: metricsData.passCount, c: 'good'},
+            {label: '未通过数', v: metricsData.unPassCount, c: 'bad'},
+            {label: '总数', v: metricsData.totalCount, c: 'default'}
+        ];
+        renderGrid('basicMetricsGrid', basic);
+        const cp = [
+            {label: '成功率', v: (metricsData.completionSuccessRate * 100).toFixed(1) + '%', c: 'good'},
+            {label: '错误率', v: (metricsData.completionErrorRate * 100).toFixed(1) + '%', c: 'bad'},
+            {label: '平均耗时', v: metricsData.completionAvgTimeCost + 'ms', c: 'default'},
+            {label: '最小耗时', v: metricsData.completionMinTimeCost + 'ms', c: 'default'},
+            {label: '最大耗时', v: metricsData.completionMaxTimeCost + 'ms', c: 'default'},
+            {label: 'TP99', v: metricsData.completionTP99TimeCost + 'ms', c: 'default'},
+            {label: 'TP95', v: metricsData.completionTP95TimeCost + 'ms', c: 'default'},
+            {label: 'TP90', v: metricsData.completionTP90TimeCost + 'ms', c: 'default'},
+            {label: 'TP80', v: metricsData.completionTP80TimeCost + 'ms', c: 'default'},
+            {label: 'TP70', v: metricsData.completionTP70TimeCost + 'ms', c: 'default'},
+            {label: 'TP60', v: metricsData.completionTP60TimeCost + 'ms', c: 'default'},
+            {label: 'TP50', v: metricsData.completionTP50TimeCost + 'ms', c: 'default'}
+        ];
+        renderGrid('completionMetricsGrid', cp);
+        const ev = [
+            {label: '成功率', v: (metricsData.evalSuccessRate * 100).toFixed(1) + '%', c: 'good'},
+            {label: '错误率', v: (metricsData.evalErrorRate * 100).toFixed(1) + '%', c: 'bad'},
+            {label: '平均耗时', v: metricsData.evalAvgTimeCost + 'ms', c: 'default'},
+            {label: '最小耗时', v: metricsData.evalMinTimeCost + 'ms', c: 'default'},
+            {label: '最大耗时', v: metricsData.evalMaxTimeCost + 'ms', c: 'default'}
+        ];
+        renderGrid('evalMetricsGrid', ev);
+        /* 图表 */
+        renderCharts();
+    }
+
+    function renderGrid(id, list) {
+        document.getElementById(id).innerHTML = list.map(m => `
+          <div class="metric-card">
+            <div class="metric-label">${m.label}</div>
+            <div class="metric-value ${m.c}">${m.v}</div>
+          </div>`).join('');
+    }
+
+    function renderCharts() {
+        /* 趋势：简单按 index 分段模拟 */
+        const step = Math.ceil(evaluationData.length / 10);
+        const labels = [], passRates = [];
+        for (let i = 0; i < evaluationData.length; i += step) {
+            const slice = evaluationData.slice(i, i + step);
+            const pass = slice.filter(d => d.evalResult.pass).length;
+            labels.push(`${i + 1}-${Math.min(i + step, evaluationData.length)}`);
+            passRates.push((pass / slice.length * 100).toFixed(1));
+        }
+        const lineCfg = {
+            type: 'line',
+            data: {labels, datasets: [{label: '通过率%', data: passRates, borderColor: '#67c23a', tension: 0.3}]},
+            options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {display: false}}}
+        };
+        const pieCfg = {
+            type: 'pie',
+            data: {
+                labels: ['通过', '未通过'],
+                datasets: [{
+                    data: [metricsData.passCount, metricsData.unPassCount],
+                    backgroundColor: ['#67c23a', '#f56c6c']
+                }]
+            },
+            options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {position: 'bottom'}}}
+        };
+        if (passChart) passChart.destroy();
+        if (distChart) distChart.destroy();
+        passChart = new Chart(document.getElementById('passTrendChart'), lineCfg);
+        distChart = new Chart(document.getElementById('distChart'), pieCfg);
+
+        /* TP */
+        const tps = [], tpLabels = [];
+        tpLabels.push('TP50')
+        tps.push(metricsData.completionTP50TimeCost)
+        tpLabels.push('TP60')
+        tps.push(metricsData.completionTP60TimeCost)
+        tpLabels.push('TP70')
+        tps.push(metricsData.completionTP70TimeCost)
+        tpLabels.push('TP80')
+        tps.push(metricsData.completionTP80TimeCost)
+        tpLabels.push('TP90')
+        tps.push(metricsData.completionTP90TimeCost)
+        tpLabels.push('TP95')
+        tps.push(metricsData.completionTP95TimeCost)
+        tpLabels.push('TP99')
+        tps.push(metricsData.completionTP99TimeCost)
+        const tpCfg = {
+            type: 'line',
+            data: {labels: tpLabels, datasets: [{label: '耗时(ms)%', data: tps, borderColor: '#67c23a', tension: 0.3}]},
+            options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {display: false}}}
+        };
+        if (tpChart) tpChart.destroy();
+        tpChart = new Chart(document.getElementById('tpChart'), tpCfg);
+    }
+
+    /* ---------- 列表 ---------- */
+    function renderCaseList() {
+        const list = document.getElementById('caseList');
+        const data = currentFilter === 'all' ? evaluationData :
+            evaluationData.filter(d => d.evalResult.pass === (currentFilter === 'pass'));
+        list.innerHTML = data.map(item => {
+            const pass = item.evalResult.pass;
+            const success = item.evalResult.success
+            return `
+              <div class="case-item ${selectedCase?.dataIndex === item.dataIndex ? 'active' : ''}"
+                   onclick="selectCase(${item.dataIndex})">
+                <div class="case-title">#${item.inputData.dataIndex}</div>
+                <div class="case-status">
+                  <span class="status-dot ${pass ? 'pass' : success ? 'fail' : 'evalerror'}"></span>
+                  <span>${pass ? '通过' : success ? '未通过' : '评测出错'}</span>
+                  <span class="metric-value ${pass ? 'good' : success ? 'bad' : 'evalerror'}">${item.evalResult.score.toFixed(1)}</span>
+                </div>
+              </div>`;
+        }).join('');
+    }
+
+    function filterCases(f) {
+        currentFilter = f;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+        renderCaseList();
+    }
+
+    /* ----------归因 ----------- */
+    function renderAttribute() {
+        showPanel('attribute');
+        const box = document.getElementById('attributeContent');
+        if (!attributeCountResult || !attributeCountResult.overallAttribution?.length) {
+            box.innerHTML = '<div>暂无归因数据</div>';
+            return;
+        }
+
+        // 初始渲染
+        function render(list) {
+            const total = list.reduce((s, v) => s + v.caseIds.length, 0);
+            const cards = list.map(attr => `
+          <div class="attribution-card">
+            <div class="attribution-card-header" onclick="this.parentNode.classList.toggle('expanded')">
+              <span>${attr.issueName}</span>
+              <span class="badge">${attr.caseIds.length}</span>
+            </div>
+            <div class="attribution-card-body">
+              <ul class="attribute-case-list">${attr.caseIds.map(id => `<li>${id}</li>`).join('')}</ul>
+              <button class="attribute-copy-btn" onclick="copyCases('${attr.issueName}',${JSON.stringify(attr.caseIds)})">复制全部 CaseId</button>
+            </div>
+          </div>`).join('');
+
+            box.innerHTML = `
+          <div class="attribution-header">
+            <h3>问题归因</h3>
+            <div>
+              <span class="attribution-stat">共 ${total} 个 Case</span>
+            </div>
+          </div>
+          <div class="attribution-cards">${cards}</div>`;
+        }
+
+        // 过滤
+        window.filterAttr = () => {
+            const kw = document.getElementById('attrSearch').value.trim().toLowerCase();
+            const filtered = attributeCountResult.overallAttribution.filter(
+                v => v.issueName.toLowerCase().includes(kw)
+            );
+            render(filtered);
+        };
+
+        // 复制
+        window.copyCases = (name, arr) => {
+            const t = arr.join('\n');
+            navigator.clipboard.writeText(t).then(() => alert(`已复制 ${arr.length} 条 CaseId`));
+        };
+
+        render(attributeCountResult.overallAttribution);
+    }
+
+    /* ---------- 详情 ---------- */
+    function selectCase(idx) {
+        selectedCase = evaluationData.find(d => d.dataIndex === idx);
+        renderCaseList();
+        renderDetail();
+    }
+
+    function renderDetail() {
+        if (!selectedCase) return;
+        showPanel('detail');
+        const d = selectedCase;
+        const pass = d.evalResult.pass;
+        const success = d.evalResult.success;
+        document.getElementById('detailContent').innerHTML = `
+          <div class="detail-header">
+            <span>#${d.inputData.dataIndex}</span>
+            <span class="metric-badge ${pass ? 'pass' : success ? 'fail' : 'evalerror'}">${pass ? '通过' : success ? '未通过' : '评测错误'}</span>
+            <span class="metric-value ${pass ? 'good' : success ? 'bad' : 'evalerror'}">${d.evalResult.score.toFixed(1)}分</span>
+            <span style="margin-left:auto;font-size:11px;color:#909399">${d.evalResult.scoreStrategyName}</span>
+          </div>
+          <div class="detail-content">
+            ${section('输入数据', jsonDiv(d.inputData.inputItem))}
+            ${section('API 调用结果', apiDiv(d.apiCompletionResult))}
+            ${section('评测结果', evalDiv(d.evalResult))}
+            ${section('评分详情', scorerDiv(d.evalResult.scorerResults))}
+          </div>`;
+        /* 激活 json-viewer */
+        document.querySelectorAll('pre.json-viewer').forEach(el => new JsonViewer(el));
+    }
+
+    function section(title, content) {
+        return `<div class="detail-section">
+                  <div class="detail-section-header">${title}</div>
+                  <div class="detail-section-content">${content}</div>
+                </div>`;
+    }
+
+    function jsonDiv(obj) {
+        if (!obj) {
+            return `<span>没有输入数据</span>`
+        }
+        // 2中展示方式任选
+        // 字符串展示
+        // return `<pre class="json-viewer">${escapeHtml(JSON.stringify(obj, null, 2))}</pre>`;
+        // json预览框展示
+        return `<div style="max-height: 400px; overflow-y: auto;">
+                    <andypf-json-viewer
+                            show-toolbar="true"
+                            show-data-types="false"
+                            theme="github"
+                            expanded="3"
+                            data="${escapeHtml(JSON.stringify(obj, null, 2))}">
+                    </andypf-json-viewer>
+               </div>`
+    }
+
+    function apiDiv(r) {
+        if (!r) {
+            return `<span>没有接口调用结果</span>`
+        }
+        return `
+          <div class="detail-row"><div class="detail-label">耗时</div><div class="detail-value">${r.timeCost}ms</div></div>
+          <div class="detail-row"><div class="detail-label">时间</div><div class="detail-value">${fmt(r.startTime)} / ${fmt(r.endTime)}</div></div>
+          <div class="detail-row"><div class="detail-label">状态</div><div class="detail-value">${r.success ? '<span style="color:#67c23a">正常</span>' : '<span style="color:#f56c6c">出错</span>'}</div></div>
+          ${r.resultItem ? jsonDiv(r.resultItem) : ''}`;
+    }
+
+    function evalDiv(r) {
+        if (!r) {
+            return `<span>没有评测结果</span>`
+        }
+        return `
+          <div class="detail-row"><div class="detail-label">分数</div><div class="detail-value metric-value ${r.pass ? 'good' : 'bad'}">${r.score.toFixed(1)}</div></div>
+          <div class="detail-row"><div class="detail-label">理由</div><div class="detail-value">${r.reason}</div></div>
+          <div class="detail-row"><div class="detail-label">策略</div><div class="detail-value">${r.scoreStrategyName}</div></div>
+          <div class="detail-row"><div class="detail-label">阈值</div><div class="detail-value">${r.threshold}</div></div>
+          <div class="detail-row"><div class="detail-label">耗时</div><div class="detail-value">${r.timeCost}ms</div></div>
+          <div class="detail-row"><div class="detail-label">时间</div><div class="detail-value">${fmt(r.startTime)} / ${fmt(r.endTime)}</div></div>
+          <div class="detail-row"><div class="detail-label">状态</div><div class="detail-value">${r.success ? '<span style="color:#67c23a">正常</span>' : '<span style="color:#f56c6c">出错</span>'}</div></div>
+        `;
+    }
+
+    function scorerDiv(list) {
+        if (!list || list.length === 0) {
+            return `<span>没有评估器</span>`
+        }
+        return list.map(s => {
+            const pass = s.pass;
+            return `<div style="margin-bottom:6px;padding:6px;border-left:3px solid ${pass ? '#67c23a' : '#f56c6c'};background:${pass ? '#e1f3d8' : '#fde2e2'};border-radius:2px;">
+                      <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600">
+                        <div>
+                            <span>${s.metric}${s.star ? '<span style="color:#ff4757;margin-left:4px">必过</span>' : ''}</span>
+                            <span>${s.success ? '' : '<span style="color:#ff4757;margin-left:4px">评测出错</span>'}</span>
+                        </div>
+                        <span class="metric-badge ${pass ? 'pass' : 'fail'}">${pass ? '通过' : '未通过'} ${s.score.toFixed(1)} / ${s.threshold}</span>
+                      </div>
+                      <div style="font-size:12px;color:#606266;margin:5px 0">${s.reason}</div>
+                      ${s.extra ? (() => {
+                const map = wrapperScorerResultExtra(s.extra);
+                return jsonDiv(map);
+            })() : ''
+            }
+                    </div>`;
+        }).join('');
+    }
+
+    /**
+     * 统一把后端 extra 对象里 **所有** 可能出现 CheckItem[] 字符串的 value
+     * 转成展示用的扁平 Map；转换失败原样返回。
+     * @param {Object} extra  后端返回的 plain object
+     * @returns {Object}      同结构对象，仅把可转换的 value 替换掉
+     */
+    function wrapperScorerResultExtra(extra = {}) {
+        const out = {};
+
+        Object.entries(extra).forEach(([k, v]) => {
+            out[k] = parseValue(v);
+        });
+
+        return out;
+    }
+
+    /* --------- 真正转换函数 --------- */
+    function parseValue(raw) {
+        // 1. 必须是字符串
+        if (typeof raw !== 'string') return raw;
+
+        try {
+            const arr = JSON.parse(raw);
+            if (!Array.isArray(arr)) return raw;
+
+            // 2. 字段完整性校验
+            const required = ['name', 'score', 'reason', 'weight', 'star', 'executed',
+                'defaultScore', 'checkDescription', 'checkMethod'];
+            const ok = arr.every(it => it && required.every(r => r in it));
+            if (!ok) return raw;
+
+            // 3. 转换
+            const map = {};
+            arr.forEach(it => {
+                const weightScore = (it.score * it.weight).toFixed(2);
+                map[it.name] = {
+                    '分数 | 权重 | 权重分数': `${it.score.toFixed(2)} | ${it.weight.toFixed(2)} | ${weightScore}`,
+                    '默认分数': it.defaultScore,
+                    '理由': it.reason,
+                    '类型': it.star ? '必过检查' : '普通检查',
+                    '检查方法 | 执行情况': `${it.checkMethod} | ${it.executed ? '已执行' : '未执行'}`,
+                    '检查要求': it.checkDescription
+                };
+            });
+            return map;
+        } catch (_) {
+            return raw;
+        }
+    }
+
+    /* ---------- 工具 ---------- */
+    function showPanel(name) {
+        document.getElementById('overviewContent').style.display = name === 'overview' ? 'flex' : 'none';
+        document.getElementById('detailContent').style.display = name === 'detail' ? '' : 'none';
+        document.getElementById('attributeContent').style.display = name === 'attribute' ? '' : 'none';
+    }
+
+    function fmt(ts) {
+        if (!ts) return '-';
+        const d = new Date(ts);
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+
+    function pad(n) {
+        return n < 10 ? '0' + n : n;
+    }
+
+    // function escapeHtml(str) {
+    //     const div = document.createElement('div');
+    //     div.textContent = str;
+    //     return div.innerHTML;
+    // }
+
+    function escapeHtml(str) {
+        return str
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')   // ← 关键：把 " 转成 &quot;
+            .replace(/'/g, '&#39;');
+    }
+
+    init();
+</script>
+</body>
+</html>
