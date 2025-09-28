@@ -31,6 +31,8 @@
 
 此处给出了一个评估相似度和文本长度的评测编排例子
 
+![](docs/files/quick_start.drawio.png)
+
 ```java
 package com.evalkit.framework.example.basic;
 
@@ -182,11 +184,12 @@ public class BasicEvalTest {
 }
 ```
 
-## 用户文档
+## 相关文档
 
-- [中文文档]()
-- [英文文档]()
+- [API文档](docs/api_doc.md)
+- [版本变更](docs/CHANGELOG.md)
+- [开发须知](docs/contribute.md)
 
 ## 开源协议
 
-EvalFox是在 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) 协议下的开源项目。
+EvalFox是在 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) 协议下的开源项目

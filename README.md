@@ -31,6 +31,8 @@ Before you begin, please install the following tools:
 
 Below is an example of an evaluation orchestration for assessing similarity and text length.
 
+![](docs/files/quick_start.drawio.png)
+
 
 ```java
 package com.evalkit.framework.example.basic;
@@ -185,8 +187,9 @@ public class BasicEvalTest {
 
 ## User Documentation
 
-- [Chinese Documentation]()
-- [English Documentation]()
+- [API documentation](docs/api_doc.md)
+- [Change log](docs/CHANGELOG.md)
+- [Contribute](docs/contribute.md)
 
 ## Open Source License
 
