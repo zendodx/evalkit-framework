@@ -40,7 +40,7 @@ case "$ENV" in
     ;;
   remote)
     echo "🚀 发布到 Maven 中央仓库${SKIP_TESTS/+，已跳过测试/...}"
-    mvn clean deploy -pl eval-fox-all -am -e -P release $MVN_ARGS
+    mvn clean deploy -e -P release $MVN_ARGS
     ;;
   *)
     echo "❌ 无效参数: $ENV"
