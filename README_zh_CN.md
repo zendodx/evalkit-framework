@@ -22,8 +22,8 @@
 ```xml
 <dependency>
     <groupId>io.github.zendodx</groupId>
-    <artifactId>eval-fox-all</artifactId>
-    <version>0.0.1</version>
+    <artifactId>eval-fox-eval</artifactId>
+    <version>0.0.2</version>
 </dependency>
 ```
 
