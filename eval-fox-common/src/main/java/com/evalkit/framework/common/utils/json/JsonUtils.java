@@ -57,7 +57,7 @@ public class JsonUtils {
     }
 
     /**
-     * json转Map<K,V>
+     * json转Map
      */
     public static <K, V> Map<K, V> fromJsonToMap(String json, Class<K> clazzK, Class<V> clazzV) {
         try {
@@ -69,7 +69,6 @@ public class JsonUtils {
 
     /**
      * json转复杂泛型对象
-     * 用法：JacksonUtil.fromJson(json, new TypeReference<List<User>>() {})
      */
     public static <T> T fromJson(String json, TypeReference<T> typeReference) {
         try {

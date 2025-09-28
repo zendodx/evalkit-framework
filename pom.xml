@@ -4,7 +4,7 @@
 
     <groupId>io.github.zendodx</groupId>
     <artifactId>eval-fox-bom</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
     <packaging>pom</packaging>
 
     <name>eval-fox-bom</name>
@@ -42,7 +42,6 @@
         <module>eval-fox-workflow</module>
         <module>eval-fox-infra</module>
         <module>eval-fox-eval</module>
-        <module>eval-fox-all</module>
     </modules>
 
     <properties>
@@ -67,22 +66,22 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.evalkit.framework</groupId>
+                <groupId>io.github.zendodx</groupId>
                 <artifactId>eval-fox-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.evalkit.framework</groupId>
+                <groupId>io.github.zendodx</groupId>
                 <artifactId>eval-fox-workflow</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.evalkit.framework</groupId>
+                <groupId>io.github.zendodx</groupId>
                 <artifactId>eval-fox-infra</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.evalkit.framework</groupId>
+                <groupId>io.github.zendodx</groupId>
                 <artifactId>eval-fox-eval</artifactId>
                 <version>${project.version}</version>
             </dependency>
