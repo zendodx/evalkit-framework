@@ -1,6 +1,7 @@
-# EvalFox
+# <img src="docs/files/eval_fox_logo.png" width="80" height="80"> EvalFox
 
 ## Overview
+
 An AI automation evaluation framework based on Java, featuring:
 
 - Full evaluation workflow orchestration: Quickly implement data construction, evaluation execution, result reporting and output, and evaluation summary processes.
@@ -30,6 +31,8 @@ Before you begin, please install the following tools:
 ### Prepare Evaluation Orchestration
 
 Below is an example of an evaluation orchestration for assessing similarity and text length.
+
+![](docs/files/quick_start.drawio.png)
 
 
 ```java
@@ -185,8 +188,9 @@ public class BasicEvalTest {
 
 ## User Documentation
 
-- [Chinese Documentation]()
-- [English Documentation]()
+- [API documentation](docs/api_doc.md)
+- [Change log](docs/CHANGELOG.md)
+- [Contribute](docs/contribute.md)
 
 ## Open Source License
 
