@@ -1,6 +1,7 @@
-# EvalFox
+# <img src="docs/files/eval_fox_logo.png" width="80" height="80"> EvalFox
 
 ## Overview
+
 An AI automation evaluation framework based on Java, featuring:
 
 - Full evaluation workflow orchestration: Quickly implement data construction, evaluation execution, result reporting and output, and evaluation summary processes.

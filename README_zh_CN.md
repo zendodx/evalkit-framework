@@ -1,4 +1,4 @@
-# EvalFox
+# <img src="docs/files/eval_fox_logo.png" width="80" height="80"> EvalFox
 
 # 概述
 基于Java的AI自动化评测框架, 具有以下特性:
