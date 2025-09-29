@@ -38,3 +38,6 @@ attaches
 
 # gpg
 .gpg
+
+# config
+secret.properties

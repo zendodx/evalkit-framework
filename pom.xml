@@ -4,7 +4,7 @@
 
     <groupId>io.github.zendodx</groupId>
     <artifactId>eval-fox-bom</artifactId>
-    <version>0.0.2</version>
+    <version>0.0.3</version>
     <packaging>pom</packaging>
 
     <name>eval-fox-bom</name>
@@ -45,41 +45,44 @@
     </modules>
 
     <properties>
+        <!-- 统一编码 -->
+        <encoding>UTF-8</encoding>
         <!-- jdk版本 -->
         <jdk.version>1.8</jdk.version>
         <!-- mvn -->
         <maven.compiler.source>${jdk.version}</maven.compiler.source>
         <maven.compiler.target>${jdk.version}</maven.compiler.target>
         <!-- 工程编码 -->
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <project.build.sourceEncoding>${encoding}</project.build.sourceEncoding>
+        <project.build.resourceEncoding>${encoding}</project.build.resourceEncoding>
+        <project.reporting.outputEncoding>${encoding}</project.reporting.outputEncoding>
         <!--插件版本-->
-        <maven-assembly-plugin.version>3.7.1</maven-assembly-plugin.version>
         <central-publishing-maven-plugin.version>0.4.0</central-publishing-maven-plugin.version>
-        <maven-source-plugin.version>2.2.1</maven-source-plugin.version>
-        <maven-javadoc-plugin.version>2.9.1</maven-javadoc-plugin.version>
         <maven-gpg-plugin.version>1.5</maven-gpg-plugin.version>
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
+            <!-- 公共模块 -->
             <dependency>
                 <groupId>io.github.zendodx</groupId>
                 <artifactId>eval-fox-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <!-- 工作流模块 -->
             <dependency>
                 <groupId>io.github.zendodx</groupId>
                 <artifactId>eval-fox-workflow</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <!-- 基础模块 -->
             <dependency>
                 <groupId>io.github.zendodx</groupId>
                 <artifactId>eval-fox-infra</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <!-- 评测模块 -->
             <dependency>
                 <groupId>io.github.zendodx</groupId>
                 <artifactId>eval-fox-eval</artifactId>

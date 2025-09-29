@@ -1,11 +1,13 @@
 package com.evalkit.framework.common.utils.runtime;
 
 import java.io.File;
+import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 public class RuntimeEnvUtils {
     private RuntimeEnvUtils() {
@@ -168,5 +170,18 @@ public class RuntimeEnvUtils {
             active = System.getenv("SPRING_PROFILES_ACTIVE");
         }
         return active;
+    }
+
+    /**
+     * 读取resource下的properties,获取执行的key
+     */
+    public static String getPropertyFromResource(String resourcePath, String key) {
+        try (InputStream in = RuntimeEnvUtils.class.getClassLoader().getResourceAsStream(resourcePath)) {
+            Properties properties = new Properties();
+            properties.load(in);
+            return properties.getProperty(key);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }
