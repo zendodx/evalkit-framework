@@ -1,5 +1,10 @@
 package com.evalkit.framework.eval.core;
 
+import com.evalkit.framework.common.utils.file.FileUtils;
+import com.evalkit.framework.common.utils.json.JsonUtils;
+import com.evalkit.framework.common.utils.list.ListUtils;
+import com.evalkit.framework.common.utils.runtime.RuntimeEnvUtils;
+import com.evalkit.framework.common.utils.time.DateUtils;
 import com.evalkit.framework.eval.model.*;
 import com.evalkit.framework.eval.node.api.ApiCompletion;
 import com.evalkit.framework.eval.node.begin.Begin;
@@ -23,11 +28,7 @@ import com.evalkit.framework.eval.node.scorer.config.ScorerConfig;
 import com.evalkit.framework.infra.service.llm.LLMService;
 import com.evalkit.framework.infra.service.llm.LLMServiceFactory;
 import com.evalkit.framework.infra.service.llm.config.DeepseekLLMServiceConfig;
-import com.evalkit.framework.infra.service.llm.constants.LLMServiceType;
-import com.evalkit.framework.common.utils.file.FileUtils;
-import com.evalkit.framework.common.utils.json.JsonUtils;
-import com.evalkit.framework.common.utils.list.ListUtils;
-import com.evalkit.framework.common.utils.time.DateUtils;
+import com.evalkit.framework.infra.service.llm.constants.LLMServiceEnum;
 import com.evalkit.framework.workflow.WorkflowBuilder;
 import com.evalkit.framework.workflow.model.WorkflowContext;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -66,9 +67,9 @@ public class CoreTest {
 
     @BeforeEach
     public void init() {
-        LLMService llmService = LLMServiceFactory.createLLMService(
-                LLMServiceType.DEEPSEEK,
-                DeepseekLLMServiceConfig.builder().apiToken("xxx").build());
+        String deepSeekToken = RuntimeEnvUtils.getPropertyFromResource("secret.properties", "deepseek-token");
+        DeepseekLLMServiceConfig config = DeepseekLLMServiceConfig.builder().apiToken(deepSeekToken).build();
+        LLMService llmService = LLMServiceFactory.createLLMService(LLMServiceEnum.DEEPSEEK.name(), config);
 
         begin = new Begin(BeginConfig.builder().threshold(3).build());
 
