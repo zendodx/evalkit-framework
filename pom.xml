@@ -2,9 +2,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>${regroupid}</groupId>
+    <groupId>io.github.zendodx</groupId>
     <artifactId>eval-fox-bom</artifactId>
-    <version>${reversion}</version>
+    <version>0.0.3</version>
     <packaging>pom</packaging>
 
     <name>eval-fox-bom</name>
@@ -45,10 +45,6 @@
     </modules>
 
     <properties>
-        <!-- 统一groupId -->
-        <regroupid>io.github.zendodx</regroupid>
-        <!-- 统一版本 -->
-        <reversion>0.0.3</reversion>
         <!-- 统一编码 -->
         <encoding>UTF-8</encoding>
         <!-- jdk版本 -->
@@ -72,25 +68,25 @@
             <dependency>
                 <groupId>io.github.zendodx</groupId>
                 <artifactId>eval-fox-common</artifactId>
-                <version>${reversion}</version>
+                <version>${project.version}</version>
             </dependency>
             <!-- 工作流模块 -->
             <dependency>
                 <groupId>io.github.zendodx</groupId>
                 <artifactId>eval-fox-workflow</artifactId>
-                <version>${reversion}</version>
+                <version>${project.version}</version>
             </dependency>
             <!-- 基础模块 -->
             <dependency>
                 <groupId>io.github.zendodx</groupId>
                 <artifactId>eval-fox-infra</artifactId>
-                <version>${reversion}</version>
+                <version>${project.version}</version>
             </dependency>
             <!-- 评测模块 -->
             <dependency>
                 <groupId>io.github.zendodx</groupId>
                 <artifactId>eval-fox-eval</artifactId>
-                <version>${reversion}</version>
+                <version>${project.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
