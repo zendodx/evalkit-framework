@@ -2,13 +2,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.github.zendodx</groupId>
+        <groupId>${regroupid}</groupId>
         <artifactId>eval-fox-bom</artifactId>
-        <version>0.0.2</version>
+        <version>${reversion}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>eval-fox-parent</artifactId>
+    <version>${reversion}</version>
     <packaging>pom</packaging>
 
     <name>eval-fox-parent</name>
@@ -63,6 +64,10 @@
         <mysql-connector-j.version>8.3.0</mysql-connector-j.version>
         <dify-java-client.version>1.1.5</dify-java-client.version>
         <thymeleaf.version>3.1.2.RELEASE</thymeleaf.version>
+        <!-- 插件版本 -->
+        <maven-assembly-plugin.version>3.7.1</maven-assembly-plugin.version>
+        <maven-source-plugin.version>2.2.1</maven-source-plugin.version>
+        <maven-javadoc-plugin.version>2.9.1</maven-javadoc-plugin.version>
     </properties>
 
     <dependencyManagement>

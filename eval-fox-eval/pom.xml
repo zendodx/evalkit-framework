@@ -2,13 +2,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.github.zendodx</groupId>
+        <groupId>${regroupid}</groupId>
         <artifactId>eval-fox-parent</artifactId>
-        <version>0.0.2</version>
+        <version>${reversion}</version>
         <relativePath>../eval-fox-parent/pom.xml</relativePath>
     </parent>
 
     <artifactId>eval-fox-eval</artifactId>
+    <version>${reversion}</version>
     <packaging>jar</packaging>
 
     <name>eval-fox-eval</name>
