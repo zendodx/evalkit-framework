@@ -3,11 +3,10 @@ package com.evalkit.framework.workflow;
 import com.evalkit.framework.workflow.model.WorkflowContext;
 
 /**
- * 静态ThreadLocal包装器
+ * 工作流上下文ThreadLocal
  */
-public final class WorkflowContextHolder {
-    // 使用InheritableThreadLocal保证跨线程访问
-    private static final ThreadLocal<WorkflowContext> TL = new InheritableThreadLocal<>();
+public class WorkflowContextHolder {
+    private static final ThreadLocal<WorkflowContext> TL = new ThreadLocal<>();
 
     private WorkflowContextHolder() {
     }

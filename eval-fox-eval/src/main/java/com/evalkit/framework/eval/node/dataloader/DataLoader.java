@@ -9,7 +9,6 @@ import com.evalkit.framework.eval.model.EvalResult;
 import com.evalkit.framework.eval.model.InputData;
 import com.evalkit.framework.eval.node.dataloader.config.DataLoaderConfig;
 import com.evalkit.framework.eval.node.scorer.strategy.ScoreStrategy;
-import com.evalkit.framework.workflow.WorkflowContextHolder;
 import com.evalkit.framework.workflow.model.WorkflowContext;
 import com.evalkit.framework.workflow.model.WorkflowNode;
 import com.evalkit.framework.workflow.utils.WorkflowUtils;
@@ -167,7 +166,7 @@ public abstract class DataLoader extends WorkflowNode {
     /**
      * 包含钩子的数据加载
      */
-    protected List<InputData> loadWrapper() {
+    public List<InputData> loadWrapper() {
         List<InputData> inputDataList = null;
         try {
             beforeLoad();
@@ -187,7 +186,7 @@ public abstract class DataLoader extends WorkflowNode {
             if (CollectionUtils.isEmpty(inputDataList)) {
                 throw new EvalException("Input data list is empty");
             }
-            WorkflowContext ctx = WorkflowContextHolder.get();
+            WorkflowContext ctx = getWorkflowContext();
             List<DataItem> dataItems = WorkflowContextOps.getDataItems(ctx);
             double threshold = WorkflowContextOps.getThreshold(ctx);
             ScoreStrategy scoreStrategy = WorkflowContextOps.getScorerStrategy(ctx);
@@ -201,7 +200,7 @@ public abstract class DataLoader extends WorkflowNode {
     /**
      * 构建数据项,填充评测数据,初始化评测结果
      */
-    private DataItem buildDataItem(Long dataIndex, InputData inputData, double threshold, ScoreStrategy scoreStrategy) {
+    protected DataItem buildDataItem(Long dataIndex, InputData inputData, double threshold, ScoreStrategy scoreStrategy) {
         DataItem dataItem = new DataItem(dataIndex, inputData);
         EvalResult evalResult = new EvalResult();
         evalResult.setThreshold(threshold);

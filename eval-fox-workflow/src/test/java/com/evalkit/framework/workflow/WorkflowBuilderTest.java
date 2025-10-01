@@ -17,7 +17,7 @@ class WorkflowBuilderTest {
         WorkflowNode node1 = new WorkflowNode() {
             @Override
             protected void doExecute() {
-                WorkflowContext ctx = WorkflowContextHolder.get();
+                WorkflowContext ctx = getWorkflowContext();
                 ctx.put("node1", 1);
                 System.out.println("Execute node1");
             }
@@ -26,7 +26,7 @@ class WorkflowBuilderTest {
         WorkflowNode node2 = new WorkflowNode() {
             @Override
             protected void doExecute() {
-                WorkflowContext ctx = WorkflowContextHolder.get();
+                WorkflowContext ctx = getWorkflowContext();
                 ctx.put("node2", 2);
                 System.out.println("Execute node2");
             }
@@ -35,7 +35,7 @@ class WorkflowBuilderTest {
         WorkflowNode node3 = new WorkflowNode() {
             @Override
             protected void doExecute() {
-                WorkflowContext ctx = WorkflowContextHolder.get();
+                WorkflowContext ctx = getWorkflowContext();
                 ctx.put("node3", 3);
                 System.out.println("Execute node3");
             }

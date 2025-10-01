@@ -1,11 +1,10 @@
 package com.evalkit.framework.eval.node.debuger;
 
 
+import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.eval.context.WorkflowContextOps;
 import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.node.scorer.strategy.ScoreStrategy;
-import com.evalkit.framework.common.utils.json.JsonUtils;
-import com.evalkit.framework.workflow.WorkflowContextHolder;
 import com.evalkit.framework.workflow.model.WorkflowContext;
 import com.fasterxml.jackson.core.type.TypeReference;
 
@@ -31,7 +30,7 @@ public class JsonStringDebugger extends Debugger {
     protected void inject() {
         Map<String, Object> map = JsonUtils.fromJson(json, new TypeReference<Map<String, Object>>() {
         });
-        WorkflowContext ctx = WorkflowContextHolder.get();
+        WorkflowContext ctx = getWorkflowContext();
         long dataIndex = 0;
         ScoreStrategy strategy = WorkflowContextOps.getScorerStrategy(ctx);
         double threshold = WorkflowContextOps.getThreshold(ctx);
@@ -39,7 +38,6 @@ public class JsonStringDebugger extends Debugger {
         WorkflowContextOps.setDataItems(ctx, dataItems);
         buildCountResultMap(map);
         WorkflowContextOps.setCountResults(ctx, buildCountResultMap(map));
-        WorkflowContextHolder.set(ctx);
     }
 
     @Override

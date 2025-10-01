@@ -7,10 +7,10 @@ import com.evalkit.framework.workflow.model.WorkflowContext;
 import lombok.Data;
 
 /**
- * 基于DAG的工作流
+ * 基于DAG的通用工作流
  */
 @Data
-public class Workflow {
+public class Workflow implements Cloneable {
     private DAG dag;
     private WorkflowContext workflowContext;
     private WorkflowStatus status;
@@ -25,7 +25,6 @@ public class Workflow {
 
     public void init() {
         try {
-            WorkflowContextHolder.set(this.workflowContext);
             setStatus(WorkflowStatus.INIT);
         } catch (Exception e) {
             setStatus(WorkflowStatus.FAILED);
@@ -36,7 +35,7 @@ public class Workflow {
     public void execute() {
         try {
             setStatus(WorkflowStatus.RUNNING);
-            taskExecutor.executeTasks(dag);
+            taskExecutor.executeTasks(dag, workflowContext);
             setStatus(WorkflowStatus.DONE);
         } catch (Exception e) {
             setStatus(WorkflowStatus.FAILED);
@@ -47,6 +46,32 @@ public class Workflow {
     public void stop() {
         if (taskExecutor != null) {
             taskExecutor.shutdown();
+        }
+    }
+
+    /**
+     * 线程池是否自动关闭
+     */
+    public void setAutoShutdown(boolean autoShutdown) {
+        taskExecutor.setAutoShutdown(autoShutdown);
+    }
+
+
+    @Override
+    public Workflow clone() {
+        try {
+            Workflow clone = (Workflow) super.clone();
+            if (this.dag != null) {
+                clone.setDag(this.dag.clone());
+            }
+            if (this.workflowContext != null) {
+                clone.setWorkflowContext(this.workflowContext.clone());
+            }
+            clone.status = this.status;
+            clone.taskExecutor = this.taskExecutor;
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
         }
     }
 }

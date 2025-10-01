@@ -2,7 +2,6 @@ package com.evalkit.framework.eval.node.end;
 
 
 import com.evalkit.framework.eval.constants.NodeNamePrefix;
-import com.evalkit.framework.workflow.WorkflowContextHolder;
 import com.evalkit.framework.workflow.model.WorkflowContext;
 import com.evalkit.framework.workflow.model.WorkflowNode;
 import com.evalkit.framework.workflow.utils.WorkflowUtils;
@@ -22,7 +21,7 @@ public abstract class End extends WorkflowNode {
 
     @Override
     protected void doExecute() {
-        process(WorkflowContextHolder.get());
+        process(getWorkflowContext());
         log.info("End execute workflow");
     }
 }

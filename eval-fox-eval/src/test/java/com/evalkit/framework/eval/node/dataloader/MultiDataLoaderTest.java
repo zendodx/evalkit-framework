@@ -11,27 +11,35 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 @Slf4j
-class DataLoaderTest {
+class MultiDataLoaderTest {
 
-    private DataLoader dataLoader;
+    MultiDataLoader multiDataLoader;
 
     @BeforeEach
     void setUp() {
-        dataLoader = new DataLoader() {
+        DataLoader d1 = new DataLoader() {
             @Override
             public List<InputData> prepareDataList() throws Exception {
                 return ListUtils.of(
-                        new InputData(MapUtils.of("query", "1")),
+                        new InputData(MapUtils.of("query", "1"))
+                );
+            }
+        };
+        DataLoader d2 = new DataLoader() {
+            @Override
+            public List<InputData> prepareDataList() throws Exception {
+                return ListUtils.of(
                         new InputData(MapUtils.of("query", "2"))
                 );
             }
         };
+        multiDataLoader = new MultiDataLoader(ListUtils.of(d1, d2));
     }
 
     @Test
-    void loadWrapper() {
-        List<InputData> inputData = dataLoader.loadWrapper();
-        log.info("inputData:{}", inputData);
+    public void testPrepareDataList() {
+        List<InputData> inputData = multiDataLoader.prepareDataList();
+        log.info("multi data loader: {}", inputData);
         Assertions.assertEquals(2, inputData.size());
     }
 }

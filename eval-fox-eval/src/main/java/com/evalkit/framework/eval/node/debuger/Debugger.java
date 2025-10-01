@@ -1,12 +1,11 @@
 package com.evalkit.framework.eval.node.debuger;
 
+import com.evalkit.framework.common.utils.map.MapUtils;
 import com.evalkit.framework.eval.constants.NodeNamePrefix;
 import com.evalkit.framework.eval.context.WorkflowContextOps;
 import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.model.EvalResult;
 import com.evalkit.framework.eval.node.scorer.strategy.ScoreStrategy;
-import com.evalkit.framework.common.utils.map.MapUtils;
-import com.evalkit.framework.workflow.WorkflowContextHolder;
 import com.evalkit.framework.workflow.model.WorkflowContext;
 import com.evalkit.framework.workflow.model.WorkflowNode;
 import com.evalkit.framework.workflow.utils.WorkflowUtils;
@@ -50,7 +49,7 @@ public abstract class Debugger extends WorkflowNode {
     protected abstract void inject();
 
     protected void afterInject() {
-        WorkflowContext ctx = WorkflowContextHolder.get();
+        WorkflowContext ctx = getWorkflowContext();
         List<DataItem> dataItems = WorkflowContextOps.getDataItems(ctx);
         if (offset > 0 && limit >= 0) {
             dataItems = dataItems.stream().skip(offset).limit(limit).collect(Collectors.toList());

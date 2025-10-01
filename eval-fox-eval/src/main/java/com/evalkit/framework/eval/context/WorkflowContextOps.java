@@ -1,12 +1,13 @@
 package com.evalkit.framework.eval.context;
 
+import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.eval.model.CountResult;
 import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.node.scorer.strategy.ScoreStrategy;
-import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.workflow.model.WorkflowContext;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -67,6 +68,9 @@ public final class WorkflowContextOps {
     public static void setCountResult(WorkflowContext ctx, CountResult result) {
         if (result == null) return;
         Map<String, Object> map = ctx.get(WorkflowContextKey.COUNT_RESULT_MAP, Map.class);
+        if (map == null) {
+            map = new LinkedHashMap<>();
+        }
         map.put(result.counterName(), JsonUtils.toJson(result));
         ctx.put(WorkflowContextKey.COUNT_RESULT_MAP, map);
     }

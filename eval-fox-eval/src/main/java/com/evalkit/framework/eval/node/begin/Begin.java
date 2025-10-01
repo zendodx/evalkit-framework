@@ -3,13 +3,13 @@ package com.evalkit.framework.eval.node.begin;
 import com.evalkit.framework.eval.constants.NodeNamePrefix;
 import com.evalkit.framework.eval.context.WorkflowContextOps;
 import com.evalkit.framework.eval.node.begin.config.BeginConfig;
-import com.evalkit.framework.workflow.WorkflowContextHolder;
 import com.evalkit.framework.workflow.model.WorkflowContext;
 import com.evalkit.framework.workflow.model.WorkflowNode;
 import com.evalkit.framework.workflow.utils.WorkflowUtils;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -36,11 +36,13 @@ public class Begin extends WorkflowNode {
      * 初始化评测工作流上下文
      */
     protected void initWorkflowContext() {
-        WorkflowContext ctx = WorkflowContextHolder.get();
+        WorkflowContext ctx = getWorkflowContext();
         WorkflowContextOps.setTaskName(ctx, config.getTaskName());
         WorkflowContextOps.setScorerStrategy(ctx, config.getScoreStrategy());
         WorkflowContextOps.setThreshold(ctx, config.getThreshold());
-        WorkflowContextOps.setDataItems(ctx, new CopyOnWriteArrayList<>());
+        if (CollectionUtils.isEmpty(WorkflowContextOps.getDataItems(ctx))) {
+            WorkflowContextOps.setDataItems(ctx, new CopyOnWriteArrayList<>());
+        }
         WorkflowContextOps.setCountResults(ctx, new ConcurrentHashMap<>());
     }
 

@@ -5,7 +5,6 @@ import com.evalkit.framework.eval.context.WorkflowContextOps;
 import com.evalkit.framework.eval.exception.EvalException;
 import com.evalkit.framework.eval.model.CountResult;
 import com.evalkit.framework.eval.model.DataItem;
-import com.evalkit.framework.workflow.WorkflowContextHolder;
 import com.evalkit.framework.workflow.model.WorkflowContext;
 import com.evalkit.framework.workflow.model.WorkflowNode;
 import com.evalkit.framework.workflow.utils.WorkflowUtils;
@@ -67,7 +66,7 @@ public abstract class Counter extends WorkflowNode {
     @Override
     protected void doExecute() {
         long start = System.currentTimeMillis();
-        WorkflowContext ctx = WorkflowContextHolder.get();
+        WorkflowContext ctx = getWorkflowContext();
         List<DataItem> dataItems = WorkflowContextOps.getDataItems(ctx);
         if (CollectionUtils.isEmpty(dataItems)) {
             throw new EvalException("Data items is empty");
