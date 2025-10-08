@@ -41,3 +41,14 @@ attaches
 
 # config
 secret.properties
+
+# activemq
+activemq-data
+
+# SQLite
+*.db
+
+# other
+*.xlsx
+cache_data
+testMQ

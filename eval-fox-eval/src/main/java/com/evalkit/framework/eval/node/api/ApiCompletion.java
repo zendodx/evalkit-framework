@@ -1,13 +1,12 @@
 package com.evalkit.framework.eval.node.api;
 
+import com.evalkit.framework.common.thread.BatchRunner;
+import com.evalkit.framework.common.thread.PoolName;
 import com.evalkit.framework.eval.constants.NodeNamePrefix;
 import com.evalkit.framework.eval.context.WorkflowContextOps;
 import com.evalkit.framework.eval.exception.EvalException;
 import com.evalkit.framework.eval.model.ApiCompletionResult;
 import com.evalkit.framework.eval.model.DataItem;
-import com.evalkit.framework.common.thread.BatchRunner;
-import com.evalkit.framework.common.thread.PoolName;
-import com.evalkit.framework.workflow.WorkflowContextHolder;
 import com.evalkit.framework.workflow.model.WorkflowContext;
 import com.evalkit.framework.workflow.model.WorkflowNode;
 import com.evalkit.framework.workflow.utils.WorkflowUtils;
@@ -73,7 +72,7 @@ public abstract class ApiCompletion extends WorkflowNode {
     /**
      * 调用
      */
-    protected abstract ApiCompletionResult invoke(DataItem dataItem) throws IOException;
+    protected abstract ApiCompletionResult invoke(DataItem dataItem) throws IOException, InterruptedException;
 
     /**
      * 调用后钩子
@@ -117,7 +116,7 @@ public abstract class ApiCompletion extends WorkflowNode {
     @Override
     public void doExecute() {
         long start = System.currentTimeMillis();
-        WorkflowContext ctx = WorkflowContextHolder.get();
+        WorkflowContext ctx = getWorkflowContext();
         List<DataItem> dataItems = WorkflowContextOps.getDataItems(ctx);
         if (CollectionUtils.isEmpty(dataItems)) {
             throw new EvalException("Data items is empty");

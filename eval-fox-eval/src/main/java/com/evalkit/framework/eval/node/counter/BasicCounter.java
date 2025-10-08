@@ -96,6 +96,7 @@ public class BasicCounter extends Counter {
      */
     public void calApiCompletionTimeCost(List<DataItem> dataItems, BasicCountResult result) {
         List<Long> timeCosts = dataItems.stream()
+                .filter(dataItem -> dataItem.getApiCompletionResult() != null)
                 .filter(dataItem -> dataItem.getApiCompletionResult().isSuccess())
                 .map(dataItem -> dataItem.getApiCompletionResult().getTimeCost())
                 .collect(Collectors.toList());
@@ -140,6 +141,7 @@ public class BasicCounter extends Counter {
      */
     public void calEvalTimeCost(List<DataItem> dataItems, BasicCountResult result) {
         List<Long> timeCosts = dataItems.stream()
+                .filter(dataItem -> dataItem.getEvalResult() != null)
                 .filter(dataItem -> dataItem.getEvalResult().isSuccess())
                 .map(dataItem -> dataItem.getEvalResult().getTimeCost())
                 .collect(Collectors.toList());

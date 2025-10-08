@@ -11,15 +11,17 @@ import java.util.concurrent.Callable;
  */
 @Slf4j
 @Data
-public abstract class WorkflowNode implements Callable<Object> {
-    // 节点id前缀
+public abstract class WorkflowNode implements Callable<Object>, Cloneable {
+    /* 节点id前缀 */
     protected final static String ID_PREFIX = "default-";
-    // 单任务最大超时时间
+    /* 单任务最大超时时间 */
     protected final static long SINGLE_TASK_TIMEOUT = 60 * 10;
-    // 并发最大线程数
+    /* 并发最大线程数 */
     protected final static int MAX_THREAD_NUM = Runtime.getRuntime().availableProcessors() * 2;
-    // 工作流id,具有唯一性,默认uuid,也可自己指定
+    /* 工作流id,具有唯一性,默认uuid,也可自己指定 */
     private String id;
+    /* 工作流上下文 */
+    private WorkflowContext workflowContext;
 
     public WorkflowNode() {
         this(ID_PREFIX + NanoIdUtils.random());
@@ -39,4 +41,17 @@ public abstract class WorkflowNode implements Callable<Object> {
      * 工作流节点执行
      */
     protected abstract void doExecute();
+
+    @Override
+    public WorkflowNode clone() {
+        try {
+            WorkflowNode clone = (WorkflowNode) super.clone();
+            if (this.workflowContext != null) {
+                clone.workflowContext = this.workflowContext.clone();
+            }
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
+    }
 }

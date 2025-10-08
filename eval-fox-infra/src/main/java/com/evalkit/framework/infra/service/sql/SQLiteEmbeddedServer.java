@@ -1,6 +1,7 @@
 package com.evalkit.framework.infra.service.sql;
 
 import com.evalkit.framework.common.utils.map.MapUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
@@ -11,15 +12,29 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * SQLite服务
+ * SQLite嵌入式服务
  */
-public class SQLiteService {
-    private final String dbUrl;
-    private final String dbFilePath;
+@Slf4j
+public class SQLiteEmbeddedServer {
+    private String dbUrl;
+    private String dbFilePath;
 
-    public SQLiteService(String dbFilePath) {
-        this.dbFilePath = dbFilePath;
+    private static class InstanceHolder {
+        static final SQLiteEmbeddedServer instance = new SQLiteEmbeddedServer();
+    }
+
+    public static SQLiteEmbeddedServer getInstance() {
+        return InstanceHolder.instance;
+    }
+
+    /**
+     * 启动嵌入式服务
+     */
+    public void start(String filePath) throws SQLException {
+        this.dbFilePath = filePath + ".db";
         this.dbUrl = "jdbc:sqlite:" + dbFilePath;
+        // 启动时创建db文件然后关闭
+        getConnection().close();
     }
 
     /**
@@ -101,7 +116,20 @@ public class SQLiteService {
         }
         File file = new File(dbFilePath);
         if (file.exists()) {
-            file.delete();
+            boolean delete = file.delete();
+            log.info("Delete db file: {}, result: {}", dbFilePath, delete);
+        }
+    }
+
+    /**
+     * 判断表是否存在
+     */
+    public boolean isTableExists(String tableName) throws SQLException {
+        try (Connection conn = getConnection()) {
+            DatabaseMetaData meta = conn.getMetaData();
+            try (ResultSet rs = meta.getTables(null, null, tableName, null)) {
+                return rs.next();
+            }
         }
     }
 }

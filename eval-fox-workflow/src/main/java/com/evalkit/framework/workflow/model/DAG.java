@@ -1,7 +1,9 @@
 package com.evalkit.framework.workflow.model;
 
 
+import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.workflow.exception.DAGException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.Data;
 
 import java.util.*;
@@ -10,10 +12,10 @@ import java.util.*;
  * DAG模型
  */
 @Data
-public class DAG {
-    private final Map<String, WorkflowNode> tasks = new HashMap<>();
-    private final Map<String, Set<String>> inEdges = new HashMap<>();
-    private final Map<String, Set<String>> outEdges = new HashMap<>();
+public class DAG implements Cloneable {
+    private Map<String, WorkflowNode> tasks = new HashMap<>();
+    private Map<String, Set<String>> inEdges = new HashMap<>();
+    private Map<String, Set<String>> outEdges = new HashMap<>();
 
     /**
      * 是否包含节点
@@ -63,5 +65,30 @@ public class DAG {
      */
     public boolean hasEdge(String from, String to) {
         return outEdges.getOrDefault(from, Collections.emptySet()).contains(to);
+    }
+
+    @Override
+    public DAG clone() {
+        try {
+            DAG clone = (DAG) super.clone();
+            Map<String, WorkflowNode> tasksClone = new HashMap<>();
+            if (this.tasks != null) {
+                this.tasks.forEach((id, node) -> tasksClone.put(id, node.clone()));
+                clone.tasks = tasksClone;
+            }
+            if (this.inEdges != null) {
+                clone.inEdges = JsonUtils.fromJson(JsonUtils.toJson(this.inEdges), new TypeReference<Map<String, Set<String>>>() {
+
+                });
+            }
+            if (this.outEdges != null) {
+                clone.outEdges = JsonUtils.fromJson(JsonUtils.toJson(this.outEdges), new TypeReference<Map<String, Set<String>>>() {
+
+                });
+            }
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
     }
 }

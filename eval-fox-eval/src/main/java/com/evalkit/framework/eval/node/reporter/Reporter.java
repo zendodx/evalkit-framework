@@ -5,7 +5,6 @@ import com.evalkit.framework.eval.context.WorkflowContextOps;
 import com.evalkit.framework.eval.exception.EvalException;
 import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.model.ReportData;
-import com.evalkit.framework.workflow.WorkflowContextHolder;
 import com.evalkit.framework.workflow.model.WorkflowContext;
 import com.evalkit.framework.workflow.model.WorkflowNode;
 import com.evalkit.framework.workflow.utils.WorkflowUtils;
@@ -66,7 +65,7 @@ public abstract class Reporter extends WorkflowNode {
     @Override
     public void doExecute() {
         long start = System.currentTimeMillis();
-        WorkflowContext ctx = WorkflowContextHolder.get();
+        WorkflowContext ctx = getWorkflowContext();
         // 构造上报对象
         List<DataItem> dataItems = WorkflowContextOps.getDataItems(ctx);
         Map<String, String> countResultMap = WorkflowContextOps.getCountResults(ctx);

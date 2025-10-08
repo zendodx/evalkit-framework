@@ -1,5 +1,6 @@
 package com.evalkit.framework.common.thread;
 
+
 import java.util.Map;
 import java.util.concurrent.*;
 
@@ -18,7 +19,7 @@ public class ThreadPoolManager {
     private static ThreadPoolExecutor createDefault(PoolName name) {
         int core = Runtime.getRuntime().availableProcessors();
         int max = core * 2;
-        int queue = 1000;
+        int queue = 10000;
         return new ThreadPoolExecutor(
                 core,
                 max,
@@ -43,11 +44,18 @@ public class ThreadPoolManager {
         pool.setMaximumPoolSize(max);
     }
 
+    /**
+     * 关闭线程池,默认等待30秒
+     */
     public static void shutdown(PoolName name) {
+        shutdown(name, 30, TimeUnit.SECONDS);
+    }
+
+    public static void shutdown(PoolName name, long waitTime, TimeUnit unit) {
         ExecutorService pool = get(name);
         pool.shutdown();
         try {
-            if (!pool.awaitTermination(10, TimeUnit.SECONDS)) {
+            if (!pool.awaitTermination(waitTime, unit)) {
                 pool.shutdownNow();
             }
         } catch (InterruptedException e) {

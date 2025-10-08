@@ -1,11 +1,10 @@
 package com.evalkit.framework.eval.node.dataloader_wrapper;
 
+import com.evalkit.framework.common.thread.BatchRunner;
+import com.evalkit.framework.common.thread.PoolName;
 import com.evalkit.framework.eval.constants.NodeNamePrefix;
 import com.evalkit.framework.eval.context.WorkflowContextOps;
 import com.evalkit.framework.eval.model.DataItem;
-import com.evalkit.framework.common.thread.BatchRunner;
-import com.evalkit.framework.common.thread.PoolName;
-import com.evalkit.framework.workflow.WorkflowContextHolder;
 import com.evalkit.framework.workflow.model.WorkflowContext;
 import com.evalkit.framework.workflow.model.WorkflowNode;
 import com.evalkit.framework.workflow.utils.WorkflowUtils;
@@ -88,7 +87,7 @@ public abstract class DataLoaderWrapper extends WorkflowNode {
     @Override
     public void doExecute() {
         long start = System.currentTimeMillis();
-        WorkflowContext ctx = WorkflowContextHolder.get();
+        WorkflowContext ctx = getWorkflowContext();
         List<DataItem> dataItems = WorkflowContextOps.getDataItems(ctx);
         BatchRunner.runBatch(dataItems, this::executeWrapper, PoolName.DATA_WRAPPER, threadNum, size -> size * SINGLE_TASK_TIMEOUT);
         log.info("Wrapper data success, time cost: {}ms", System.currentTimeMillis() - start);

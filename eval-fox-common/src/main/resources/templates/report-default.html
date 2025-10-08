@@ -501,71 +501,95 @@
     /* ---------- 总览 ---------- */
     function renderOverview() {
         showPanel('overview');
+
+        // 安全获取 metricsData 字段，避免 null/undefined 报错
+        const md = metricsData || {};
+
+        function safePercent(val) {
+            return typeof val === 'number' ? (val * 100).toFixed(1) + '%' : '-';
+        }
+        function safeInt(val) {
+            return typeof val === 'number' ? val : '-';
+        }
+        function safeMs(val) {
+            return typeof val === 'number' ? val + 'ms' : '-';
+        }
+
         /* 指标卡片 */
         const basic = [
-            {label: '通过率', v: (metricsData.passRate * 100).toFixed(1) + '%', c: 'good'},
-            {label: '未通过率', v: (metricsData.unPassRate * 100).toFixed(1) + '%', c: 'bad'},
-            {label: '通过数', v: metricsData.passCount, c: 'good'},
-            {label: '未通过数', v: metricsData.unPassCount, c: 'bad'},
-            {label: '总数', v: metricsData.totalCount, c: 'default'}
+            {label: '通过率', v: safePercent(md.passRate), c: 'good'},
+            {label: '未通过率', v: safePercent(md.unPassRate), c: 'bad'},
+            {label: '通过数', v: safeInt(md.passCount), c: 'good'},
+            {label: '未通过数', v: safeInt(md.unPassCount), c: 'bad'},
+            {label: '总数', v: safeInt(md.totalCount), c: 'default'}
         ];
         renderGrid('basicMetricsGrid', basic);
+
         const cp = [
-            {label: '成功率', v: (metricsData.completionSuccessRate * 100).toFixed(1) + '%', c: 'good'},
-            {label: '错误率', v: (metricsData.completionErrorRate * 100).toFixed(1) + '%', c: 'bad'},
-            {label: '平均耗时', v: metricsData.completionAvgTimeCost + 'ms', c: 'default'},
-            {label: '最小耗时', v: metricsData.completionMinTimeCost + 'ms', c: 'default'},
-            {label: '最大耗时', v: metricsData.completionMaxTimeCost + 'ms', c: 'default'},
-            {label: 'TP99', v: metricsData.completionTP99TimeCost + 'ms', c: 'default'},
-            {label: 'TP95', v: metricsData.completionTP95TimeCost + 'ms', c: 'default'},
-            {label: 'TP90', v: metricsData.completionTP90TimeCost + 'ms', c: 'default'},
-            {label: 'TP80', v: metricsData.completionTP80TimeCost + 'ms', c: 'default'},
-            {label: 'TP70', v: metricsData.completionTP70TimeCost + 'ms', c: 'default'},
-            {label: 'TP60', v: metricsData.completionTP60TimeCost + 'ms', c: 'default'},
-            {label: 'TP50', v: metricsData.completionTP50TimeCost + 'ms', c: 'default'}
+            {label: '成功率', v: safePercent(md.completionSuccessRate), c: 'good'},
+            {label: '错误率', v: safePercent(md.completionErrorRate), c: 'bad'},
+            {label: '平均耗时', v: safeMs(md.completionAvgTimeCost), c: 'default'},
+            {label: '最小耗时', v: safeMs(md.completionMinTimeCost), c: 'default'},
+            {label: '最大耗时', v: safeMs(md.completionMaxTimeCost), c: 'default'},
+            {label: 'TP99', v: safeMs(md.completionTP99TimeCost), c: 'default'},
+            {label: 'TP95', v: safeMs(md.completionTP95TimeCost), c: 'default'},
+            {label: 'TP90', v: safeMs(md.completionTP90TimeCost), c: 'default'},
+            {label: 'TP80', v: safeMs(md.completionTP80TimeCost), c: 'default'},
+            {label: 'TP70', v: safeMs(md.completionTP70TimeCost), c: 'default'},
+            {label: 'TP60', v: safeMs(md.completionTP60TimeCost), c: 'default'},
+            {label: 'TP50', v: safeMs(md.completionTP50TimeCost), c: 'default'}
         ];
         renderGrid('completionMetricsGrid', cp);
+
         const ev = [
-            {label: '成功率', v: (metricsData.evalSuccessRate * 100).toFixed(1) + '%', c: 'good'},
-            {label: '错误率', v: (metricsData.evalErrorRate * 100).toFixed(1) + '%', c: 'bad'},
-            {label: '平均耗时', v: metricsData.evalAvgTimeCost + 'ms', c: 'default'},
-            {label: '最小耗时', v: metricsData.evalMinTimeCost + 'ms', c: 'default'},
-            {label: '最大耗时', v: metricsData.evalMaxTimeCost + 'ms', c: 'default'}
+            {label: '成功率', v: safePercent(md.evalSuccessRate), c: 'good'},
+            {label: '错误率', v: safePercent(md.evalErrorRate), c: 'bad'},
+            {label: '平均耗时', v: safeMs(md.evalAvgTimeCost), c: 'default'},
+            {label: '最小耗时', v: safeMs(md.evalMinTimeCost), c: 'default'},
+            {label: '最大耗时', v: safeMs(md.evalMaxTimeCost), c: 'default'}
         ];
         renderGrid('evalMetricsGrid', ev);
+
         /* 图表 */
         renderCharts();
     }
 
     function renderGrid(id, list) {
         document.getElementById(id).innerHTML = list.map(m => `
-          <div class="metric-card">
-            <div class="metric-label">${m.label}</div>
-            <div class="metric-value ${m.c}">${m.v}</div>
-          </div>`).join('');
+      <div class="metric-card">
+        <div class="metric-label">${m.label}</div>
+        <div class="metric-value ${m.c}">${m.v}</div>
+      </div>`).join('');
     }
 
     function renderCharts() {
-        /* 趋势：简单按 index 分段模拟 */
+        // 趋势：简单按 index 分段模拟
         const step = Math.ceil(evaluationData.length / 10);
         const labels = [], passRates = [];
         for (let i = 0; i < evaluationData.length; i += step) {
             const slice = evaluationData.slice(i, i + step);
-            const pass = slice.filter(d => d.evalResult.pass).length;
+            // 过滤时保证 evalResult 存在且 pass 字段有意义
+            const pass = slice.filter(d => d.evalResult && d.evalResult.pass === true).length;
             labels.push(`${i + 1}-${Math.min(i + step, evaluationData.length)}`);
-            passRates.push((pass / slice.length * 100).toFixed(1));
+            passRates.push(slice.length ? (pass / slice.length * 100).toFixed(1) : '0.0');
         }
         const lineCfg = {
             type: 'line',
             data: {labels, datasets: [{label: '通过率%', data: passRates, borderColor: '#67c23a', tension: 0.3}]},
             options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {display: false}}}
         };
+
+        // 饼图数据安全处理
+        const md = metricsData || {};
         const pieCfg = {
             type: 'pie',
             data: {
                 labels: ['通过', '未通过'],
                 datasets: [{
-                    data: [metricsData.passCount, metricsData.unPassCount],
+                    data: [
+                        typeof md.passCount === 'number' ? md.passCount : 0,
+                        typeof md.unPassCount === 'number' ? md.unPassCount : 0
+                    ],
                     backgroundColor: ['#67c23a', '#f56c6c']
                 }]
             },
@@ -576,22 +600,17 @@
         passChart = new Chart(document.getElementById('passTrendChart'), lineCfg);
         distChart = new Chart(document.getElementById('distChart'), pieCfg);
 
-        /* TP */
+        /* TP 指标安全处理 */
+        const mdTp = metricsData || {};
         const tps = [], tpLabels = [];
-        tpLabels.push('TP50')
-        tps.push(metricsData.completionTP50TimeCost)
-        tpLabels.push('TP60')
-        tps.push(metricsData.completionTP60TimeCost)
-        tpLabels.push('TP70')
-        tps.push(metricsData.completionTP70TimeCost)
-        tpLabels.push('TP80')
-        tps.push(metricsData.completionTP80TimeCost)
-        tpLabels.push('TP90')
-        tps.push(metricsData.completionTP90TimeCost)
-        tpLabels.push('TP95')
-        tps.push(metricsData.completionTP95TimeCost)
-        tpLabels.push('TP99')
-        tps.push(metricsData.completionTP99TimeCost)
+        function safeTp(val) { return typeof val === 'number' ? val : 0; }
+        tpLabels.push('TP50'); tps.push(safeTp(mdTp.completionTP50TimeCost));
+        tpLabels.push('TP60'); tps.push(safeTp(mdTp.completionTP60TimeCost));
+        tpLabels.push('TP70'); tps.push(safeTp(mdTp.completionTP70TimeCost));
+        tpLabels.push('TP80'); tps.push(safeTp(mdTp.completionTP80TimeCost));
+        tpLabels.push('TP90'); tps.push(safeTp(mdTp.completionTP90TimeCost));
+        tpLabels.push('TP95'); tps.push(safeTp(mdTp.completionTP95TimeCost));
+        tpLabels.push('TP99'); tps.push(safeTp(mdTp.completionTP99TimeCost));
         const tpCfg = {
             type: 'line',
             data: {labels: tpLabels, datasets: [{label: '耗时(ms)%', data: tps, borderColor: '#67c23a', tension: 0.3}]},
@@ -604,23 +623,48 @@
     /* ---------- 列表 ---------- */
     function renderCaseList() {
         const list = document.getElementById('caseList');
-        const data = currentFilter === 'all' ? evaluationData :
-            evaluationData.filter(d => d.evalResult.pass === (currentFilter === 'pass'));
+        // 过滤时保证 evalResult 存在且 pass 字段有意义
+        const data = currentFilter === 'all'
+            ? evaluationData
+            : evaluationData.filter(d =>
+                d.evalResult && d.evalResult.pass === (currentFilter === 'pass')
+            );
         list.innerHTML = data.map(item => {
-            const pass = item.evalResult.pass;
-            const success = item.evalResult.success
+            const evalResult = item.evalResult || {};
+            const pass = evalResult.pass;
+            const success = evalResult.success;
+            // score 为空时显示 '-'，避免 toFixed 报错
+            const score = typeof evalResult.score === 'number'
+                ? evalResult.score.toFixed(1)
+                : '-';
+            // 状态判断
+            let statusClass, statusText, metricClass;
+            if (pass === true) {
+                statusClass = 'pass';
+                statusText = '通过';
+                metricClass = 'good';
+            } else if (success === true) {
+                statusClass = 'fail';
+                statusText = '未通过';
+                metricClass = 'bad';
+            } else {
+                statusClass = 'evalerror';
+                statusText = '评测出错';
+                metricClass = 'evalerror';
+            }
             return `
-              <div class="case-item ${selectedCase?.dataIndex === item.dataIndex ? 'active' : ''}"
-                   onclick="selectCase(${item.dataIndex})">
-                <div class="case-title">#${item.inputData.dataIndex}</div>
-                <div class="case-status">
-                  <span class="status-dot ${pass ? 'pass' : success ? 'fail' : 'evalerror'}"></span>
-                  <span>${pass ? '通过' : success ? '未通过' : '评测出错'}</span>
-                  <span class="metric-value ${pass ? 'good' : success ? 'bad' : 'evalerror'}">${item.evalResult.score.toFixed(1)}</span>
-                </div>
-              </div>`;
+          <div class="case-item ${selectedCase?.dataIndex === item.dataIndex ? 'active' : ''}"
+               onclick="selectCase(${item.dataIndex})">
+            <div class="case-title">#${item.inputData.dataIndex}</div>
+            <div class="case-status">
+              <span class="status-dot ${statusClass}"></span>
+              <span>${statusText}</span>
+              <span class="metric-value ${metricClass}">${score}</span>
+            </div>
+          </div>`;
         }).join('');
     }
+
 
     function filterCases(f) {
         currentFilter = f;
@@ -692,24 +736,45 @@
         if (!selectedCase) return;
         showPanel('detail');
         const d = selectedCase;
-        const pass = d.evalResult.pass;
-        const success = d.evalResult.success;
+        const evalResult = d.evalResult || {};
+        const pass = evalResult.pass;
+        const success = evalResult.success;
+        const score = typeof evalResult.score === 'number' ? evalResult.score.toFixed(1) : '-';
+        const scoreStrategyName = evalResult.scoreStrategyName || '-';
+
+        let statusClass, statusText, metricClass;
+        if (pass === true) {
+            statusClass = 'pass';
+            statusText = '通过';
+            metricClass = 'good';
+        } else if (success === true) {
+            statusClass = 'fail';
+            statusText = '未通过';
+            metricClass = 'bad';
+        } else {
+            statusClass = 'evalerror';
+            statusText = '评测错误';
+            metricClass = 'evalerror';
+        }
+
         document.getElementById('detailContent').innerHTML = `
-          <div class="detail-header">
-            <span>#${d.inputData.dataIndex}</span>
-            <span class="metric-badge ${pass ? 'pass' : success ? 'fail' : 'evalerror'}">${pass ? '通过' : success ? '未通过' : '评测错误'}</span>
-            <span class="metric-value ${pass ? 'good' : success ? 'bad' : 'evalerror'}">${d.evalResult.score.toFixed(1)}分</span>
-            <span style="margin-left:auto;font-size:11px;color:#909399">${d.evalResult.scoreStrategyName}</span>
-          </div>
-          <div class="detail-content">
-            ${section('输入数据', jsonDiv(d.inputData.inputItem))}
-            ${section('API 调用结果', apiDiv(d.apiCompletionResult))}
-            ${section('评测结果', evalDiv(d.evalResult))}
-            ${section('评分详情', scorerDiv(d.evalResult.scorerResults))}
-          </div>`;
-        /* 激活 json-viewer */
+      <div class="detail-header">
+        <span>#${d.inputData.dataIndex}</span>
+        <span class="metric-badge ${statusClass}">${statusText}</span>
+        <span class="metric-value ${metricClass}">${score}分</span>
+        <span style="margin-left:auto;font-size:11px;color:#909399">${scoreStrategyName}</span>
+      </div>
+      <div class="detail-content">
+        ${section('输入数据', jsonDiv(d.inputData.inputItem))}
+        ${section('API 调用结果', apiDiv(d.apiCompletionResult))}
+        ${section('评测结果', evalDiv(d.evalResult))}
+        ${section('评分详情', scorerDiv(evalResult.scorerResults))}
+      </div>`;
+
+        // 激活 json-viewer
         document.querySelectorAll('pre.json-viewer').forEach(el => new JsonViewer(el));
     }
+
 
     function section(title, content) {
         return `<div class="detail-section">
@@ -750,18 +815,33 @@
 
     function evalDiv(r) {
         if (!r) {
-            return `<span>没有评测结果</span>`
+            return `<span>没有评测结果</span>`;
         }
+        // 安全处理各字段
+        const pass = r.pass === true;
+        const score = typeof r.score === 'number' ? r.score.toFixed(1) : '-';
+        const reason = r.reason || '-';
+        const scoreStrategyName = r.scoreStrategyName || '-';
+        const threshold = typeof r.threshold === 'number' ? r.threshold : '-';
+        const timeCost = typeof r.timeCost === 'number' ? r.timeCost + 'ms' : '-';
+        const startTime = r.startTime ? fmt(r.startTime) : '-';
+        const endTime = r.endTime ? fmt(r.endTime) : '-';
+        const success = r.success === true;
+        const statusHtml = success
+            ? '<span style="color:#67c23a">正常</span>'
+            : '<span style="color:#f56c6c">出错</span>';
+
         return `
-          <div class="detail-row"><div class="detail-label">分数</div><div class="detail-value metric-value ${r.pass ? 'good' : 'bad'}">${r.score.toFixed(1)}</div></div>
-          <div class="detail-row"><div class="detail-label">理由</div><div class="detail-value">${r.reason}</div></div>
-          <div class="detail-row"><div class="detail-label">策略</div><div class="detail-value">${r.scoreStrategyName}</div></div>
-          <div class="detail-row"><div class="detail-label">阈值</div><div class="detail-value">${r.threshold}</div></div>
-          <div class="detail-row"><div class="detail-label">耗时</div><div class="detail-value">${r.timeCost}ms</div></div>
-          <div class="detail-row"><div class="detail-label">时间</div><div class="detail-value">${fmt(r.startTime)} / ${fmt(r.endTime)}</div></div>
-          <div class="detail-row"><div class="detail-label">状态</div><div class="detail-value">${r.success ? '<span style="color:#67c23a">正常</span>' : '<span style="color:#f56c6c">出错</span>'}</div></div>
-        `;
+      <div class="detail-row"><div class="detail-label">分数</div><div class="detail-value metric-value ${pass ? 'good' : 'bad'}">${score}</div></div>
+      <div class="detail-row"><div class="detail-label">理由</div><div class="detail-value">${reason}</div></div>
+      <div class="detail-row"><div class="detail-label">策略</div><div class="detail-value">${scoreStrategyName}</div></div>
+      <div class="detail-row"><div class="detail-label">阈值</div><div class="detail-value">${threshold}</div></div>
+      <div class="detail-row"><div class="detail-label">耗时</div><div class="detail-value">${timeCost}</div></div>
+      <div class="detail-row"><div class="detail-label">时间</div><div class="detail-value">${startTime} / ${endTime}</div></div>
+      <div class="detail-row"><div class="detail-label">状态</div><div class="detail-value">${statusHtml}</div></div>
+    `;
     }
+
 
     function scorerDiv(list) {
         if (!list || list.length === 0) {

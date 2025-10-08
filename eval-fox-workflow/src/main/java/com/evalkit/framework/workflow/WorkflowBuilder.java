@@ -5,6 +5,9 @@ import com.evalkit.framework.workflow.model.WorkflowNode;
 
 import java.util.Collection;
 
+/**
+ * 通用工作流构建器
+ */
 public class WorkflowBuilder {
     private final DAG dag = new DAG();
 

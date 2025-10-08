@@ -25,7 +25,7 @@ public class DataItem {
     /* 额外信息 */
     private Map<String, Object> extra;
 
-    private DataItem() {
+    public DataItem() {
     }
 
     public DataItem(Long dataIndex, InputData inputData) {
