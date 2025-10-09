@@ -60,7 +60,7 @@ class DeltaEvalFacadeTest {
         // 评测数据加载器
         DataLoader dataLoader1 = new DataLoader() {
             @Override
-            public List<InputData> prepareDataList() throws Exception {
+            public List<InputData> prepareDataList() {
                 return ListUtils.of(
                         new InputData(MapUtils.of("query", "1")),
                         new InputData(MapUtils.of("query", "2"))
@@ -69,7 +69,7 @@ class DeltaEvalFacadeTest {
         };
         DataLoader dataLoader2 = new DataLoader() {
             @Override
-            public List<InputData> prepareDataList() throws Exception {
+            public List<InputData> prepareDataList() {
                 List<InputData> inputDataList = new ArrayList<>();
                 for (int i = 0; i < 1000; i++) {
                     inputDataList.add(new InputData(MapUtils.of("query", "" + i)));
@@ -88,7 +88,7 @@ class DeltaEvalFacadeTest {
         );
         ApiCompletion apiCompletion = new ApiCompletion() {
             @Override
-            protected ApiCompletionResult invoke(DataItem dataItem) throws InterruptedException {
+            protected ApiCompletionResult invoke(DataItem dataItem) {
                 ApiCompletionResult result = new ApiCompletionResult();
                 result.setResultItem(MapUtils.of("response", "Resp of " + dataItem.getInputData().get("query")));
                 return result;

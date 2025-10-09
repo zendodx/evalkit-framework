@@ -16,6 +16,7 @@ import com.evalkit.framework.workflow.Workflow;
 import com.evalkit.framework.workflow.exception.WorkflowException;
 import com.evalkit.framework.workflow.model.WorkflowContext;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
@@ -35,6 +36,7 @@ import java.util.stream.Collectors;
  * 增量式评测
  * 支持断点重试,增量评测,周期结果上报
  */
+@EqualsAndHashCode(callSuper = true)
 @Slf4j
 @Data
 public class DeltaEvalFacade extends EvalFacade {
