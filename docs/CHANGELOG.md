@@ -11,6 +11,7 @@
 - 修复增量评测消息消费bug
 - 修复html结果上报的未关闭writer的bug
 - 修复文件上报时空指针bug
+- 优化评测门面执行生命周期
 ### Changed
 - pom统一版本号管理
 - 添加flatten-maven-plugin插件,打包时自动展开变量
