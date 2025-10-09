@@ -4,7 +4,7 @@
 
     <groupId>io.github.zendodx</groupId>
     <artifactId>eval-fox-bom</artifactId>
-    <version>0.1.0</version>
+    <version>${revision}</version>
     <packaging>pom</packaging>
 
     <name>eval-fox-bom</name>
@@ -45,6 +45,8 @@
     </modules>
 
     <properties>
+        <!-- 项目版本 -->
+        <revision>0.1.1</revision>
         <!-- 统一编码 -->
         <encoding>UTF-8</encoding>
         <!-- jdk版本 -->
