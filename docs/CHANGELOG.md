@@ -1,5 +1,14 @@
 # ChangeLog
 
+## [0.1.1] - 2025-10-09
+
+### Added
+### Fixed
+- 修复评测结果错误的bug
+- 使用fastjson2替换jayway.jsonpath解析json路径
+### Changed
+- pom统一版本号管理
+
 ## [0.1.0] - 2025-10-08
 
 ### Added
