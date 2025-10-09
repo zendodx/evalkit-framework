@@ -184,4 +184,11 @@ public class RuntimeEnvUtils {
             return null;
         }
     }
+
+    /**
+     * 获取项目根目录
+     */
+    public static String getProjectRootDir() {
+        return System.getProperty("user.dir");
+    }
 }

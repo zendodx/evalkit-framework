@@ -40,6 +40,8 @@ import java.util.stream.Collectors;
 @Slf4j
 @Data
 public class DeltaEvalFacade extends EvalFacade {
+    /* 缓存文件存储位置 */
+    private final static String CACHE_FILE_PATH = "cache_data/";
     /* 增量评测配置 */
     protected DeltaEvalConfig config;
     /* 评测结果上报 */
@@ -76,13 +78,13 @@ public class DeltaEvalFacade extends EvalFacade {
     }
 
     /**
-     * 初始化工作流
+     * 初始化环境
      */
     @Override
-    protected void beforeExecute() {
+    protected void init() {
         try {
             // 中间件文件存储路径
-            String parentPath = "cache_data/";
+            String parentPath = CACHE_FILE_PATH;
             String taskName = config.getTaskName();
             // 如果没有开启断点续评则每次初始化时删除缓存(MQ和DB数据)
             if (!config.isEnableResume()) {
@@ -107,10 +109,10 @@ public class DeltaEvalFacade extends EvalFacade {
      * 执行工作流
      */
     @Override
-    public void doExecute() {
+    protected void execute() {
         try {
             // 加载评测数据
-            loadData();
+            loadDataWrapper();
             CompletableFuture<Void> consumeFuture = eval();
             // 周期性上报最新评测结果
             report();
@@ -223,7 +225,7 @@ public class DeltaEvalFacade extends EvalFacade {
     /**
      * 执行评测并将结果落库
      */
-    protected void evalAndInsert(InputData inputData) throws SQLException {
+    private void evalAndInsert(InputData inputData) throws SQLException {
         // 构建DataItem
         List<DataItem> dataItems = new CopyOnWriteArrayList<>();
         DataItem dataItem = new DataItem();
@@ -250,14 +252,14 @@ public class DeltaEvalFacade extends EvalFacade {
     /**
      * 幂等检查,已经处理过消息则跳过
      */
-    protected boolean isProcess(String messageId) throws SQLException {
+    private boolean isProcess(String messageId) throws SQLException {
         return mqMessageProcessedMapper.exists(messageId);
     }
 
     /**
      * 落去重表
      */
-    protected void makeProcessed(String messageId) throws SQLException {
+    private void makeProcessed(String messageId) throws SQLException {
         mqMessageProcessedMapper.insert(messageId);
     }
 
@@ -276,7 +278,7 @@ public class DeltaEvalFacade extends EvalFacade {
     /**
      * 优雅停止上报：等当前批次跑完再停
      */
-    protected void stopReporter() {
+    private void stopReporter() {
         if (reporterFuture != null) {
             reporterFuture.cancel(false);
         }
@@ -293,7 +295,7 @@ public class DeltaEvalFacade extends EvalFacade {
     /**
      * 执行上报
      */
-    protected void doReport() {
+    private void doReport() {
         try {
             List<DataItem> dataItems = dataItemMapper.queryAll();
             if (CollectionUtils.isEmpty(dataItems)) {

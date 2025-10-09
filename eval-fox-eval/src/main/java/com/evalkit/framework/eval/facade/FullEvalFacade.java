@@ -34,7 +34,7 @@ public class FullEvalFacade extends EvalFacade {
      * 执行前初始化工作流上下文
      */
     @Override
-    protected void beforeExecute() {
+    protected void init() {
         workflowContext = new WorkflowContext();
     }
 

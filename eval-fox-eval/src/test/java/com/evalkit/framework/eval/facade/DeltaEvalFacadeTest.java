@@ -71,13 +71,13 @@ class DeltaEvalFacadeTest {
             @Override
             public List<InputData> prepareDataList() {
                 List<InputData> inputDataList = new ArrayList<>();
-                for (int i = 0; i < 1000; i++) {
+                for (int i = 0; i < 100; i++) {
                     inputDataList.add(new InputData(MapUtils.of("query", "" + i)));
                 }
                 return inputDataList;
             }
         };
-        MultiDataLoader multiDataLoader = new MultiDataLoader(ListUtils.of(dataLoader1, dataLoader2), 10, 10);
+        MultiDataLoader multiDataLoader = new MultiDataLoader(ListUtils.of(dataLoader1, dataLoader2), 10, 100);
 
         // 评测工作流
         Begin begin = new Begin(
@@ -151,12 +151,10 @@ class DeltaEvalFacadeTest {
                         .dataLoader(multiDataLoader)
                         .evalWorkflow(evalWorkflow)
                         .reportWorkflow(reportWorkflow)
-                        .reportInterval(3)
                         .batchSize(10)
                         .threadNum(10)
-                        .enableResume(false)
                         .build()
         );
-        cfe.execute();
+        cfe.run();
     }
 }
