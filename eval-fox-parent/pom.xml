@@ -42,7 +42,7 @@
     <properties>
         <!-- 依赖包 -->
         <jackson.version>2.19.1</jackson.version>
-        <json-path.version>2.9.0</json-path.version>
+        <fastjson2.version>2.0.51</fastjson2.version>
         <junit-jupiter.version>5.9.3</junit-jupiter.version>
         <mockito-inline.version>3.12.4</mockito-inline.version>
         <lombok.version>1.18.38</lombok.version>
@@ -122,9 +122,9 @@
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.jayway.jsonpath</groupId>
-                <artifactId>json-path</artifactId>
-                <version>${json-path.version}</version>
+                <groupId>com.alibaba.fastjson2</groupId>
+                <artifactId>fastjson2</artifactId>
+                <version>${fastjson2.version}</version>
             </dependency>
             <!-- junit5单元测试 -->
             <dependency>
