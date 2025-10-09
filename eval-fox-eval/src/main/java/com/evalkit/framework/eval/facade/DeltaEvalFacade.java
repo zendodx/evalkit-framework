@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Collectors;
 
 /**
@@ -160,26 +159,18 @@ public class DeltaEvalFacade extends EvalFacade {
     protected CompletableFuture<Void> eval() {
         String taskName = config.getTaskName();
         int threadNum = config.getThreadNum();
+        int mqReceiveTimeout = config.getMqReceiveTimeout();
         int batchSize = config.getBatchSize();
         ThreadPoolExecutor pool = ThreadPoolManager.get(PoolName.MQ_CONSUME);
-        ThreadPoolManager.resize(PoolName.MQ_CONSUME, threadNum, threadNum);
-        long total = activeMQEmbeddedServer.getQueueMessageCount(taskName);
-        // 计算循环次数
-        int loop = (int) (total / batchSize);
-        if (total % batchSize > 0) {
-            loop++;
-        }
-        CountDownLatch latch = new CountDownLatch(loop);
         AtomicLong consumed = new AtomicLong(0);
-
-        // 提前把所有任务扔进去，避免死循环
-        for (int i = 0; i < loop; i++) {
-            // 线程池提交批次消息
+        CountDownLatch latch = new CountDownLatch(1);
+        long total = getRemainDataCount();
+        for (int i = 0; i < threadNum; i++) {
             pool.submit(() -> {
-                try {
-                    activeMQEmbeddedServer.batchReceiveInTx(taskName, batchSize, config.getMqReceiveTimeout(), (batch, session) -> {
+                do {
+                    activeMQEmbeddedServer.batchReceiveInTx(taskName, batchSize, mqReceiveTimeout, (batch, session) -> {
                         if (batch.isEmpty()) {
-                            return true;
+                            return false;
                         }
                         for (Message m : batch) {
                             // 幂等检查,已经处理过则跳过
@@ -196,21 +187,18 @@ public class DeltaEvalFacade extends EvalFacade {
                             makeProcessed(messageId);
                             log.info("Eval data consume and eval success, messageId: {}", messageId);
                         }
-                        // 记录已消费消息
                         consumed.addAndGet(batch.size());
-                        log.info("Already consume {}/{}", consumed.get(), total);
+                        if (consumed.get() >= total) {
+                            // 消费完毕
+                            latch.countDown();
+                            return false;
+                        }
                         return true;
                     });
-                } catch (Exception e) {
-                    log.error("Batch consume and eval error", e);
-                    // 延迟1秒后再拉
-                    LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
-                } finally {
-                    latch.countDown();
-                }
+                    // 如果消费完毕，则退出循环
+                } while (consumed.get() < total);
             });
         }
-
         // 把等待逻辑包成 CompletableFuture，主线程可以继续干别的
         return CompletableFuture.runAsync(() -> {
             try {
