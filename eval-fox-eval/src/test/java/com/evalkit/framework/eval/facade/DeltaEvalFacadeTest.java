@@ -77,7 +77,7 @@ class DeltaEvalFacadeTest {
                 return inputDataList;
             }
         };
-        MultiDataLoader multiDataLoader = new MultiDataLoader(ListUtils.of(dataLoader1, dataLoader2));
+        MultiDataLoader multiDataLoader = new MultiDataLoader(ListUtils.of(dataLoader1, dataLoader2), 10, 10);
 
         // 评测工作流
         Begin begin = new Begin(
@@ -154,6 +154,7 @@ class DeltaEvalFacadeTest {
                         .reportInterval(3)
                         .batchSize(10)
                         .threadNum(10)
+                        .enableResume(false)
                         .build()
         );
         cfe.execute();
