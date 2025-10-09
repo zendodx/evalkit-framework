@@ -18,10 +18,12 @@ import com.evalkit.framework.workflow.model.WorkflowContext;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.jms.Message;
 import javax.jms.TextMessage;
+import java.io.File;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
@@ -80,6 +82,12 @@ public class DeltaEvalFacade extends EvalFacade {
             // 中间件文件存储路径
             String parentPath = "cache_data/";
             String taskName = config.getTaskName();
+            // 如果没有开启断点续评则每次初始化时删除缓存(MQ和DB数据)
+            if (!config.isEnableResume()) {
+                log.info("Not open resume eval from breakpoint, delete cache data");
+                FileUtils.deleteDirectory(new File(parentPath + taskName));
+                FileUtils.delete(new File(parentPath + taskName + ".db"));
+            }
             // 启动MQ
             activeMQEmbeddedServer.start(parentPath + taskName);
             // 启动DB

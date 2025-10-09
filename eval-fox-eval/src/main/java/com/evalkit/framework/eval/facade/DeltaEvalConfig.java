@@ -31,4 +31,7 @@ public class DeltaEvalConfig {
     /* MQ消息接收超时时间,默认10000毫秒 */
     @Builder.Default
     int mqReceiveTimeout = 10000;
+    /* 是否开启断点续评, 默认true */
+    @Builder.Default
+    boolean enableResume = true;
 }
