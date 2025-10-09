@@ -4,11 +4,13 @@
 
 ### Added
 - 增加是否开启断点续评开关, 默认开启
+- 多数据加载器增加配置和分页构造方法
 ### Fixed
 - 修复评测结果错误的bug
 - 使用fastjson2替换jayway.jsonpath解析json路径
 - 修复增量评测消息消费bug
 - 修复html结果上报的未关闭writer的bug
+- 修复文件上报时空指针bug
 ### Changed
 - pom统一版本号管理
 - 添加flatten-maven-plugin插件,打包时自动展开变量
