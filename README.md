@@ -1,5 +1,7 @@
 # <img src="docs/files/eval_fox_logo.png" width="80" height="80"> EvalFox
 
+##### 📖 English Documentation | 📖 [中文文档](README_zh_CN.md)
+
 ## Overview
 
 An AI automation evaluation framework based on Java, featuring:
@@ -25,7 +27,7 @@ Before you begin, please install the following tools:
 <dependency>
     <groupId>io.github.zendodx</groupId>
     <artifactId>eval-fox-eval</artifactId>
-    <version>0.1.0</version>
+    <version>0.1.1</version>
 </dependency>
 ```
 
@@ -211,6 +213,9 @@ import com.evalkit.framework.eval.node.dataloader.MultiDataLoader;
 import com.evalkit.framework.eval.node.reporter.JsonReporter;
 import com.evalkit.framework.eval.node.reporter.html.HtmlReporter;
 import com.evalkit.framework.eval.node.scorer.Scorer;
+import com.evalkit.framework.eval.node.scorer.config.ScorerConfig;
+import com.evalkit.framework.eval.node.scorer.strategy.SumScoreStrategy;
+import com.evalkit.framework.workflow.Workflow;
 import com.evalkit.framework.workflow.WorkflowBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -222,10 +227,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 class FullEvalFacadeTest {
-
-    /**
-     * 自定义全量式评测
-     */
+    
     static class CustomFullEval extends FullEvalFacade {
 
         public CustomFullEval(FullEvalConfig config) {
@@ -247,8 +249,7 @@ class FullEvalFacadeTest {
     }
 
     @Test
-    public void test() {
-        // 评测数据加载器
+    public void test() throws Exception {
         DataLoader dataLoader1 = new DataLoader() {
             @Override
             public List<InputData> prepareDataList() throws Exception {
@@ -268,50 +269,81 @@ class FullEvalFacadeTest {
                 return inputDataList;
             }
         };
-        MultiDataLoader multiDataLoader = new MultiDataLoader(ListUtils.of(dataLoader1, dataLoader2));
+        MultiDataLoader multiDataLoader = new MultiDataLoader(ListUtils.of(dataLoader1, dataLoader2), 10, 100);
 
-        // 评测工作流
         Begin begin = new Begin(
-                BeginConfig.builder().build()
+                BeginConfig.builder()
+                        .threshold(1)
+                        .scoreStrategy(new SumScoreStrategy())
+                        .build()
         );
         ApiCompletion apiCompletion = new ApiCompletion() {
             @Override
             protected ApiCompletionResult invoke(DataItem dataItem) throws InterruptedException {
                 ApiCompletionResult result = new ApiCompletionResult();
-                result.setResultItem(MapUtils.of("response", "resp of " + dataItem.getInputData().get("query")));
+                result.setResultItem(MapUtils.of("response", "Resp of " + dataItem.getInputData().get("query")));
                 return result;
             }
         };
-        Scorer scorer = new Scorer() {
+        Scorer scorer1 = new Scorer() {
             @Override
             public ScorerResult eval(DataItem dataItem) {
                 ScorerResult scorerResult = new ScorerResult();
-                scorerResult.setMetric("eval-test");
+                scorerResult.setMetric("eval-test-1");
                 scorerResult.setScore(1.0);
-                scorerResult.setReason("eval test:" + dataItem.getInputData().get("query"));
+                scorerResult.setReason("eval test1:" + dataItem.getInputData().get("query"));
+                return scorerResult;
+            }
+        };
+        Scorer scorer2 = new Scorer(
+                ScorerConfig.builder()
+                        .star(true)
+                        .threshold(1)
+                        .metricName("eval-test-2")
+                        .build()
+        ) {
+            @Override
+            public ScorerResult eval(DataItem dataItem) {
+                ScorerResult scorerResult = new ScorerResult();
+                scorerResult.setMetric("eval-test-2");
+                scorerResult.setScore(1.0);
+                scorerResult.setReason("eval test1:" + dataItem.getInputData().get("query"));
+                return scorerResult;
+            }
+        };
+        Scorer scorer3 = new Scorer() {
+            @Override
+            public ScorerResult eval(DataItem dataItem) {
+                ScorerResult scorerResult = new ScorerResult();
+                scorerResult.setMetric("eval-test-3");
+                scorerResult.setScore(0);
+                scorerResult.setReason("eval test3:" + dataItem.getInputData().get("query"));
                 return scorerResult;
             }
         };
 
-        // 评测结果上报
         String fileName = "full_eval_test_" + DateUtils.nowToString();
         BasicCounter basicCounter = new BasicCounter();
         HtmlReporter htmlReporter = new HtmlReporter(fileName);
         JsonReporter jsonReporter = new JsonReporter(fileName);
 
-        try {
-            CustomFullEval cfe = new CustomFullEval(
-                    FullEvalConfig.builder()
-                            .taskName("FullEvalTest")
-                            .dataLoader(multiDataLoader)
-                            .evalWorkflow(new WorkflowBuilder().link(begin, apiCompletion, scorer).build())
-                            .reportWorkflow(new WorkflowBuilder().link(basicCounter, htmlReporter, jsonReporter).build())
-                            .build()
-            );
-            cfe.execute();
-        } catch (Exception e) {
-            log.error("Full Eval error:{}", e.getMessage(), e);
-        }
+        List<Scorer> scorers = ListUtils.of(scorer1, scorer2, scorer3);
+
+        Workflow evalWorkflow = new WorkflowBuilder()
+                .link(begin, apiCompletion)
+                .link(apiCompletion, scorers).build();
+        Workflow reportWorkflow = new WorkflowBuilder()
+                .link(basicCounter, htmlReporter, jsonReporter).build();
+
+        CustomFullEval cfe = new CustomFullEval(
+                FullEvalConfig.builder()
+                        .taskName("FullEvalTest")
+                        .dataLoader(multiDataLoader)
+                        .evalWorkflow(evalWorkflow)
+                        .reportWorkflow(reportWorkflow)
+                        .build()
+        );
+        cfe.run();
     }
 
 }
@@ -339,6 +371,9 @@ import com.evalkit.framework.eval.node.dataloader.MultiDataLoader;
 import com.evalkit.framework.eval.node.reporter.JsonReporter;
 import com.evalkit.framework.eval.node.reporter.html.HtmlReporter;
 import com.evalkit.framework.eval.node.scorer.Scorer;
+import com.evalkit.framework.eval.node.scorer.config.ScorerConfig;
+import com.evalkit.framework.eval.node.scorer.strategy.SumScoreStrategy;
+import com.evalkit.framework.workflow.Workflow;
 import com.evalkit.framework.workflow.WorkflowBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -350,10 +385,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 class DeltaEvalFacadeTest {
-
-    /**
-     * 自定义增量评测
-     */
+    
     static class CustomDeltaEval extends DeltaEvalFacade {
 
         public CustomDeltaEval(DeltaEvalConfig config) {
@@ -375,11 +407,11 @@ class DeltaEvalFacadeTest {
     }
 
     @Test
-    public void test() {
+    public void test() throws Exception {
         // 评测数据加载器
         DataLoader dataLoader1 = new DataLoader() {
             @Override
-            public List<InputData> prepareDataList() throws Exception {
+            public List<InputData> prepareDataList() {
                 return ListUtils.of(
                         new InputData(MapUtils.of("query", "1")),
                         new InputData(MapUtils.of("query", "2"))
@@ -388,7 +420,7 @@ class DeltaEvalFacadeTest {
         };
         DataLoader dataLoader2 = new DataLoader() {
             @Override
-            public List<InputData> prepareDataList() throws Exception {
+            public List<InputData> prepareDataList() {
                 List<InputData> inputDataList = new ArrayList<>();
                 for (int i = 0; i < 100; i++) {
                     inputDataList.add(new InputData(MapUtils.of("query", "" + i)));
@@ -396,52 +428,83 @@ class DeltaEvalFacadeTest {
                 return inputDataList;
             }
         };
-        MultiDataLoader multiDataLoader = new MultiDataLoader(ListUtils.of(dataLoader1, dataLoader2));
+        MultiDataLoader multiDataLoader = new MultiDataLoader(ListUtils.of(dataLoader1, dataLoader2), 10, 100);
 
-        // 评测工作流
         Begin begin = new Begin(
-                BeginConfig.builder().build()
+                BeginConfig.builder()
+                        .threshold(1)
+                        .scoreStrategy(new SumScoreStrategy())
+                        .build()
         );
         ApiCompletion apiCompletion = new ApiCompletion() {
             @Override
             protected ApiCompletionResult invoke(DataItem dataItem) {
                 ApiCompletionResult result = new ApiCompletionResult();
-                result.setResultItem(MapUtils.of("response", "resp of " + dataItem.getInputData().get("query")));
+                result.setResultItem(MapUtils.of("response", "Resp of " + dataItem.getInputData().get("query")));
                 return result;
             }
         };
-        Scorer scorer = new Scorer() {
+        Scorer scorer1 = new Scorer() {
             @Override
             public ScorerResult eval(DataItem dataItem) {
                 ScorerResult scorerResult = new ScorerResult();
-                scorerResult.setMetric("eval_test");
+                scorerResult.setMetric("eval-test-1");
                 scorerResult.setScore(1.0);
-                scorerResult.setReason("eval test:" + dataItem.getInputData().get("query"));
+                scorerResult.setReason("eval test1:" + dataItem.getInputData().get("query"));
+                return scorerResult;
+            }
+        };
+        Scorer scorer2 = new Scorer(
+                ScorerConfig.builder()
+                        .star(true)
+                        .threshold(1)
+                        .metricName("eval-test-2")
+                        .build()
+        ) {
+            @Override
+            public ScorerResult eval(DataItem dataItem) {
+                ScorerResult scorerResult = new ScorerResult();
+                scorerResult.setMetric("eval-test-2");
+                scorerResult.setScore(1.0);
+                scorerResult.setReason("eval test1:" + dataItem.getInputData().get("query"));
+                return scorerResult;
+            }
+        };
+        Scorer scorer3 = new Scorer() {
+            @Override
+            public ScorerResult eval(DataItem dataItem) {
+                ScorerResult scorerResult = new ScorerResult();
+                scorerResult.setMetric("eval-test-3");
+                scorerResult.setScore(0);
+                scorerResult.setReason("eval test3:" + dataItem.getInputData().get("query"));
                 return scorerResult;
             }
         };
 
-        // 评测结果上报
         String fileName = "delta_eval_test_" + DateUtils.nowToString();
         BasicCounter basicCounter = new BasicCounter();
         HtmlReporter htmlReporter = new HtmlReporter(fileName);
         JsonReporter jsonReporter = new JsonReporter(fileName);
 
-        try {
-            CustomDeltaEval cde = new CustomDeltaEval(
-                    DeltaEvalConfig.builder()
-                            .taskName("DeltaEvalTest")
-                            .dataLoader(multiDataLoader)
-                            .evalWorkflow(new WorkflowBuilder().link(begin, apiCompletion, scorer).build())
-                            .reportWorkflow(new WorkflowBuilder().link(basicCounter, htmlReporter, jsonReporter).build())
-                            .threadNum(10)
-                            .batchSize(10)
-                            .build()
-            );
-            cde.execute();
-        } catch (Exception e) {
-            log.error("Delta Eval error:{}", e.getMessage(), e);
-        }
+        List<Scorer> scorers = ListUtils.of(scorer1, scorer2, scorer3);
+
+        Workflow evalWorkflow = new WorkflowBuilder()
+                .link(begin, apiCompletion)
+                .link(apiCompletion, scorers).build();
+        Workflow reportWorkflow = new WorkflowBuilder()
+                .link(basicCounter, htmlReporter, jsonReporter).build();
+
+        CustomDeltaEval cfe = new CustomDeltaEval(
+                DeltaEvalConfig.builder()
+                        .taskName("DeltaEvalTest")
+                        .dataLoader(multiDataLoader)
+                        .evalWorkflow(evalWorkflow)
+                        .reportWorkflow(reportWorkflow)
+                        .batchSize(10)
+                        .threadNum(10)
+                        .build()
+        );
+        cfe.run();
     }
 }
 ```

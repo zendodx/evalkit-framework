@@ -1,5 +1,6 @@
 package com.evalkit.framework.eval.model;
 
+import com.evalkit.framework.eval.node.scorer.strategy.ScoreStrategy;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,7 +22,7 @@ public class DataItem {
     /* 业务接口调用结果 */
     private ApiCompletionResult apiCompletionResult;
     /* 评估器结果 */
-    private EvalResult evalResult;
+    private volatile EvalResult evalResult;
     /* 额外信息 */
     private Map<String, Object> extra;
 
@@ -33,15 +34,24 @@ public class DataItem {
         this.inputData = inputData;
     }
 
-    public void addScorerResult(ScorerResult result) {
-        // 添加评估器结果时要同步更新最终的评估结果
-        synchronized (this) {
-            if (evalResult == null) {
-                evalResult = new EvalResult();
+    public void addScorerResult(ScorerResult result, ScoreStrategy scoreStrategy, double threshold) {
+        // 双重检查锁
+        if (evalResult == null) {
+            synchronized (this) {
+                if (evalResult == null) {
+                    evalResult = new EvalResult();
+                    if (scoreStrategy != null) {
+                        evalResult.setScoreStrategy(scoreStrategy);
+                        evalResult.setScoreStrategyName(scoreStrategy.getStrategyName());
+                    }
+                    if (threshold > 0) {
+                        evalResult.setThreshold(threshold);
+                    }
+                }
             }
-            evalResult.addScorerResult(result);
-            evalResult.setDataIndex(dataIndex);
         }
+        evalResult.addScorerResult(result);
+        evalResult.setDataIndex(dataIndex);
     }
 
     public void addExtraItem(String key, Object value) {

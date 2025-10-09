@@ -9,9 +9,6 @@ import lombok.Data;
 @Data
 @Builder
 public class BeginConfig {
-    // 任务名称
-    @Builder.Default
-    protected String taskName = "task_" + DateUtils.nowToString();
     // 评测分数整合策略,默认求和策略
     @Builder.Default
     protected ScoreStrategy scoreStrategy = new SumScoreStrategy();

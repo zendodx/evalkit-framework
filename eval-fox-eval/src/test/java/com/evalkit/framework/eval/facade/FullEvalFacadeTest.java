@@ -17,6 +17,9 @@ import com.evalkit.framework.eval.node.dataloader.MultiDataLoader;
 import com.evalkit.framework.eval.node.reporter.JsonReporter;
 import com.evalkit.framework.eval.node.reporter.html.HtmlReporter;
 import com.evalkit.framework.eval.node.scorer.Scorer;
+import com.evalkit.framework.eval.node.scorer.config.ScorerConfig;
+import com.evalkit.framework.eval.node.scorer.strategy.SumScoreStrategy;
+import com.evalkit.framework.workflow.Workflow;
 import com.evalkit.framework.workflow.WorkflowBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -53,7 +56,7 @@ class FullEvalFacadeTest {
     }
 
     @Test
-    public void test() {
+    public void test() throws Exception {
         // 评测数据加载器
         DataLoader dataLoader1 = new DataLoader() {
             @Override
@@ -74,27 +77,56 @@ class FullEvalFacadeTest {
                 return inputDataList;
             }
         };
-        MultiDataLoader multiDataLoader = new MultiDataLoader(ListUtils.of(dataLoader1, dataLoader2));
+        MultiDataLoader multiDataLoader = new MultiDataLoader(ListUtils.of(dataLoader1, dataLoader2), 10, 100);
 
         // 评测工作流
         Begin begin = new Begin(
-                BeginConfig.builder().build()
+                BeginConfig.builder()
+                        .threshold(1)
+                        .scoreStrategy(new SumScoreStrategy())
+                        .build()
         );
         ApiCompletion apiCompletion = new ApiCompletion() {
             @Override
             protected ApiCompletionResult invoke(DataItem dataItem) throws InterruptedException {
                 ApiCompletionResult result = new ApiCompletionResult();
-                result.setResultItem(MapUtils.of("response", "resp of " + dataItem.getInputData().get("query")));
+                result.setResultItem(MapUtils.of("response", "Resp of " + dataItem.getInputData().get("query")));
                 return result;
             }
         };
-        Scorer scorer = new Scorer() {
+        Scorer scorer1 = new Scorer() {
             @Override
             public ScorerResult eval(DataItem dataItem) {
                 ScorerResult scorerResult = new ScorerResult();
-                scorerResult.setMetric("eval-test");
+                scorerResult.setMetric("eval-test-1");
                 scorerResult.setScore(1.0);
-                scorerResult.setReason("eval test:" + dataItem.getInputData().get("query"));
+                scorerResult.setReason("eval test1:" + dataItem.getInputData().get("query"));
+                return scorerResult;
+            }
+        };
+        Scorer scorer2 = new Scorer(
+                ScorerConfig.builder()
+                        .star(true)
+                        .threshold(1)
+                        .metricName("eval-test-2")
+                        .build()
+        ) {
+            @Override
+            public ScorerResult eval(DataItem dataItem) {
+                ScorerResult scorerResult = new ScorerResult();
+                scorerResult.setMetric("eval-test-2");
+                scorerResult.setScore(1.0);
+                scorerResult.setReason("eval test1:" + dataItem.getInputData().get("query"));
+                return scorerResult;
+            }
+        };
+        Scorer scorer3 = new Scorer() {
+            @Override
+            public ScorerResult eval(DataItem dataItem) {
+                ScorerResult scorerResult = new ScorerResult();
+                scorerResult.setMetric("eval-test-3");
+                scorerResult.setScore(0);
+                scorerResult.setReason("eval test3:" + dataItem.getInputData().get("query"));
                 return scorerResult;
             }
         };
@@ -105,19 +137,23 @@ class FullEvalFacadeTest {
         HtmlReporter htmlReporter = new HtmlReporter(fileName);
         JsonReporter jsonReporter = new JsonReporter(fileName);
 
-        try {
-            CustomFullEval cfe = new CustomFullEval(
-                    FullEvalConfig.builder()
-                            .taskName("FullEvalTest")
-                            .dataLoader(multiDataLoader)
-                            .evalWorkflow(new WorkflowBuilder().link(begin, apiCompletion, scorer).build())
-                            .reportWorkflow(new WorkflowBuilder().link(basicCounter, htmlReporter, jsonReporter).build())
-                            .build()
-            );
-            cfe.execute();
-        } catch (Exception e) {
-            log.error("Full Eval error:{}", e.getMessage(), e);
-        }
+        List<Scorer> scorers = ListUtils.of(scorer1, scorer2, scorer3);
+
+        Workflow evalWorkflow = new WorkflowBuilder()
+                .link(begin, apiCompletion)
+                .link(apiCompletion, scorers).build();
+        Workflow reportWorkflow = new WorkflowBuilder()
+                .link(basicCounter, htmlReporter, jsonReporter).build();
+
+        CustomFullEval cfe = new CustomFullEval(
+                FullEvalConfig.builder()
+                        .taskName("FullEvalTest")
+                        .dataLoader(multiDataLoader)
+                        .evalWorkflow(evalWorkflow)
+                        .reportWorkflow(reportWorkflow)
+                        .build()
+        );
+        cfe.run();
     }
 
 }

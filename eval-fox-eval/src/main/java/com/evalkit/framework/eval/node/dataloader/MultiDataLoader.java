@@ -1,6 +1,7 @@
 package com.evalkit.framework.eval.node.dataloader;
 
 import com.evalkit.framework.eval.model.InputData;
+import com.evalkit.framework.eval.node.dataloader.config.DataLoaderConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +14,17 @@ public class MultiDataLoader extends DataLoader {
     private final List<DataLoader> dataLoaders;
 
     public MultiDataLoader(List<DataLoader> dataLoaders) {
+        super();
+        this.dataLoaders = dataLoaders;
+    }
+
+    public MultiDataLoader(List<DataLoader> dataLoaders, int offset, int limit) {
+        super(offset, limit);
+        this.dataLoaders = dataLoaders;
+    }
+
+    public MultiDataLoader(List<DataLoader> dataLoaders, DataLoaderConfig config) {
+        super(config);
         this.dataLoaders = dataLoaders;
     }
 

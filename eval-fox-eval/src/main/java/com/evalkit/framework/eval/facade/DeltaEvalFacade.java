@@ -2,8 +2,8 @@ package com.evalkit.framework.eval.facade;
 
 import com.evalkit.framework.common.thread.PoolName;
 import com.evalkit.framework.common.thread.ThreadPoolManager;
+import com.evalkit.framework.common.utils.file.FileUtils;
 import com.evalkit.framework.common.utils.json.JsonUtils;
-import com.evalkit.framework.common.utils.list.ListUtils;
 import com.evalkit.framework.eval.context.WorkflowContextOps;
 import com.evalkit.framework.eval.mapper.DataItemMapper;
 import com.evalkit.framework.eval.mapper.MQMessageProcessedMapper;
@@ -17,6 +17,7 @@ import com.evalkit.framework.workflow.Workflow;
 import com.evalkit.framework.workflow.exception.WorkflowException;
 import com.evalkit.framework.workflow.model.WorkflowContext;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -25,18 +26,21 @@ import javax.jms.Message;
 import javax.jms.TextMessage;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Collectors;
 
 /**
  * 增量式评测
  * 支持断点重试,增量评测,周期结果上报
  */
+@EqualsAndHashCode(callSuper = true)
 @Slf4j
 @Data
 public class DeltaEvalFacade extends EvalFacade {
+    /* 缓存文件存储位置 */
+    private final static String CACHE_FILE_PATH = "cache_data/";
     /* 增量评测配置 */
     protected DeltaEvalConfig config;
     /* 评测结果上报 */
@@ -73,14 +77,20 @@ public class DeltaEvalFacade extends EvalFacade {
     }
 
     /**
-     * 初始化工作流
+     * 初始化环境
      */
     @Override
-    protected void beforeExecute() {
+    protected void init() {
         try {
             // 中间件文件存储路径
-            String parentPath = "cache_data/";
+            String parentPath = CACHE_FILE_PATH;
             String taskName = config.getTaskName();
+            // 如果没有开启断点续评则每次初始化时删除缓存(MQ和DB数据)
+            if (!config.isEnableResume()) {
+                log.info("Not open resume eval from breakpoint, delete cache data");
+                FileUtils.deleteDirectory(parentPath + taskName);
+                FileUtils.deleteFile(parentPath + taskName + ".db");
+            }
             // 启动MQ
             activeMQEmbeddedServer.start(parentPath + taskName);
             // 启动DB
@@ -98,10 +108,10 @@ public class DeltaEvalFacade extends EvalFacade {
      * 执行工作流
      */
     @Override
-    public void doExecute() {
+    protected void execute() {
         try {
             // 加载评测数据
-            loadData();
+            loadDataWrapper();
             CompletableFuture<Void> consumeFuture = eval();
             // 周期性上报最新评测结果
             report();
@@ -160,26 +170,18 @@ public class DeltaEvalFacade extends EvalFacade {
     protected CompletableFuture<Void> eval() {
         String taskName = config.getTaskName();
         int threadNum = config.getThreadNum();
+        int mqReceiveTimeout = config.getMqReceiveTimeout();
         int batchSize = config.getBatchSize();
         ThreadPoolExecutor pool = ThreadPoolManager.get(PoolName.MQ_CONSUME);
-        ThreadPoolManager.resize(PoolName.MQ_CONSUME, threadNum, threadNum);
-        long total = activeMQEmbeddedServer.getQueueMessageCount(taskName);
-        // 计算循环次数
-        int loop = (int) (total / batchSize);
-        if (total % batchSize > 0) {
-            loop++;
-        }
-        CountDownLatch latch = new CountDownLatch(loop);
         AtomicLong consumed = new AtomicLong(0);
-
-        // 提前把所有任务扔进去，避免死循环
-        for (int i = 0; i < loop; i++) {
-            // 线程池提交批次消息
+        CountDownLatch latch = new CountDownLatch(1);
+        long total = getRemainDataCount();
+        for (int i = 0; i < threadNum; i++) {
             pool.submit(() -> {
-                try {
-                    activeMQEmbeddedServer.batchReceiveInTx(taskName, batchSize, config.getMqReceiveTimeout(), (batch, session) -> {
+                do {
+                    activeMQEmbeddedServer.batchReceiveInTx(taskName, batchSize, mqReceiveTimeout, (batch, session) -> {
                         if (batch.isEmpty()) {
-                            return true;
+                            return false;
                         }
                         for (Message m : batch) {
                             // 幂等检查,已经处理过则跳过
@@ -196,21 +198,18 @@ public class DeltaEvalFacade extends EvalFacade {
                             makeProcessed(messageId);
                             log.info("Eval data consume and eval success, messageId: {}", messageId);
                         }
-                        // 记录已消费消息
                         consumed.addAndGet(batch.size());
-                        log.info("Already consume {}/{}", consumed.get(), total);
+                        if (consumed.get() >= total) {
+                            // 消费完毕
+                            latch.countDown();
+                            return false;
+                        }
                         return true;
                     });
-                } catch (Exception e) {
-                    log.error("Batch consume and eval error", e);
-                    // 延迟1秒后再拉
-                    LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
-                } finally {
-                    latch.countDown();
-                }
+                    // 如果消费完毕，则退出循环
+                } while (consumed.get() < total);
             });
         }
-
         // 把等待逻辑包成 CompletableFuture，主线程可以继续干别的
         return CompletableFuture.runAsync(() -> {
             try {
@@ -225,28 +224,41 @@ public class DeltaEvalFacade extends EvalFacade {
     /**
      * 执行评测并将结果落库
      */
-    protected void evalAndInsert(InputData inputData) throws SQLException {
-        DataItem item = new DataItem(inputData.getDataIndex(), inputData);
+    private void evalAndInsert(InputData inputData) throws SQLException {
+        // 构建DataItem
+        List<DataItem> dataItems = new CopyOnWriteArrayList<>();
+        DataItem dataItem = new DataItem();
+        dataItem.setDataIndex(inputData.getDataIndex());
+        dataItem.setInputData(inputData);
+        dataItems.add(dataItem);
+        // 克隆工作流
         Workflow evalWorkflow = config.getEvalWorkflow().clone();
+        // 禁用自动关闭线程池
         evalWorkflow.setAutoShutdown(false);
+        // 构建上下文
         WorkflowContext ctx = new WorkflowContext();
-        WorkflowContextOps.setDataItems(ctx, ListUtils.of(item));
+        WorkflowContextOps.setDataItems(ctx, dataItems);
         evalWorkflow.setWorkflowContext(ctx);
+        // 执行评测
         evalWorkflow.execute();
-        dataItemMapper.insert(WorkflowContextOps.getDataItems(ctx).get(0));
+        // 执行后结果落库
+        Optional<DataItem> result = WorkflowContextOps.getDataItems(ctx).stream().findFirst();
+        if (result.isPresent()) {
+            dataItemMapper.insert(result.get());
+        }
     }
 
     /**
      * 幂等检查,已经处理过消息则跳过
      */
-    protected boolean isProcess(String messageId) throws SQLException {
+    private boolean isProcess(String messageId) throws SQLException {
         return mqMessageProcessedMapper.exists(messageId);
     }
 
     /**
      * 落去重表
      */
-    protected void makeProcessed(String messageId) throws SQLException {
+    private void makeProcessed(String messageId) throws SQLException {
         mqMessageProcessedMapper.insert(messageId);
     }
 
@@ -265,7 +277,7 @@ public class DeltaEvalFacade extends EvalFacade {
     /**
      * 优雅停止上报：等当前批次跑完再停
      */
-    protected void stopReporter() {
+    private void stopReporter() {
         if (reporterFuture != null) {
             reporterFuture.cancel(false);
         }
@@ -282,7 +294,7 @@ public class DeltaEvalFacade extends EvalFacade {
     /**
      * 执行上报
      */
-    protected void doReport() {
+    private void doReport() {
         try {
             List<DataItem> dataItems = dataItemMapper.queryAll();
             if (CollectionUtils.isEmpty(dataItems)) {

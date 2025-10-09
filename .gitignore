@@ -52,3 +52,6 @@ activemq-data
 *.xlsx
 cache_data
 testMQ
+
+# mvn flatten
+.flattened-pom.xml

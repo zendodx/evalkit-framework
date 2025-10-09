@@ -1,9 +1,9 @@
 package com.evalkit.framework.eval.node.reporter;
 
-import com.evalkit.framework.eval.model.*;
 import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.common.utils.random.NanoIdUtils;
 import com.evalkit.framework.common.utils.time.DateUtils;
+import com.evalkit.framework.eval.model.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.StringUtils;
@@ -70,19 +70,29 @@ public abstract class FileReporter extends Reporter {
     protected List<Map<String, Object>> convertDataItems(List<DataItem> items) {
         List<Map<String, Object>> result = new ArrayList<>();
         for (DataItem item : items) {
-            InputData inputData = item.getInputData();
-            Map<String, Object> inputDataMap = inputData.getInputItem();
-            ApiCompletionResult apiCompletionResult = item.getApiCompletionResult();
-            Map<String, Object> apiCompletionResultMap = apiCompletionResult.getResultItem();
-            EvalResult evalResult = item.getEvalResult();
-            List<ScorerResult> scorerResults = evalResult.getScorerResults();
             Map<String, Object> itemMap = new HashMap<>();
+            // 保存数据索引
             itemMap.put("dataIndex", item.getDataIndex());
-            itemMap.putAll(inputDataMap);
-            itemMap.putAll(apiCompletionResultMap);
-            for (ScorerResult scorerResult : scorerResults) {
-                String metric = scorerResult.getMetric();
-                itemMap.put(metric, JsonUtils.toJson(scorerResult));
+            // 保存输入数据
+            InputData inputData = item.getInputData();
+            if (inputData != null) {
+                Map<String, Object> inputDataMap = inputData.getInputItem();
+                itemMap.putAll(inputDataMap);
+            }
+            // 保存接口数据
+            ApiCompletionResult apiCompletionResult = item.getApiCompletionResult();
+            if (apiCompletionResult != null) {
+                Map<String, Object> apiCompletionResultMap = apiCompletionResult.getResultItem();
+                itemMap.putAll(apiCompletionResultMap);
+            }
+            // 保存评测结果
+            EvalResult evalResult = item.getEvalResult();
+            if (evalResult != null) {
+                List<ScorerResult> scorerResults = evalResult.getScorerResults();
+                for (ScorerResult scorerResult : scorerResults) {
+                    String metric = scorerResult.getMetric();
+                    itemMap.put(metric, JsonUtils.toJson(scorerResult));
+                }
             }
             result.add(itemMap);
         }

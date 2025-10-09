@@ -1,6 +1,7 @@
 package com.evalkit.framework.common.utils.file;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Path;
@@ -133,4 +134,31 @@ public class FileUtils {
         }
     }
 
+    /**
+     * 删除文件夹
+     */
+    public static void deleteDirectory(String dirPath) {
+        File dir = new File(dirPath);
+        if (dir.exists() && dir.isDirectory()) {
+            try {
+                org.apache.commons.io.FileUtils.deleteDirectory(dir);
+            } catch (IOException e) {
+                throw new RuntimeException("Delete directory error:" + e.getMessage(), e);
+            }
+        }
+    }
+
+    /**
+     * 删除文件
+     */
+    public static void deleteFile(String filePath) {
+        File file = new File(filePath);
+        if (file.exists() && file.isFile()) {
+            try {
+                org.apache.commons.io.FileUtils.delete(file);
+            } catch (IOException e) {
+                throw new RuntimeException("Delete file error:" + e.getMessage(), e);
+            }
+        }
+    }
 }

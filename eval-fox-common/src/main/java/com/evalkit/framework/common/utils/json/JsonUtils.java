@@ -1,11 +1,10 @@
 package com.evalkit.framework.common.utils.json;
 
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONPath;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jayway.jsonpath.Configuration;
-import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.ReadContext;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
@@ -124,21 +123,33 @@ public class JsonUtils {
      */
     public static <T> T fromJson(String json, String jsonPath, Class<T> clazz) {
         if (StringUtils.isEmpty(jsonPath)) {
-            return fromJson(json, clazz);
+            // 全量反序列化
+            return JSON.parseObject(json, clazz);
         }
-        Object document;
+        Object root;
         try {
-            document = Configuration.defaultConfiguration().jsonProvider().parse(json);
+            root = JSON.parse(json);
         } catch (Exception e) {
             throw new RuntimeException("Parse json error: " + e.getMessage(), e);
         }
-        ReadContext ctx = JsonPath.parse(document);
-        T obj;
+        Object value;
         try {
-            obj = ctx.read(jsonPath);
+            value = JSONPath.eval(root, jsonPath);
         } catch (Exception e) {
-            throw new RuntimeException("Read json path " + jsonPath + " error:" + e.getMessage(), e);
+            throw new RuntimeException("Read json path " + jsonPath + " error: " + e.getMessage(), e);
         }
-        return obj;
+        // 类型转换
+        if (clazz.isInstance(value)) {
+            return clazz.cast(value);
+        } else {
+            // value 可能是 JSONObject/JSONArray 或基本类型
+            // 先转为字符串再反序列化为目标类型
+            try {
+                String jsonStr = JSON.toJSONString(value);
+                return JSON.parseObject(jsonStr, clazz);
+            } catch (Exception e) {
+                throw new RuntimeException("Convert value to class " + clazz.getName() + " error: " + e.getMessage(), e);
+            }
+        }
     }
 }

@@ -125,9 +125,10 @@ public abstract class ApiCompletion extends WorkflowNode {
         if (CollectionUtils.isEmpty(apiCompletionResults)) {
             throw new EvalException("Api completion result is empty");
         }
-        dataItems.forEach(item -> apiCompletionResults.stream()
-                .filter(r -> Objects.equals(r.getDataIndex(), item.getDataIndex()))
-                .findFirst().ifPresent(item::setApiCompletionResult));
+        dataItems.forEach(dataItem -> apiCompletionResults.stream()
+                .filter(r -> Objects.equals(r.getDataIndex(), dataItem.getDataIndex()))
+                .findFirst()
+                .ifPresent(dataItem::setApiCompletionResult));
         log.info("Api completion success, time cost: {}ms", System.currentTimeMillis() - start);
     }
 }
