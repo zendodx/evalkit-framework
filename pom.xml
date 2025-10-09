@@ -62,6 +62,7 @@
         <central-publishing-maven-plugin.version>0.4.0</central-publishing-maven-plugin.version>
         <maven-gpg-plugin.version>1.5</maven-gpg-plugin.version>
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
+        <flatten-maven-plugin.version>1.2.7</flatten-maven-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -139,6 +140,24 @@
                     <excludes>
 
                     </excludes>
+                </configuration>
+            </plugin>
+            <!-- 在发布（deploy/install）前自动将变量展开为实际值 -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>${flatten-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>flatten</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <updatePomFile>true</updatePomFile>
                 </configuration>
             </plugin>
         </plugins>
