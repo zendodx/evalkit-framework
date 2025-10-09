@@ -2,7 +2,9 @@ package com.evalkit.framework.eval.node.begin;
 
 import com.evalkit.framework.eval.constants.NodeNamePrefix;
 import com.evalkit.framework.eval.context.WorkflowContextOps;
+import com.evalkit.framework.eval.exception.EvalException;
 import com.evalkit.framework.eval.node.begin.config.BeginConfig;
+import com.evalkit.framework.workflow.WorkflowContextHolder;
 import com.evalkit.framework.workflow.model.WorkflowContext;
 import com.evalkit.framework.workflow.model.WorkflowNode;
 import com.evalkit.framework.workflow.utils.WorkflowUtils;
@@ -37,13 +39,16 @@ public class Begin extends WorkflowNode {
      */
     protected void initWorkflowContext() {
         WorkflowContext ctx = getWorkflowContext();
-        WorkflowContextOps.setTaskName(ctx, config.getTaskName());
+        if (ctx == null) {
+            throw new EvalException("WorkflowContext is null");
+        }
         WorkflowContextOps.setScorerStrategy(ctx, config.getScoreStrategy());
         WorkflowContextOps.setThreshold(ctx, config.getThreshold());
         if (CollectionUtils.isEmpty(WorkflowContextOps.getDataItems(ctx))) {
             WorkflowContextOps.setDataItems(ctx, new CopyOnWriteArrayList<>());
         }
         WorkflowContextOps.setCountResults(ctx, new ConcurrentHashMap<>());
+        WorkflowContextOps.setExtra(ctx, new ConcurrentHashMap<>());
     }
 
 

@@ -3,7 +3,6 @@ package com.evalkit.framework.eval.facade;
 import com.evalkit.framework.common.thread.PoolName;
 import com.evalkit.framework.common.thread.ThreadPoolManager;
 import com.evalkit.framework.common.utils.json.JsonUtils;
-import com.evalkit.framework.common.utils.list.ListUtils;
 import com.evalkit.framework.eval.context.WorkflowContextOps;
 import com.evalkit.framework.eval.mapper.DataItemMapper;
 import com.evalkit.framework.eval.mapper.MQMessageProcessedMapper;
@@ -25,6 +24,7 @@ import javax.jms.Message;
 import javax.jms.TextMessage;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
@@ -226,14 +226,27 @@ public class DeltaEvalFacade extends EvalFacade {
      * 执行评测并将结果落库
      */
     protected void evalAndInsert(InputData inputData) throws SQLException {
-        DataItem item = new DataItem(inputData.getDataIndex(), inputData);
+        // 构建DataItem
+        List<DataItem> dataItems = new CopyOnWriteArrayList<>();
+        DataItem dataItem = new DataItem();
+        dataItem.setDataIndex(inputData.getDataIndex());
+        dataItem.setInputData(inputData);
+        dataItems.add(dataItem);
+        // 克隆工作流
         Workflow evalWorkflow = config.getEvalWorkflow().clone();
+        // 禁用自动关闭线程池
         evalWorkflow.setAutoShutdown(false);
+        // 构建上下文
         WorkflowContext ctx = new WorkflowContext();
-        WorkflowContextOps.setDataItems(ctx, ListUtils.of(item));
+        WorkflowContextOps.setDataItems(ctx, dataItems);
         evalWorkflow.setWorkflowContext(ctx);
+        // 执行评测
         evalWorkflow.execute();
-        dataItemMapper.insert(WorkflowContextOps.getDataItems(ctx).get(0));
+        // 执行后结果落库
+        Optional<DataItem> result = WorkflowContextOps.getDataItems(ctx).stream().findFirst();
+        if (result.isPresent()) {
+            dataItemMapper.insert(result.get());
+        }
     }
 
     /**

@@ -1,8 +1,8 @@
 package com.evalkit.framework.eval.model;
 
-import com.evalkit.framework.eval.node.scorer.strategy.MinScoreStrategy;
-import com.evalkit.framework.eval.node.scorer.strategy.ScoreStrategy;
 import com.evalkit.framework.common.utils.json.JsonUtils;
+import com.evalkit.framework.eval.node.scorer.strategy.ScoreStrategy;
+import com.evalkit.framework.eval.node.scorer.strategy.SumScoreStrategy;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,6 +23,10 @@ import java.util.stream.Collectors;
 @Builder
 @AllArgsConstructor
 public class EvalResult {
+    /* 默认评估分数计算策略为求和 */
+    private final static ScoreStrategy DEFAULT_SCORE_STRATEGY = new SumScoreStrategy();
+    /* 默认评估分数通过阈值 */
+    private final static double DEFAULT_SCORE_THRESHOLD = 0;
     /* 数据索引 */
     private Long dataIndex;
     /* 评测分数 */
@@ -49,11 +53,11 @@ public class EvalResult {
     private String scoreStrategyName;
 
     public EvalResult() {
-        this(null, new MinScoreStrategy(), 0);
+        this(new CopyOnWriteArrayList<>(), DEFAULT_SCORE_STRATEGY, DEFAULT_SCORE_THRESHOLD);
     }
 
     public EvalResult(List<ScorerResult> scorerResults) {
-        this(scorerResults, new MinScoreStrategy(), 0);
+        this(scorerResults, DEFAULT_SCORE_STRATEGY, DEFAULT_SCORE_THRESHOLD);
     }
 
     public EvalResult(List<ScorerResult> scorerResults, ScoreStrategy scoreStrategy, double threshold) {
@@ -61,13 +65,14 @@ public class EvalResult {
         this.reason = "";
         this.scorerResults = scorerResults;
         this.scoreStrategy = scoreStrategy;
+        this.scoreStrategyName = scoreStrategy.getStrategyName();
         this.threshold = threshold;
     }
 
     /**
      * 添加评估器结果,同时更新评测结果
      */
-    public void addScorerResult(ScorerResult scorerResult) {
+    public synchronized void addScorerResult(ScorerResult scorerResult) {
         if (scorerResults == null) {
             scorerResults = new CopyOnWriteArrayList<>();
         }
@@ -79,6 +84,9 @@ public class EvalResult {
      * 更新评测结果
      */
     public void updateEvalResult() {
+        if (CollectionUtils.isEmpty(scorerResults)) {
+            return;
+        }
         updateScore();
         updateReason();
         updateTimeCost();
