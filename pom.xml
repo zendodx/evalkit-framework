@@ -62,7 +62,7 @@
         <central-publishing-maven-plugin.version>0.4.0</central-publishing-maven-plugin.version>
         <maven-gpg-plugin.version>1.5</maven-gpg-plugin.version>
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
-        <flatten-maven-plugin.version>1.2.7</flatten-maven-plugin.version>
+        <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -148,6 +148,7 @@
                 <artifactId>flatten-maven-plugin</artifactId>
                 <version>${flatten-maven-plugin.version}</version>
                 <executions>
+                    <!-- enable flattening -->
                     <execution>
                         <id>flatten</id>
                         <phase>process-resources</phase>
@@ -155,9 +156,27 @@
                             <goal>flatten</goal>
                         </goals>
                     </execution>
+                    <!-- ensure proper cleanup -->
+                    <execution>
+                        <id>flatten.clean</id>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                    </execution>
                 </executions>
                 <configuration>
                     <updatePomFile>true</updatePomFile>
+                    <pomElements>
+                        <name/>
+                        <description/>
+                        <url/>
+                        <inceptionYear/>
+                        <organization/>
+                        <contributors/>
+                        <mailingLists/>
+                        <scm/>
+                        <developers/>
+                    </pomElements>
                 </configuration>
             </plugin>
         </plugins>
