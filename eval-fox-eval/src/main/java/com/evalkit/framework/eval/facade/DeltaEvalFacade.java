@@ -2,6 +2,7 @@ package com.evalkit.framework.eval.facade;
 
 import com.evalkit.framework.common.thread.PoolName;
 import com.evalkit.framework.common.thread.ThreadPoolManager;
+import com.evalkit.framework.common.utils.file.FileUtils;
 import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.eval.context.WorkflowContextOps;
 import com.evalkit.framework.eval.mapper.DataItemMapper;
@@ -19,12 +20,10 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.jms.Message;
 import javax.jms.TextMessage;
-import java.io.File;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
@@ -89,8 +88,8 @@ public class DeltaEvalFacade extends EvalFacade {
             // 如果没有开启断点续评则每次初始化时删除缓存(MQ和DB数据)
             if (!config.isEnableResume()) {
                 log.info("Not open resume eval from breakpoint, delete cache data");
-                FileUtils.deleteDirectory(new File(parentPath + taskName));
-                FileUtils.delete(new File(parentPath + taskName + ".db"));
+                FileUtils.deleteDirectory(parentPath + taskName);
+                FileUtils.deleteFile(parentPath + taskName + ".db");
             }
             // 启动MQ
             activeMQEmbeddedServer.start(parentPath + taskName);
