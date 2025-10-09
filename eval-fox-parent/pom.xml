@@ -5,6 +5,7 @@
         <groupId>io.github.zendodx</groupId>
         <artifactId>eval-fox-bom</artifactId>
         <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>eval-fox-parent</artifactId>
