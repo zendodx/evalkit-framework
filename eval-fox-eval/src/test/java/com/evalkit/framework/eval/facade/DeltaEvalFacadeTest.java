@@ -151,6 +151,7 @@ class DeltaEvalFacadeTest {
                         .dataLoader(multiDataLoader)
                         .evalWorkflow(evalWorkflow)
                         .reportWorkflow(reportWorkflow)
+                        .reportInterval(3)
                         .batchSize(10)
                         .threadNum(10)
                         .build()

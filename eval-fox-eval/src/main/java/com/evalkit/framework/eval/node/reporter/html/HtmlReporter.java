@@ -1,10 +1,10 @@
 package com.evalkit.framework.eval.node.reporter.html;
 
+import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.model.ReportData;
 import com.evalkit.framework.eval.node.reporter.FileReporter;
 import com.evalkit.framework.eval.node.reporter.html.enums.HtmlReportStyle;
-import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -79,8 +79,11 @@ public class HtmlReporter extends FileReporter {
             templateName = "report-default";
         }
         String outputFileName = StringUtils.isNotBlank(this.fileName) ? this.fileName : generateDefaultOutputFileName();
-        FileWriter writer = new FileWriter(String.format("%s/%s.html", this.parentDir, outputFileName));
-        engine.process(templateName, ctx, writer);
+        try (FileWriter writer = new FileWriter(String.format("%s/%s.html", this.parentDir, outputFileName))) {
+            engine.process(templateName, ctx, writer);
+        } catch (Exception e) {
+            log.error("Report error", e);
+        }
     }
 
     private Map<String, Object> convertJsonToMap(String json) {
