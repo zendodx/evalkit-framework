@@ -26,7 +26,7 @@
 <dependency>
     <groupId>io.github.zendodx</groupId>
     <artifactId>eval-fox-eval</artifactId>
-    <version>0.1.1</version>
+    <version>0.1.2</version>
 </dependency>
 ```
 
