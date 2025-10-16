@@ -99,6 +99,13 @@ public class RuntimeEnvUtils {
     }
 
     /**
+     * 设置JVM系统属性
+     */
+    public static void setJVMProperty(String key, String value) {
+        System.setProperty(key, value);
+    }
+
+    /**
      * 读取JVM系统属性,mvn的-D传参是系统属性
      */
     public static String getJVMProperty(String key) {
@@ -131,6 +138,11 @@ public class RuntimeEnvUtils {
     public static String getJVMPropertyString(String key, String defaultValue) {
         String value = getJVMProperty(key);
         return value == null ? defaultValue : value;
+    }
+
+    public static boolean getJVMPropertyBoolean(String key, Boolean defaultValue) {
+        String value = getJVMProperty(key);
+        return value == null ? defaultValue : Boolean.valueOf(value);
     }
 
     /**
