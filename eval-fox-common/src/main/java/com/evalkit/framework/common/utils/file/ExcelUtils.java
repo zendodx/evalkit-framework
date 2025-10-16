@@ -7,7 +7,10 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -62,7 +65,7 @@ public class ExcelUtils {
         if (sheetIndex < 0) {
             throw new IllegalArgumentException("sheetIndex < 0");
         }
-        try (XSSFWorkbook workbook = new XSSFWorkbook(getInputStream(filePath))) {
+        try (XSSFWorkbook workbook = new XSSFWorkbook(FileUtils.getInputStream(filePath))) {
             if (workbook.getNumberOfSheets() == 0) {
                 throw new RuntimeException("excel sheet is empty");
             }
@@ -90,19 +93,19 @@ public class ExcelUtils {
      * 读取Excel为List->Map，支持自定义header、分页
      */
     public static List<Map<String, String>> readExcelAsListMap(String filePath, int sheetIndex, List<String> headers, int offset, int limit) throws IOException {
-        try (InputStream inputStream = getInputStream(filePath)) {
+        try (InputStream inputStream = FileUtils.getInputStream(filePath)) {
             return readExcelAsListMap(inputStream, sheetIndex, headers, offset, limit);
         }
     }
 
     public static List<Map<String, String>> readExcelAsListMap(File file, int sheetIndex, List<String> headers, int offset, int limit) throws IOException {
-        try (InputStream inputStream = getInputStream(file)) {
+        try (InputStream inputStream = FileUtils.getInputStream(file)) {
             return readExcelAsListMap(inputStream, sheetIndex, headers, offset, limit);
         }
     }
 
     public static List<Map<String, String>> readExcelAsListMap(URL url, int sheetIndex, List<String> headers, int offset, int limit) throws IOException {
-        try (InputStream inputStream = getInputStream(url)) {
+        try (InputStream inputStream = FileUtils.getInputStream(url)) {
             return readExcelAsListMap(inputStream, sheetIndex, headers, offset, limit);
         }
     }
@@ -196,40 +199,6 @@ public class ExcelUtils {
 
     public static List<Map<String, String>> readExcelAsListMapWithTargetHeaders(File file, int sheetIndex, List<String> headers, int offset, int limit) throws IOException {
         return readExcelAsListMap(file, sheetIndex, headers, offset, limit);
-    }
-
-    // 工具方法：获取输入流
-    private static InputStream getInputStream(String filePath) throws IOException {
-        if (StringUtils.isBlank(filePath)) {
-            throw new IllegalArgumentException("filePath is blank");
-        }
-        if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
-            return new URL(filePath).openStream();
-        } else if (filePath.startsWith("classpath:")) {
-            String realFilePath = filePath.replace("classpath:", "");
-            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-            InputStream is = classLoader.getResourceAsStream(realFilePath);
-            if (is == null) {
-                throw new FileNotFoundException("File not found in classpath: " + realFilePath);
-            }
-            return is;
-        } else {
-            return new FileInputStream(filePath);
-        }
-    }
-
-    private static InputStream getInputStream(File file) throws IOException {
-        if (file == null || !file.exists()) {
-            throw new FileNotFoundException("File not found: " + file);
-        }
-        return new FileInputStream(file);
-    }
-
-    private static InputStream getInputStream(URL url) throws IOException {
-        if (url == null) {
-            throw new IllegalArgumentException("URL is null");
-        }
-        return url.openStream();
     }
 
     /**
