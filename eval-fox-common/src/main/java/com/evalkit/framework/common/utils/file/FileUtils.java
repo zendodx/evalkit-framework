@@ -1,9 +1,13 @@
 package com.evalkit.framework.common.utils.file;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -160,5 +164,50 @@ public class FileUtils {
                 throw new RuntimeException("Delete file error:" + e.getMessage(), e);
             }
         }
+    }
+
+    /**
+     * 获取文件的输入流, 文件路径包含: 绝对路径, 类路径, 远程路径
+     */
+    public static InputStream getInputStream(String filePath) throws IOException {
+        if (StringUtils.isEmpty(filePath)) {
+            throw new IllegalArgumentException("filePath is blank");
+        }
+        if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
+            // 远程路径
+            return new URL(filePath).openStream();
+        } else if (filePath.startsWith("classpath:")) {
+            // 类路径
+            String realFilePath = filePath.replace("classpath:", "");
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            InputStream is = classLoader.getResourceAsStream(realFilePath);
+            if (is == null) {
+                throw new FileNotFoundException("File not found in classpath: " + realFilePath);
+            }
+            return is;
+        } else {
+            // 绝对路径
+            return Files.newInputStream(Paths.get(filePath));
+        }
+    }
+
+    /**
+     * 获取file输入流
+     */
+    public static InputStream getInputStream(File file) throws IOException {
+        if (file == null || !file.exists()) {
+            throw new FileNotFoundException("File not found: " + file);
+        }
+        return Files.newInputStream(file.toPath());
+    }
+
+    /**
+     * 获取url输入流
+     */
+    public static InputStream getInputStream(URL url) throws IOException {
+        if (url == null) {
+            throw new IllegalArgumentException("URL is null");
+        }
+        return url.openStream();
     }
 }

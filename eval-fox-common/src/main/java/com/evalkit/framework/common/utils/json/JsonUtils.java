@@ -10,6 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -81,10 +82,23 @@ public class JsonUtils {
      * 对象写json文件
      */
     public static void writeJsonFile(String filePath, Object obj) {
+        File file = new File(filePath);
+        writeJsonFile(file, obj);
+    }
+
+    public static void writeJsonFile(File file, Object obj) {
         try {
-            objectMapper.writeValue(new File(filePath), obj);
+            objectMapper.writeValue(file, obj);
         } catch (IOException e) {
             throw new RuntimeException("Write obj to json file error:" + e.getMessage(), e);
+        }
+    }
+
+    public static void writeJsonFile(OutputStream outputStream, Object obj) {
+        try {
+            objectMapper.writeValue(outputStream, obj);
+        } catch (IOException e) {
+            throw new RuntimeException("Write obj to json stream error:" + e.getMessage(), e);
         }
     }
 

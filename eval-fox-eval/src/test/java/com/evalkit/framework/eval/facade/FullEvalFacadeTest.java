@@ -77,7 +77,7 @@ class FullEvalFacadeTest {
                 return inputDataList;
             }
         };
-        MultiDataLoader multiDataLoader = new MultiDataLoader(ListUtils.of(dataLoader1, dataLoader2), 10, 100);
+        MultiDataLoader multiDataLoader = new MultiDataLoader(ListUtils.of(dataLoader1, dataLoader2), 0, -1);
 
         // 评测工作流
         Begin begin = new Begin(

@@ -2,6 +2,7 @@ package com.evalkit.framework.eval.node.dataloader;
 
 
 import com.evalkit.framework.eval.model.InputData;
+import com.evalkit.framework.eval.node.dataloader.config.DataLoaderConfig;
 
 import java.io.IOException;
 import java.util.List;
@@ -10,6 +11,15 @@ import java.util.List;
  * Json文本数据加载器
  */
 public abstract class JsonTextDataLoader extends JsonDataLoader {
+
+    public JsonTextDataLoader() {
+        super();
+    }
+
+    public JsonTextDataLoader(DataLoaderConfig config) {
+        super(config);
+    }
+
     /**
      * 准备目标数据所在的jsonpath
      */

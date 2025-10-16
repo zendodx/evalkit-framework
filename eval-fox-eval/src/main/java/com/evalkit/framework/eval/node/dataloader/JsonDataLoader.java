@@ -1,16 +1,28 @@
 package com.evalkit.framework.eval.node.dataloader;
 
 
-import com.evalkit.framework.eval.exception.EvalException;
-import com.evalkit.framework.eval.model.InputData;
 import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.common.utils.map.MapUtils;
+import com.evalkit.framework.eval.exception.EvalException;
+import com.evalkit.framework.eval.model.InputData;
+import com.evalkit.framework.eval.node.dataloader.config.DataLoaderConfig;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public abstract class JsonDataLoader extends DataLoader {
+
+    protected DataLoaderConfig config;
+
+    public JsonDataLoader() {
+        super();
+    }
+
+    public JsonDataLoader(DataLoaderConfig config) {
+        this.config = config;
+    }
+
     /**
      * 准备目标数据所在的jsonpath
      */
@@ -39,7 +51,7 @@ public abstract class JsonDataLoader extends DataLoader {
             inputData.setDataIndex(0L);
             inputDataList.add(inputData);
         } else {
-            throw new EvalException("Prepare json data unsupported parse value:" + eval);
+            throw new EvalException("Prepare json data unsupported parse value: " + eval);
         }
         return inputDataList;
     }

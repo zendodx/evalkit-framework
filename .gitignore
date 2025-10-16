@@ -50,6 +50,7 @@ activemq-data
 
 # other
 *.xlsx
+*.json
 cache_data
 testMQ
 

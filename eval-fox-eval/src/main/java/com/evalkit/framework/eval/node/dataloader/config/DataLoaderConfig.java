@@ -16,7 +16,8 @@ import java.util.function.Predicate;
 @Data
 public class DataLoaderConfig {
     // 偏移量,默认值0
-    protected int offset;
+    @Builder.Default
+    protected int offset = 0;
     // 页数,默认值-1,加载所有
     @Builder.Default
     protected int limit = -1;
@@ -24,5 +25,6 @@ public class DataLoaderConfig {
     @Builder.Default
     protected List<Predicate<InputData>> filters = new ArrayList<>();
     // 是否打乱顺序
-    protected boolean shuffle;
+    @Builder.Default
+    protected boolean shuffle = false;
 }

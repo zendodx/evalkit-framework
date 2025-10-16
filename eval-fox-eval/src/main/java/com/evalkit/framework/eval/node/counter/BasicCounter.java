@@ -3,10 +3,10 @@ package com.evalkit.framework.eval.node.counter;
 import com.evalkit.framework.eval.model.*;
 import org.apache.commons.collections4.CollectionUtils;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static com.evalkit.framework.common.utils.statics.StaticsUtils.*;
 
 /**
  * 基础统计器
@@ -25,6 +25,7 @@ public class BasicCounter extends Counter {
         calRate(dataItems, result);
         calApiCompletionTimeCost(dataItems, result);
         calEvalTimeCost(dataItems, result);
+        calEvalScore(dataItems, result);
         return result;
     }
 
@@ -103,37 +104,16 @@ public class BasicCounter extends Counter {
         if (CollectionUtils.isEmpty(timeCosts)) {
             return;
         }
-        long completionAvgTimeCost;
-        long completionMinTimeCost;
-        long completionMaxTimeCost;
-        long completionTP99TimeCost;
-        long completionTP95TimeCost;
-        long completionTP90TimeCost;
-        long completionTP80TimeCost;
-        long completionTP70TimeCost;
-        long completionTP60TimeCost;
-        long completionTP50TimeCost;
-        completionAvgTimeCost = timeCosts.stream().mapToLong(Long::longValue).sum() / timeCosts.size();
-        completionMinTimeCost = timeCosts.stream().min(Long::compareTo).get();
-        completionMaxTimeCost = timeCosts.stream().max(Long::compareTo).get();
-        completionTP99TimeCost = calTP(timeCosts, 99);
-        completionTP95TimeCost = calTP(timeCosts, 95);
-        completionTP90TimeCost = calTP(timeCosts, 90);
-        completionTP80TimeCost = calTP(timeCosts, 80);
-        completionTP70TimeCost = calTP(timeCosts, 70);
-        completionTP60TimeCost = calTP(timeCosts, 60);
-        completionTP50TimeCost = calTP(timeCosts, 50);
-
-        result.setCompletionAvgTimeCost(completionAvgTimeCost);
-        result.setCompletionMinTimeCost(completionMinTimeCost);
-        result.setCompletionMaxTimeCost(completionMaxTimeCost);
-        result.setCompletionTP99TimeCost(completionTP99TimeCost);
-        result.setCompletionTP95TimeCost(completionTP95TimeCost);
-        result.setCompletionTP90TimeCost(completionTP90TimeCost);
-        result.setCompletionTP80TimeCost(completionTP80TimeCost);
-        result.setCompletionTP70TimeCost(completionTP70TimeCost);
-        result.setCompletionTP60TimeCost(completionTP60TimeCost);
-        result.setCompletionTP50TimeCost(completionTP50TimeCost);
+        result.setCompletionAvgTimeCost(avg(timeCosts));
+        result.setCompletionMinTimeCost(min(timeCosts));
+        result.setCompletionMaxTimeCost(max(timeCosts));
+        result.setCompletionTP99TimeCost(tp(timeCosts, 99));
+        result.setCompletionTP95TimeCost(tp(timeCosts, 95));
+        result.setCompletionTP90TimeCost(tp(timeCosts, 90));
+        result.setCompletionTP80TimeCost(tp(timeCosts, 80));
+        result.setCompletionTP70TimeCost(tp(timeCosts, 70));
+        result.setCompletionTP60TimeCost(tp(timeCosts, 60));
+        result.setCompletionTP50TimeCost(tp(timeCosts, 50));
     }
 
     /**
@@ -148,31 +128,33 @@ public class BasicCounter extends Counter {
         if (CollectionUtils.isEmpty(timeCosts)) {
             return;
         }
-        long evalAvgTimeCost;
-        long evalMinTimeCost;
-        long evalMaxTimeCost;
-        evalAvgTimeCost = timeCosts.stream().mapToLong(Long::longValue).sum() / timeCosts.size();
-        evalMinTimeCost = timeCosts.stream().min(Long::compareTo).get();
-        evalMaxTimeCost = timeCosts.stream().max(Long::compareTo).get();
-        result.setEvalAvgTimeCost(evalAvgTimeCost);
-        result.setEvalMinTimeCost(evalMinTimeCost);
-        result.setEvalMaxTimeCost(evalMaxTimeCost);
+        result.setEvalAvgTimeCost(avg(timeCosts));
+        result.setEvalMinTimeCost(min(timeCosts));
+        result.setEvalMaxTimeCost(max(timeCosts));
     }
 
     /**
-     * 计算TP
+     * 计算评测分数相关指标
      */
-    private long calTP(List<Long> timeCosts, int TP) {
-        if (timeCosts == null || timeCosts.isEmpty()) {
-            throw new IllegalArgumentException("timeCosts must not be empty");
+    public void calEvalScore(List<DataItem> dataItems, BasicCountResult result) {
+        List<Double> scores = dataItems.stream()
+                .filter(dataItem -> dataItem.getEvalResult() != null)
+                .filter(dataItem -> dataItem.getEvalResult().isSuccess())
+                .map(dataItem -> dataItem.getEvalResult().getScore())
+                .collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(scores)) {
+            return;
         }
-        if (TP <= 0 || TP > 100) {
-            throw new IllegalArgumentException("TP must be in (0,100]");
-        }
-        List<Long> sorted = new ArrayList<>(timeCosts);
-        Collections.sort(sorted);
-        int index = (int) Math.ceil(sorted.size() * TP / 100.0);
-        if (index == 0) index = 1;
-        return sorted.get(index - 1);
+        result.setMinScore(min(scores));
+        result.setMaxScore(max(scores));
+        result.setAvgScore(avg(scores));
+        result.setTp99Score(tp(scores, 99));
+        result.setTp95Score(tp(scores, 95));
+        result.setTp90Score(tp(scores, 90));
+        result.setTp80Score(tp(scores, 80));
+        result.setTp70Score(tp(scores, 70));
+        result.setTp60Score(tp(scores, 60));
+        result.setTp50Score(tp(scores, 50));
+        result.setScoreStdDev(standardDeviation(scores));
     }
 }
