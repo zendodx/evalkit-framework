@@ -487,11 +487,17 @@
         function safePercent(val) {
             return typeof val === 'number' ? (val * 100).toFixed(1) + '%' : '-';
         }
+
         function safeInt(val) {
             return typeof val === 'number' ? val : '-';
         }
+
+        function safeFloat(val) {
+            return typeof val === 'number' ? val.toFixed(1) : '-';
+        }
+
         function safeMs(val) {
-            return typeof val === 'number' ? val + 'ms' : '-';
+            return typeof val === 'number' ? val.toFixed(1) + 'ms' : '-';
         }
 
         /* 指标卡片 */
@@ -525,7 +531,18 @@
             {label: '错误率', v: safePercent(md.evalErrorRate), c: 'bad'},
             {label: '平均耗时', v: safeMs(md.evalAvgTimeCost), c: 'default'},
             {label: '最小耗时', v: safeMs(md.evalMinTimeCost), c: 'default'},
-            {label: '最大耗时', v: safeMs(md.evalMaxTimeCost), c: 'default'}
+            {label: '最大耗时', v: safeMs(md.evalMaxTimeCost), c: 'default'},
+            {label: '最小分数', v: safeFloat(md.minScore), c: 'default'},
+            {label: '最大分数', v: safeFloat(md.maxScore), c: 'default'},
+            {label: '平均分数', v: safeFloat(md.avgScore), c: 'default'},
+            {label: '分数标准差', v: safeFloat(md.scoreStdDev), c: 'default'},
+            {label: 'TP99', v: safeFloat(md.tp99Score), c: 'default'},
+            {label: 'TP95', v: safeFloat(md.tp95Score), c: 'default'},
+            {label: 'TP90', v: safeFloat(md.tp90Score), c: 'default'},
+            {label: 'TP80', v: safeFloat(md.tp80Score), c: 'default'},
+            {label: 'TP70', v: safeFloat(md.tp70Score), c: 'default'},
+            {label: 'TP60', v: safeFloat(md.tp60Score), c: 'default'},
+            {label: 'TP50', v: safeFloat(md.tp50Score), c: 'default'}
         ];
         renderGrid('evalMetricsGrid', ev);
 
@@ -582,14 +599,25 @@
         /* TP 指标安全处理 */
         const mdTp = metricsData || {};
         const tps = [], tpLabels = [];
-        function safeTp(val) { return typeof val === 'number' ? val : 0; }
-        tpLabels.push('TP50'); tps.push(safeTp(mdTp.completionTP50TimeCost));
-        tpLabels.push('TP60'); tps.push(safeTp(mdTp.completionTP60TimeCost));
-        tpLabels.push('TP70'); tps.push(safeTp(mdTp.completionTP70TimeCost));
-        tpLabels.push('TP80'); tps.push(safeTp(mdTp.completionTP80TimeCost));
-        tpLabels.push('TP90'); tps.push(safeTp(mdTp.completionTP90TimeCost));
-        tpLabels.push('TP95'); tps.push(safeTp(mdTp.completionTP95TimeCost));
-        tpLabels.push('TP99'); tps.push(safeTp(mdTp.completionTP99TimeCost));
+
+        function safeTp(val) {
+            return typeof val === 'number' ? val : 0;
+        }
+
+        tpLabels.push('TP50');
+        tps.push(safeTp(mdTp.completionTP50TimeCost));
+        tpLabels.push('TP60');
+        tps.push(safeTp(mdTp.completionTP60TimeCost));
+        tpLabels.push('TP70');
+        tps.push(safeTp(mdTp.completionTP70TimeCost));
+        tpLabels.push('TP80');
+        tps.push(safeTp(mdTp.completionTP80TimeCost));
+        tpLabels.push('TP90');
+        tps.push(safeTp(mdTp.completionTP90TimeCost));
+        tpLabels.push('TP95');
+        tps.push(safeTp(mdTp.completionTP95TimeCost));
+        tpLabels.push('TP99');
+        tps.push(safeTp(mdTp.completionTP99TimeCost));
         const tpCfg = {
             type: 'line',
             data: {labels: tpLabels, datasets: [{label: '耗时(ms)%', data: tps, borderColor: '#67c23a', tension: 0.3}]},
