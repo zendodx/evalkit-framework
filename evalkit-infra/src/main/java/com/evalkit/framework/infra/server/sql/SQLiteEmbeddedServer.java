@@ -1,4 +1,4 @@
-package com.evalkit.framework.infra.service.sql;
+package com.evalkit.framework.infra.server.sql;
 
 import com.evalkit.framework.common.utils.map.MapUtils;
 import lombok.extern.slf4j.Slf4j;

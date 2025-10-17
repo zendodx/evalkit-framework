@@ -2,7 +2,7 @@ package com.evalkit.framework.eval.mapper;
 
 import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.eval.model.DataItem;
-import com.evalkit.framework.infra.service.sql.SQLiteEmbeddedServer;
+import com.evalkit.framework.infra.server.sql.SQLiteEmbeddedServer;
 import lombok.extern.slf4j.Slf4j;
 
 import java.sql.SQLException;

@@ -1,4 +1,4 @@
-package com.evalkit.framework.infra.service.mq;
+package com.evalkit.framework.infra.server.mq;
 
 import com.evalkit.framework.common.utils.list.ListUtils;
 import org.apache.activemq.ActiveMQConnectionFactory;

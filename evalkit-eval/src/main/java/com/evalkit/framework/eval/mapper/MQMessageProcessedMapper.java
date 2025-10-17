@@ -1,6 +1,6 @@
 package com.evalkit.framework.eval.mapper;
 
-import com.evalkit.framework.infra.service.sql.SQLiteEmbeddedServer;
+import com.evalkit.framework.infra.server.sql.SQLiteEmbeddedServer;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.sql.SQLException;

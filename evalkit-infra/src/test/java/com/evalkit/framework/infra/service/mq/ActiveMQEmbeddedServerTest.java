@@ -1,5 +1,6 @@
 package com.evalkit.framework.infra.service.mq;
 
+import com.evalkit.framework.infra.server.mq.ActiveMQEmbeddedServer;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
