@@ -1,4 +1,4 @@
-# <img src="docs/files/evalkit_logo.png" width="80" height="80"> EvalFox
+# <img src="docs/files/evalkit_logo.png" width="80" height="80"> EvalKit Framework
 
 ##### 📖 [English Documentation](README.md) | 📖 中文文档
 
@@ -25,8 +25,8 @@
 ```xml
 <dependency>
     <groupId>io.github.zendodx</groupId>
-    <artifactId>eval-fox-eval</artifactId>
-    <version>0.1.2</version>
+    <artifactId>evalkit-eval</artifactId>
+    <version>0.2.0</version>
 </dependency>
 ```
 
@@ -526,4 +526,4 @@ class DeltaEvalFacadeTest {
 
 ## 开源协议
 
-EvalFox是在 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) 协议下的开源项目
+EvalKit Framework是在 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) 协议下的开源项目
