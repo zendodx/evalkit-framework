@@ -1,4 +1,4 @@
-# <img src="docs/files/eval_fox_logo.png" width="80" height="80"> EvalFox
+# <img src="docs/files/evalkit_logo.png" width="80" height="80"> EvalFox
 
 ##### 📖 [English Documentation](README.md) | 📖 中文文档
 

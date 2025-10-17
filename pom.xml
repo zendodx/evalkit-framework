@@ -3,13 +3,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.github.zendodx</groupId>
-    <artifactId>eval-fox-bom</artifactId>
+    <artifactId>evalkit-bom</artifactId>
     <version>${revision}</version>
     <packaging>pom</packaging>
 
-    <name>eval-fox-bom</name>
-    <description>eval fox project bom</description>
-    <url>https://github.com/zendodx/eval-fox.git</url>
+    <name>evalkit-bom</name>
+    <description>evalkit project bom</description>
+    <url>https://github.com/zendodx/evalkit.git</url>
 
     <licenses>
         <license>
@@ -30,23 +30,23 @@
     </developers>
 
     <scm>
-        <connection>https://github.com/zendodx/eval-fox.git</connection>
-        <developerConnection>scm:git@github.com:zendodx/eval-fox.git</developerConnection>
-        <url>https://github.com/zendodx/eval-fox</url>
+        <connection>https://github.com/zendodx/evalkit-framework.git</connection>
+        <developerConnection>scm:git@github.com:zendodx/evalkit-framework.git</developerConnection>
+        <url>https://github.com/zendodx/evalkit-framework</url>
         <tag>HEAD</tag>
     </scm>
 
     <modules>
-        <module>eval-fox-parent</module>
-        <module>eval-fox-common</module>
-        <module>eval-fox-workflow</module>
-        <module>eval-fox-infra</module>
-        <module>eval-fox-eval</module>
+        <module>evalkit-parent</module>
+        <module>evalkit-common</module>
+        <module>evalkit-workflow</module>
+        <module>evalkit-infra</module>
+        <module>evalkit-eval</module>
     </modules>
 
     <properties>
         <!-- 项目版本 -->
-        <revision>0.1.2</revision>
+        <revision>0.2.0</revision>
         <!-- 统一编码 -->
         <encoding>UTF-8</encoding>
         <!-- jdk版本 -->
@@ -70,25 +70,25 @@
             <!-- 公共模块 -->
             <dependency>
                 <groupId>io.github.zendodx</groupId>
-                <artifactId>eval-fox-common</artifactId>
+                <artifactId>evalkit-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <!-- 工作流模块 -->
             <dependency>
                 <groupId>io.github.zendodx</groupId>
-                <artifactId>eval-fox-workflow</artifactId>
+                <artifactId>evalkit-workflow</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <!-- 基础模块 -->
             <dependency>
                 <groupId>io.github.zendodx</groupId>
-                <artifactId>eval-fox-infra</artifactId>
+                <artifactId>evalkit-infra</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <!-- 评测模块 -->
             <dependency>
                 <groupId>io.github.zendodx</groupId>
-                <artifactId>eval-fox-eval</artifactId>
+                <artifactId>evalkit-eval</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

@@ -3,15 +3,15 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.github.zendodx</groupId>
-        <artifactId>eval-fox-parent</artifactId>
+        <artifactId>evalkit-parent</artifactId>
         <version>${revision}</version>
-        <relativePath>../eval-fox-parent/pom.xml</relativePath>
+        <relativePath>../evalkit-parent/pom.xml</relativePath>
     </parent>
 
-    <artifactId>eval-fox-workflow</artifactId>
+    <artifactId>evalkit-common</artifactId>
     <packaging>jar</packaging>
 
-    <name>eval-fox-workflow</name>
+    <name>evalkit-common</name>
 
     <licenses>
         <license>
@@ -32,16 +32,52 @@
     </developers>
 
     <scm>
-        <connection>https://github.com/zendodx/eval-fox.git</connection>
-        <developerConnection>scm:git@github.com:zendodx/eval-fox.git</developerConnection>
-        <url>https://github.com/zendodx/eval-fox</url>
+        <connection>https://github.com/zendodx/evalkit-framework.git</connection>
+        <developerConnection>scm:git@github.com:zendodx/evalkit-framework.git</developerConnection>
+        <url>https://github.com/zendodx/evalkit-framework</url>
         <tag>HEAD</tag>
     </scm>
 
     <dependencies>
         <dependency>
-            <groupId>io.github.zendodx</groupId>
-            <artifactId>eval-fox-common</artifactId>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.fastjson2</groupId>
+            <artifactId>fastjson2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.xkzhangsan</groupId>
+            <artifactId>xk-time</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.retrofit2</groupId>
+            <artifactId>retrofit</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.retrofit2</groupId>
+            <artifactId>converter-jackson</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.retrofit2</groupId>
+            <artifactId>converter-scalars</artifactId>
         </dependency>
     </dependencies>
 

@@ -3,17 +3,17 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.github.zendodx</groupId>
-        <artifactId>eval-fox-bom</artifactId>
+        <artifactId>evalkit-bom</artifactId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>eval-fox-parent</artifactId>
+    <artifactId>evalkit-parent</artifactId>
     <packaging>pom</packaging>
 
-    <name>eval-fox-parent</name>
+    <name>evalkit-parent</name>
     <description>eval fox project parent</description>
-    <url>https://github.com/zendodx/eval-fox.git</url>
+    <url>https://github.com/zendodx/evalkit.git</url>
 
     <licenses>
         <license>
@@ -34,9 +34,9 @@
     </developers>
 
     <scm>
-        <connection>https://github.com/zendodx/eval-fox.git</connection>
-        <developerConnection>scm:git@github.com:zendodx/eval-fox.git</developerConnection>
-        <url>https://github.com/zendodx/eval-fox</url>
+        <connection>https://github.com/zendodx/evalkit.git</connection>
+        <developerConnection>scm:git@github.com:zendodx/evalkit.git</developerConnection>
+        <url>https://github.com/zendodx/evalkit</url>
         <tag>HEAD</tag>
     </scm>
 

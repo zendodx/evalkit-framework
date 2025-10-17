@@ -3,15 +3,15 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.github.zendodx</groupId>
-        <artifactId>eval-fox-parent</artifactId>
+        <artifactId>evalkit-parent</artifactId>
         <version>${revision}</version>
-        <relativePath>../eval-fox-parent/pom.xml</relativePath>
+        <relativePath>../evalkit-parent/pom.xml</relativePath>
     </parent>
 
-    <artifactId>eval-fox-infra</artifactId>
+    <artifactId>evalkit-workflow</artifactId>
     <packaging>jar</packaging>
 
-    <name>eval-fox-infra</name>
+    <name>evalkit-workflow</name>
 
     <licenses>
         <license>
@@ -32,32 +32,16 @@
     </developers>
 
     <scm>
-        <connection>https://github.com/zendodx/eval-fox.git</connection>
-        <developerConnection>scm:git@github.com:zendodx/eval-fox.git</developerConnection>
-        <url>https://github.com/zendodx/eval-fox</url>
+        <connection>https://github.com/zendodx/evalkit.git</connection>
+        <developerConnection>scm:git@github.com:zendodx/evalkit.git</developerConnection>
+        <url>https://github.com/zendodx/evalkit</url>
         <tag>HEAD</tag>
     </scm>
 
     <dependencies>
         <dependency>
             <groupId>io.github.zendodx</groupId>
-            <artifactId>eval-fox-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.activemq</groupId>
-            <artifactId>activemq-broker</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.activemq</groupId>
-            <artifactId>activemq-kahadb-store</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>javax.jms</groupId>
-            <artifactId>javax.jms-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.xerial</groupId>
-            <artifactId>sqlite-jdbc</artifactId>
+            <artifactId>evalkit-common</artifactId>
         </dependency>
     </dependencies>
 
