@@ -12,6 +12,8 @@
     <packaging>jar</packaging>
 
     <name>evalkit-common</name>
+    <description>evalkit common</description>
+    <url>https://github.com/zendodx/evalkit-framework.git</url>
 
     <licenses>
         <license>

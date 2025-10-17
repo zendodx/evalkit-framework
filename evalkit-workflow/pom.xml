@@ -12,6 +12,8 @@
     <packaging>jar</packaging>
 
     <name>evalkit-workflow</name>
+    <description>evalkit workflow</description>
+    <url>https://github.com/zendodx/evalkit-framework.git</url>
 
     <licenses>
         <license>

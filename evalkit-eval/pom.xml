@@ -12,6 +12,8 @@
     <packaging>jar</packaging>
 
     <name>evalkit-eval</name>
+    <description>evalkit eval</description>
+    <url>https://github.com/zendodx/evalkit-framework.git</url>
 
     <licenses>
         <license>
@@ -32,9 +34,9 @@
     </developers>
 
     <scm>
-        <connection>https://github.com/zendodx/evalkit.git</connection>
-        <developerConnection>scm:git@github.com:zendodx/evalkit.git</developerConnection>
-        <url>https://github.com/zendodx/evalkit</url>
+        <connection>https://github.com/zendodx/evalkit-framework.git</connection>
+        <developerConnection>scm:git@github.com:zendodx/evalkit-framework.git</developerConnection>
+        <url>https://github.com/zendodx/evalkit-framework</url>
         <tag>HEAD</tag>
     </scm>
 

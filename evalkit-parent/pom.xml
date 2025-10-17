@@ -13,7 +13,7 @@
 
     <name>evalkit-parent</name>
     <description>eval fox project parent</description>
-    <url>https://github.com/zendodx/evalkit.git</url>
+    <url>https://github.com/zendodx/evalkit-framework.git</url>
 
     <licenses>
         <license>
@@ -34,9 +34,9 @@
     </developers>
 
     <scm>
-        <connection>https://github.com/zendodx/evalkit.git</connection>
-        <developerConnection>scm:git@github.com:zendodx/evalkit.git</developerConnection>
-        <url>https://github.com/zendodx/evalkit</url>
+        <connection>https://github.com/zendodx/evalkit-framework.git</connection>
+        <developerConnection>scm:git@github.com:zendodx/evalkit-framework.git</developerConnection>
+        <url>https://github.com/zendodx/evalkit-framework</url>
         <tag>HEAD</tag>
     </scm>
 
