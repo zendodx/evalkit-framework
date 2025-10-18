@@ -1,4 +1,4 @@
-# <img src="docs/files/eval_fox_logo.png" width="80" height="80"> EvalFox
+# <img src="docs/files/evalkit_logo.png" width="80" height="80"> EvalKit Framework
 
 ##### 📖 English Documentation | 📖 [中文文档](README_zh_CN.md)
 
@@ -26,8 +26,8 @@ Before you begin, please install the following tools:
 ```xml
 <dependency>
     <groupId>io.github.zendodx</groupId>
-    <artifactId>eval-fox-eval</artifactId>
-    <version>0.1.2</version>
+    <artifactId>evalkit-eval</artifactId>
+    <version>0.2.0</version>
 </dependency>
 ```
 
@@ -517,5 +517,5 @@ class DeltaEvalFacadeTest {
 
 ## Open Source License
 
-EvalFox is an open-source project licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+EvalKit Framework is an open-source project licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
 
