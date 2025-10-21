@@ -113,6 +113,10 @@ public abstract class ApiCompletion extends WorkflowNode {
         return afterInvoke(dataItem, result);
     }
 
+    protected List<ApiCompletionResult> batchInvoke(List<DataItem> dataItems) {
+        return BatchRunner.runBatch(dataItems, this::invokeWrapper, PoolName.API_COMPLETION, threadNum, size -> size * SINGLE_TASK_TIMEOUT);
+    }
+
     @Override
     public void doExecute() {
         long start = System.currentTimeMillis();
@@ -121,7 +125,7 @@ public abstract class ApiCompletion extends WorkflowNode {
         if (CollectionUtils.isEmpty(dataItems)) {
             throw new EvalException("Data items is empty");
         }
-        List<ApiCompletionResult> apiCompletionResults = BatchRunner.runBatch(dataItems, this::invokeWrapper, PoolName.API_COMPLETION, threadNum, size -> size * SINGLE_TASK_TIMEOUT);
+        List<ApiCompletionResult> apiCompletionResults = batchInvoke(dataItems);
         if (CollectionUtils.isEmpty(apiCompletionResults)) {
             throw new EvalException("Api completion result is empty");
         }
