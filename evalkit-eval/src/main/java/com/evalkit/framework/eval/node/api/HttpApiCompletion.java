@@ -6,11 +6,11 @@ import com.evalkit.framework.common.client.http.model.HttpApiResponse;
 import com.evalkit.framework.eval.model.ApiCompletionResult;
 import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.model.InputData;
+import com.evalkit.framework.eval.node.api.config.HttpApiCompletionConfig;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * HTTP接口调用器
@@ -19,22 +19,13 @@ import java.util.concurrent.TimeUnit;
 public abstract class HttpApiCompletion extends ApiCompletion {
     /* http调用客户端 */
     protected final HttpApiClient client;
+    /* http接口调用器配置 */
+    protected HttpApiCompletionConfig config;
 
-    public HttpApiCompletion(String host, String api, String method) {
-        this(1, host, api, method);
-    }
-
-    public HttpApiCompletion(int threadNum, String host, String api, String method) {
-        this(threadNum, 120L, TimeUnit.SECONDS, host, api, method);
-    }
-
-    public HttpApiCompletion(long timeout, TimeUnit timeUnit, String host, String api, String method) {
-        this(1, timeout, timeUnit, host, api, method);
-    }
-
-    public HttpApiCompletion(int threadNum, long timeout, TimeUnit timeUnit, String host, String api, String method) {
-        super(threadNum, timeout, timeUnit);
-        this.client = new HttpApiClient(timeout, timeUnit, host, api, method);
+    public HttpApiCompletion(HttpApiCompletionConfig config) {
+        super(config);
+        this.config = config;
+        this.client = new HttpApiClient(config.getTimeout(), config.getTimeUnit(), config.getHost(), config.getApi(), config.getMethod());
     }
 
     public abstract Map<String, Object> prepareBody(InputData inputData);

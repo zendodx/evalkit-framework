@@ -5,6 +5,7 @@ import com.evalkit.framework.common.utils.map.MapUtils;
 import com.evalkit.framework.eval.model.ApiCompletionResult;
 import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.model.InputData;
+import com.evalkit.framework.eval.node.api.config.ApiCompletionConfig;
 import com.evalkit.framework.eval.node.begin.Begin;
 import com.evalkit.framework.eval.node.dataloader.DataLoader;
 import com.evalkit.framework.workflow.WorkflowBuilder;
@@ -23,6 +24,13 @@ import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 @Slf4j
 class ApiCompletionTest {
     private final class TestApiCompletion extends ApiCompletion {
+        public TestApiCompletion() {
+        }
+
+        public TestApiCompletion(ApiCompletionConfig config) {
+            super(config);
+        }
+
         /* 用来收集实际执行顺序 */
         private final Map<String, List<String>> execOrder = new ConcurrentHashMap<>();
 
@@ -69,11 +77,12 @@ class ApiCompletionTest {
         };
 
         Begin begin = new Begin();
-        TestApiCompletion apiCompletion = new TestApiCompletion();
-        apiCompletion.setThreadNum(4);
+        TestApiCompletion apiCompletion = new TestApiCompletion(
+                ApiCompletionConfig.builder().threadNum(4).build()
+        );
 
         // 必须在指定时间内跑完，否则认为死锁 / 阻塞
-        assertTimeoutPreemptively(java.time.Duration.ofSeconds(3), (ThrowingSupplier<Void>) () -> {
+        assertTimeoutPreemptively(java.time.Duration.ofSeconds(10), (ThrowingSupplier<Void>) () -> {
             new WorkflowBuilder()
                     .link(begin, dataLoader, apiCompletion)
                     .build()

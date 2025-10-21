@@ -2,14 +2,13 @@ package com.evalkit.framework.eval.node.api;
 
 import com.evalkit.framework.common.thread.BatchRunner;
 import com.evalkit.framework.common.thread.PoolName;
-import com.evalkit.framework.eval.constants.NodeNamePrefix;
 import com.evalkit.framework.eval.context.WorkflowContextOps;
 import com.evalkit.framework.eval.exception.EvalException;
 import com.evalkit.framework.eval.model.ApiCompletionResult;
 import com.evalkit.framework.eval.model.DataItem;
+import com.evalkit.framework.eval.node.api.config.ApiCompletionConfig;
 import com.evalkit.framework.workflow.model.WorkflowContext;
 import com.evalkit.framework.workflow.model.WorkflowNode;
-import com.evalkit.framework.workflow.utils.WorkflowUtils;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +18,6 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 接口调用器
@@ -28,38 +26,15 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Data
 public abstract class ApiCompletion extends WorkflowNode {
-    /* 单任务超时时间 */
-    protected final static long SINGLE_TASK_TIMEOUT = 60 * 10;
-    /* 最大线程数 */
-    protected final static int MAX_THREAD_NUM = Runtime.getRuntime().availableProcessors() * 2;
-    /* 并发调用线程数 */
-    protected int threadNum;
-    /* 接口超时时间,默认120秒 */
-    protected long timeout;
-    protected TimeUnit timeUnit;
+    /* api调用器配置 */
+    protected ApiCompletionConfig config;
 
     public ApiCompletion() {
-        this(1, 120, TimeUnit.SECONDS);
+        config = ApiCompletionConfig.builder().build();
     }
 
-    public ApiCompletion(long timeout, TimeUnit timeUnit) {
-        this(1, timeout, timeUnit);
-    }
-
-    public ApiCompletion(int threadNum) {
-        this(threadNum, 120, TimeUnit.SECONDS);
-    }
-
-    public ApiCompletion(int threadNum, long timeout, TimeUnit timeUnit) {
-        super(WorkflowUtils.generateNodeId(NodeNamePrefix.API_COMPLETION));
-        this.timeout = Math.max(1, timeout);
-        this.timeUnit = timeUnit;
-        this.threadNum = Math.min(threadNum, MAX_THREAD_NUM);
-    }
-
-    public void setTimeout(long timeout, TimeUnit timeUnit) {
-        this.timeout = timeout;
-        this.timeUnit = timeUnit;
+    public ApiCompletion(ApiCompletionConfig config) {
+        this.config = config;
     }
 
     /**
@@ -114,7 +89,7 @@ public abstract class ApiCompletion extends WorkflowNode {
     }
 
     protected List<ApiCompletionResult> batchInvoke(List<DataItem> dataItems) {
-        return BatchRunner.runBatch(dataItems, this::invokeWrapper, PoolName.API_COMPLETION, threadNum, size -> size * SINGLE_TASK_TIMEOUT);
+        return BatchRunner.runBatch(dataItems, this::invokeWrapper, PoolName.API_COMPLETION, config.getThreadNum(), size -> size * SINGLE_TASK_TIMEOUT);
     }
 
     @Override
