@@ -14,5 +14,5 @@ import java.util.Comparator;
 public class OrderedApiCompletionConfig extends ApiCompletionConfig {
     /* 同组内元素排序 */
     @Builder.Default
-    private Comparator<DataItem> comparator = null;
+    protected Comparator<DataItem> comparator = null;
 }

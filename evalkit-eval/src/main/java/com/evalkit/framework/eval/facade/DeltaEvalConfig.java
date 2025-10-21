@@ -22,9 +22,9 @@ public class DeltaEvalConfig {
     /* 并发处理线程数,默认1 */
     @Builder.Default
     int threadNum = 1;
-    /* 批处理数量,默认10 */
+    /* 批处理数量,默认1 */
     @Builder.Default
-    int batchSize = 5;
+    int batchSize = 1;
     /* 结果上报间隔,默认30秒 */
     @Builder.Default
     int reportInterval = 30;
