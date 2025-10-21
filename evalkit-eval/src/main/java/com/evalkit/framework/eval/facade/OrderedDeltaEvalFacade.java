@@ -1,0 +1,136 @@
+package com.evalkit.framework.eval.facade;
+
+import com.evalkit.framework.common.thread.OrderedBatchRunner;
+import com.evalkit.framework.common.thread.PoolName;
+import com.evalkit.framework.common.thread.ThreadPoolManager;
+import com.evalkit.framework.common.utils.json.JsonUtils;
+import com.evalkit.framework.eval.facade.config.DeltaEvalConfig;
+import com.evalkit.framework.eval.model.InputData;
+import lombok.EqualsAndHashCode;
+import lombok.extern.slf4j.Slf4j;
+
+import javax.jms.Message;
+import javax.jms.TextMessage;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicLong;
+
+/**
+ * 有序的增量式评测
+ * 支持断点重试,增量评测,周期结果上报
+ */
+@EqualsAndHashCode(callSuper = true)
+@Slf4j
+public abstract class OrderedDeltaEvalFacade extends DeltaEvalFacade {
+    public OrderedDeltaEvalFacade(DeltaEvalConfig config) {
+        super(config);
+    }
+
+    /**
+     * 获取顺序key，用于有序批量处理
+     * 同key的数据会被分配到同一线程并按顺序处理
+     *
+     * @param inputData 输入数据
+     * @return 顺序key
+     */
+    public abstract String getOrderKey(InputData inputData);
+
+    public abstract Comparator<Message> getComparator();
+
+    /**
+     * 消费MQ并评测,事务控制,中断后再重启也不会丢失消息
+     * 使用OrderedBatchRunner实现有序批量处理
+     */
+    @Override
+    protected CompletableFuture<Void> eval() {
+        String taskName = config.getTaskName();
+        int threadNum = config.getThreadNum();
+        int mqReceiveTimeout = config.getMqReceiveTimeout();
+        int batchSize = config.getBatchSize();
+        ThreadPoolExecutor pool = ThreadPoolManager.get(PoolName.MQ_CONSUME);
+        AtomicLong consumed = new AtomicLong(0);
+        CountDownLatch latch = new CountDownLatch(1);
+        long total = getRemainDataCount();
+
+        for (int i = 0; i < threadNum; i++) {
+            pool.submit(() -> {
+                do {
+                    activeMQEmbeddedServer.batchReceiveInTx(taskName, batchSize, mqReceiveTimeout, (batch, session) -> {
+                        if (batch.isEmpty()) {
+                            return false;
+                        }
+
+                        // 使用OrderedBatchRunner进行有序批量处理
+                        List<Message> messageList = batch;
+                        log.info("batch size: {}", messageList.size());
+                        List<InputData> processedData = OrderedBatchRunner.runOrderedBatch(
+                                messageList,
+                                message -> {
+                                    try {
+                                        // 幂等检查,已经处理过则跳过
+                                        String messageId = message.getJMSMessageID();
+                                        if (isProcess(messageId)) {
+                                            log.info("Message already processed, messageId: {}", messageId);
+                                            return null;
+                                        }
+
+                                        // 执行评测并落库
+                                        String json = ((TextMessage) message).getText();
+                                        InputData inputData = JsonUtils.fromJson(json, InputData.class);
+                                        evalAndInsert(inputData);
+
+                                        // 去重表落库
+                                        makeProcessed(messageId);
+                                        log.info("Eval data consume and eval success, messageId: {}, input: {}", messageId, inputData);
+
+                                        return inputData;
+                                    } catch (Exception e) {
+                                        log.error("Error processing message", e);
+                                        return null;
+                                    }
+                                },
+                                message -> {
+                                    try {
+                                        String json = ((TextMessage) message).getText();
+                                        InputData inputData = JsonUtils.fromJson(json, InputData.class);
+                                        return getOrderKey(inputData);
+                                    } catch (Exception e) {
+                                        log.error("Error extracting order key", e);
+                                        return "default";
+                                    }
+                                },
+                                getComparator(),
+                                size -> size * 30L // 超时时间计算：每条消息30秒
+                        );
+
+                        // 过滤掉处理失败的数据
+                        long successCount = processedData.stream().filter(Objects::nonNull).count();
+                        consumed.addAndGet(successCount);
+
+                        if (consumed.get() >= total) {
+                            // 消费完毕
+                            latch.countDown();
+                            return false;
+                        }
+                        return true;
+                    });
+                    // 如果消费完毕，则退出循环
+                } while (consumed.get() < total);
+            });
+        }
+
+        // 把等待逻辑包成 CompletableFuture，主线程可以继续干别的
+        return CompletableFuture.runAsync(() -> {
+            try {
+                latch.await();
+                log.info("Eval data consume and eval finished");
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
+    }
+}

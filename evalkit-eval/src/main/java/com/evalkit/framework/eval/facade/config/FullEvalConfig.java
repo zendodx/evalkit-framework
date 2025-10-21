@@ -1,4 +1,4 @@
-package com.evalkit.framework.eval.facade;
+package com.evalkit.framework.eval.facade.config;
 
 import com.evalkit.framework.eval.node.dataloader.DataLoader;
 import com.evalkit.framework.workflow.Workflow;

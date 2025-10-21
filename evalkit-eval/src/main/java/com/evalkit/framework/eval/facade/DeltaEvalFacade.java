@@ -5,6 +5,7 @@ import com.evalkit.framework.common.thread.ThreadPoolManager;
 import com.evalkit.framework.common.utils.file.FileUtils;
 import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.eval.context.WorkflowContextOps;
+import com.evalkit.framework.eval.facade.config.DeltaEvalConfig;
 import com.evalkit.framework.eval.mapper.DataItemMapper;
 import com.evalkit.framework.eval.mapper.MQMessageProcessedMapper;
 import com.evalkit.framework.eval.model.DataItem;
@@ -40,7 +41,7 @@ import java.util.stream.Collectors;
 @Data
 public class DeltaEvalFacade extends EvalFacade {
     /* 缓存文件存储位置 */
-    private final static String CACHE_FILE_PATH = "cache_data/";
+    protected final static String CACHE_FILE_PATH = "cache_data/";
     /* 增量评测配置 */
     protected DeltaEvalConfig config;
     /* 评测结果上报 */
@@ -224,7 +225,7 @@ public class DeltaEvalFacade extends EvalFacade {
     /**
      * 执行评测并将结果落库
      */
-    private void evalAndInsert(InputData inputData) throws SQLException {
+    protected void evalAndInsert(InputData inputData) throws SQLException {
         // 构建DataItem
         List<DataItem> dataItems = new CopyOnWriteArrayList<>();
         DataItem dataItem = new DataItem();
@@ -251,14 +252,14 @@ public class DeltaEvalFacade extends EvalFacade {
     /**
      * 幂等检查,已经处理过消息则跳过
      */
-    private boolean isProcess(String messageId) throws SQLException {
+    protected boolean isProcess(String messageId) throws SQLException {
         return mqMessageProcessedMapper.exists(messageId);
     }
 
     /**
      * 落去重表
      */
-    private void makeProcessed(String messageId) throws SQLException {
+    protected void makeProcessed(String messageId) throws SQLException {
         mqMessageProcessedMapper.insert(messageId);
     }
 
@@ -277,7 +278,7 @@ public class DeltaEvalFacade extends EvalFacade {
     /**
      * 优雅停止上报：等当前批次跑完再停
      */
-    private void stopReporter() {
+    protected void stopReporter() {
         if (reporterFuture != null) {
             reporterFuture.cancel(false);
         }
@@ -294,7 +295,7 @@ public class DeltaEvalFacade extends EvalFacade {
     /**
      * 执行上报
      */
-    private void doReport() {
+    protected void doReport() {
         try {
             List<DataItem> dataItems = dataItemMapper.queryAll();
             if (CollectionUtils.isEmpty(dataItems)) {

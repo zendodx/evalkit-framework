@@ -1,15 +1,16 @@
-package com.evalkit.framework.eval.facade;
+package com.evalkit.framework.eval.facade.config;
 
 import com.evalkit.framework.eval.node.dataloader.DataLoader;
 import com.evalkit.framework.workflow.Workflow;
 import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.SuperBuilder;
 
 /**
  * 增量评测配置
  */
 @Data
-@Builder
+@SuperBuilder
 public class DeltaEvalConfig {
     /* 任务名称,必填 */
     private String taskName;

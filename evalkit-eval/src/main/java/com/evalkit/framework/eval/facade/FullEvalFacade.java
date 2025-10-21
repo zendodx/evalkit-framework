@@ -1,6 +1,7 @@
 package com.evalkit.framework.eval.facade;
 
 import com.evalkit.framework.eval.context.WorkflowContextOps;
+import com.evalkit.framework.eval.facade.config.FullEvalConfig;
 import com.evalkit.framework.eval.model.ApiCompletionResult;
 import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.model.EvalResult;

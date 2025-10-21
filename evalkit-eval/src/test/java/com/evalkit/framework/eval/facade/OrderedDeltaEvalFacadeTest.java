@@ -1,6 +1,7 @@
 package com.evalkit.framework.eval.facade;
 
 import com.evalkit.framework.common.utils.file.FileUtils;
+import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.common.utils.list.ListUtils;
 import com.evalkit.framework.common.utils.map.MapUtils;
 import com.evalkit.framework.common.utils.time.DateUtils;
@@ -25,21 +26,46 @@ import com.evalkit.framework.workflow.WorkflowBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
+import javax.jms.Message;
+import javax.jms.TextMessage;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
-class DeltaEvalFacadeTest {
-
+class OrderedDeltaEvalFacadeTest {
     /**
      * 自定义增量评测
      */
-    static class CustomDeltaEval extends DeltaEvalFacade {
-
+    static class CustomDeltaEval extends OrderedDeltaEvalFacade {
         public CustomDeltaEval(DeltaEvalConfig config) {
             super(config);
+        }
+
+        @Override
+        public String getOrderKey(InputData inputData) {
+            Integer caseId = inputData.get("caseId");
+            return caseId.toString();
+        }
+
+        @Override
+        public Comparator<Message> getComparator() {
+            return (o1, o2) -> {
+                try {
+                    String j1 = ((TextMessage) o1).getText();
+                    InputData i1 = JsonUtils.fromJson(j1, InputData.class);
+                    String j2 = ((TextMessage) o2).getText();
+                    InputData i2 = JsonUtils.fromJson(j2, InputData.class);
+                    int r1 = i1.get("round");
+                    int r2 = i2.get("round");
+                    return r1 - r2;
+                } catch (Exception e) {
+
+                }
+                return 0;
+            };
         }
 
         @Override
@@ -63,8 +89,8 @@ class DeltaEvalFacadeTest {
             @Override
             public List<InputData> prepareDataList() {
                 return ListUtils.of(
-                        new InputData(MapUtils.of("query", "1")),
-                        new InputData(MapUtils.of("query", "2"))
+                        new InputData(MapUtils.of("caseId", 1, "query", "1", "round", 1)),
+                        new InputData(MapUtils.of("caseId", 1, "query", "2", "round", 2))
                 );
             }
         };
@@ -72,13 +98,16 @@ class DeltaEvalFacadeTest {
             @Override
             public List<InputData> prepareDataList() {
                 List<InputData> inputDataList = new ArrayList<>();
-                for (int i = 0; i < 100; i++) {
-                    inputDataList.add(new InputData(MapUtils.of("query", "" + i)));
+                for (int i = 0; i < 5; i++) {
+                    inputDataList.add(new InputData(MapUtils.of("caseId", 2, "query", "" + i, "round", i + 1)));
+                }
+                for (int i = 0; i < 3; i++) {
+                    inputDataList.add(new InputData(MapUtils.of("caseId", 3, "query", "" + i, "round", i + 1)));
                 }
                 return inputDataList;
             }
         };
-        MultiDataLoader multiDataLoader = new MultiDataLoader(ListUtils.of(dataLoader1, dataLoader2), 10, 100);
+        MultiDataLoader multiDataLoader = new MultiDataLoader(ListUtils.of(dataLoader1, dataLoader2));
 
         // 评测工作流
         Begin begin = new Begin(
@@ -133,7 +162,7 @@ class DeltaEvalFacadeTest {
         };
 
         // 评测结果上报
-        String fileName = "delta_eval_test_" + DateUtils.nowToString();
+        String fileName = "ordered_delta_eval_test_" + DateUtils.nowToString();
         BasicCounter basicCounter = new BasicCounter();
         HtmlReporter htmlReporter = new HtmlReporter(fileName);
         JsonReporter jsonReporter = new JsonReporter(fileName);
@@ -148,12 +177,11 @@ class DeltaEvalFacadeTest {
 
         CustomDeltaEval cfe = new CustomDeltaEval(
                 DeltaEvalConfig.builder()
-                        .taskName("DeltaEvalTest")
+                        .taskName("OrderedDeltaEvalTest")
                         .dataLoader(multiDataLoader)
                         .evalWorkflow(evalWorkflow)
                         .reportWorkflow(reportWorkflow)
                         .batchSize(10)
-                        .threadNum(10)
                         .build()
         );
         cfe.run();

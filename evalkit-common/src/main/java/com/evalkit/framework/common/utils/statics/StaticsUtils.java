@@ -4,6 +4,7 @@ import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * 数学统计工具类
@@ -75,5 +76,12 @@ public class StaticsUtils {
             return 0.0;
         }
         return sum(list) / list.size();
+    }
+
+    /**
+     * 获取指定范围内的整数随机数
+     */
+    public static int random(int min, int max) {
+        return ThreadLocalRandom.current().nextInt(min, max);
     }
 }
