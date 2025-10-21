@@ -3,14 +3,12 @@ package com.evalkit.framework.common.thread;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.IntToLongFunction;
+import java.util.stream.Collectors;
 
 /**
  * 有序批量执行器
@@ -21,12 +19,24 @@ public class OrderedBatchRunner {
     }
 
     /**
-     * 有序批量执行
+     * 有序批量执行, 同组内先来先执行
+     */
+    public static <T, R> List<R> runOrderedBatch(List<T> data,
+                                                 Function<T, R> task,
+                                                 Function<T, String> keyExtractor,
+                                                 IntToLongFunction timeoutComputer) {
+        // comparator为null,同组内先来先执行
+        return runOrderedBatch(data, task, keyExtractor, null, timeoutComputer);
+    }
+
+    /**
+     * 有序批量执行, 同组内元素排序后执行
      *
      * @param data            待处理数据
      * @param task            任务执行器
      * @param keyExtractor    key 提取器
      * @param timeoutComputer 超时时间计算器
+     * @param comparator      同组内排序器
      * @param <T>             输入类型
      * @param <R>             输出类型
      * @return 执行结果
@@ -34,6 +44,7 @@ public class OrderedBatchRunner {
     public static <T, R> List<R> runOrderedBatch(List<T> data,
                                                  Function<T, R> task,
                                                  Function<T, String> keyExtractor,
+                                                 Comparator<T> comparator,
                                                  IntToLongFunction timeoutComputer) {
         if (CollectionUtils.isEmpty(data)) {
             return Collections.emptyList();
@@ -66,9 +77,27 @@ public class OrderedBatchRunner {
                         .build();
 
         // 提交任务
-        for (int i = 0; i < size; i++) {
-            T item = data.get(i);
-            dispatcher.submit(new OrderTask<>(item, keyExtractor.apply(item), i));
+        if (comparator != null) {
+            // 同组内自定义排序
+            Map<String, List<T>> grouped = data.stream()
+                    .collect(Collectors.groupingByConcurrent(keyExtractor))
+                    .entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey,
+                            e -> e.getValue().stream()
+                                    .sorted(comparator)
+                                    .collect(Collectors.toList())));
+            int index = 0;
+            for (List<T> group : grouped.values()) {
+                for (T item : group) {
+                    dispatcher.submit(new OrderTask<>(item, keyExtractor.apply(item), index++));
+                }
+            }
+        } else {
+            // 同组内先来的先处理
+            for (int i = 0; i < size; i++) {
+                T item = data.get(i);
+                dispatcher.submit(new OrderTask<>(item, keyExtractor.apply(item), i));
+            }
         }
 
         // 等待完成

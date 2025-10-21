@@ -3,28 +3,27 @@ package com.evalkit.framework.eval.node.api;
 import com.evalkit.framework.common.thread.OrderedBatchRunner;
 import com.evalkit.framework.eval.model.ApiCompletionResult;
 import com.evalkit.framework.eval.model.DataItem;
+import com.evalkit.framework.eval.node.api.config.OrderedApiCompletionConfig;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 有序API调用,适用于同组数据按顺序执行,例如:相同CaseId的Query要用同一线程处理,并且需要保证执行顺序
  */
+@EqualsAndHashCode(callSuper = true)
+@Data
 public abstract class OrderedApiCompletion extends ApiCompletion {
+    protected OrderedApiCompletionConfig config;
 
     public OrderedApiCompletion() {
+        super();
     }
 
-    public OrderedApiCompletion(long timeout, TimeUnit timeUnit) {
-        super(timeout, timeUnit);
-    }
-
-    public OrderedApiCompletion(int threadNum) {
-        super(threadNum);
-    }
-
-    public OrderedApiCompletion(int threadNum, long timeout, TimeUnit timeUnit) {
-        super(threadNum, timeout, timeUnit);
+    public OrderedApiCompletion(OrderedApiCompletionConfig config) {
+        super(config);
+        this.config = config;
     }
 
     /**
@@ -43,6 +42,6 @@ public abstract class OrderedApiCompletion extends ApiCompletion {
      */
     @Override
     protected List<ApiCompletionResult> batchInvoke(List<DataItem> dataItems) {
-        return OrderedBatchRunner.runOrderedBatch(dataItems, this::invokeWrapper, this::getOrderKey, size -> size * SINGLE_TASK_TIMEOUT);
+        return OrderedBatchRunner.runOrderedBatch(dataItems, this::invokeWrapper, this::getOrderKey, config.getComparator(), size -> size * SINGLE_TASK_TIMEOUT);
     }
 }
