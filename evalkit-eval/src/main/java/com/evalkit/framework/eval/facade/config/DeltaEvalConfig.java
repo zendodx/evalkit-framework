@@ -11,19 +11,22 @@ import java.util.Map;
  */
 public class DeltaEvalConfig extends EvalConfig {
     /* 数据加载器 */
-    private DataLoader dataLoader;
+    protected DataLoader dataLoader;
     /* 评测工作流,必填 */
-    private Workflow evalWorkflow;
+    protected Workflow evalWorkflow;
     /* 评测结果上报工作流,必填 */
-    private Workflow reportWorkflow;
+    protected Workflow reportWorkflow;
     /* 批处理数量,默认1 */
-    int batchSize;
+    protected int batchSize;
     /* 结果上报间隔,默认30秒 */
-    int reportInterval;
+    protected int reportInterval;
     /* MQ消息接收超时时间,默认10000毫秒 */
-    int mqReceiveTimeout;
+    protected int mqReceiveTimeout;
     /* 是否开启断点续评, 默认true */
-    boolean enableResume;
+    protected boolean enableResume;
+    /* 单消息处理最大时间,60秒 */
+    protected long messageProcessMaxTime;
+
 
     protected DeltaEvalConfig() {
     }
@@ -41,7 +44,8 @@ public class DeltaEvalConfig extends EvalConfig {
                               int batchSize,
                               int reportInterval,
                               int mqReceiveTimeout,
-                              boolean enableResume) {
+                              boolean enableResume,
+                              long messageProcessMaxTime) {
         super(taskName, filePath, offset, limit, threadNum, passScore, extra);
         this.dataLoader = dataLoader;
         this.evalWorkflow = evalWorkflow;
@@ -50,6 +54,7 @@ public class DeltaEvalConfig extends EvalConfig {
         this.reportInterval = reportInterval;
         this.mqReceiveTimeout = mqReceiveTimeout;
         this.enableResume = enableResume;
+        this.messageProcessMaxTime = messageProcessMaxTime;
     }
 
     public static DeltaEvalConfigBuilder<?> builder() {
@@ -75,6 +80,10 @@ public class DeltaEvalConfig extends EvalConfig {
         if (enableResume != null) {
             this.enableResume = enableResume;
         }
+        Long messageProcessMaxTime = RuntimeEnvUtils.getJVMPropertyLong("messageProcessMaxTime", null);
+        if (messageProcessMaxTime != null && messageProcessMaxTime > 0) {
+            this.messageProcessMaxTime = messageProcessMaxTime;
+        }
     }
 
     @Override
@@ -89,6 +98,9 @@ public class DeltaEvalConfig extends EvalConfig {
         if (mqReceiveTimeout <= 0) {
             throw new IllegalArgumentException("mqReceiveTimeout must be greater than 0");
         }
+        if (messageProcessMaxTime <= 0) {
+            throw new IllegalArgumentException("messageProcessMaxTime must be greater than 0");
+        }
     }
 
     public static class DeltaEvalConfigBuilder<B extends DeltaEvalConfigBuilder<B>> extends EvalConfigBuilder<B> {
@@ -100,6 +112,7 @@ public class DeltaEvalConfig extends EvalConfig {
         protected int reportInterval = 30;
         protected int mqReceiveTimeout = 10000;
         protected boolean enableResume = true;
+        protected long messageProcessMaxTime = 60;
 
         public B dataLoader(DataLoader dataLoader) {
             this.dataLoader = dataLoader;
@@ -136,11 +149,17 @@ public class DeltaEvalConfig extends EvalConfig {
             return (B) this;
         }
 
+        public B messageProcessMaxTime(long messageProcessMaxTime) {
+            this.messageProcessMaxTime = messageProcessMaxTime;
+            return (B) this;
+        }
+
         @Override
         public DeltaEvalConfig build() {
             DeltaEvalConfig deltaEvalConfig = new DeltaEvalConfig(
                     taskName, filePath, offset, limit, threadNum, passScore, extra,
-                    dataLoader, evalWorkflow, reportWorkflow, batchSize, reportInterval, mqReceiveTimeout, enableResume);
+                    dataLoader, evalWorkflow, reportWorkflow, batchSize, reportInterval,
+                    mqReceiveTimeout, enableResume, messageProcessMaxTime);
             deltaEvalConfig.updateConfigFromEnv();
             deltaEvalConfig.checkParams();
             return deltaEvalConfig;
@@ -201,5 +220,13 @@ public class DeltaEvalConfig extends EvalConfig {
 
     public void setEnableResume(boolean enableResume) {
         this.enableResume = enableResume;
+    }
+
+    public long getMessageProcessMaxTime() {
+        return messageProcessMaxTime;
+    }
+
+    public void setMessageProcessMaxTime(long messageProcessMaxTime) {
+        this.messageProcessMaxTime = messageProcessMaxTime;
     }
 }

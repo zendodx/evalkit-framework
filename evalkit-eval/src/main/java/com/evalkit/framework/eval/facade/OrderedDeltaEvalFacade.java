@@ -6,7 +6,6 @@ import com.evalkit.framework.common.thread.ThreadPoolManager;
 import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.eval.facade.config.DeltaEvalConfig;
 import com.evalkit.framework.eval.model.InputData;
-import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.jms.JMSException;
@@ -24,7 +23,6 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * 有序的增量式评测,支持断点重试,增量评测,周期结果上报,支持同组数据自定义顺序执行
  */
-@EqualsAndHashCode(callSuper = true)
 @Slf4j
 public abstract class OrderedDeltaEvalFacade extends DeltaEvalFacade {
     public OrderedDeltaEvalFacade(DeltaEvalConfig config) {
@@ -82,6 +80,7 @@ public abstract class OrderedDeltaEvalFacade extends DeltaEvalFacade {
         int threadNum = config.getThreadNum();
         int mqReceiveTimeout = config.getMqReceiveTimeout();
         int batchSize = config.getBatchSize();
+        long messageProcessMaxTime = config.getMessageProcessMaxTime();
         ThreadPoolExecutor pool = ThreadPoolManager.get(PoolName.MQ_CONSUME);
         AtomicLong consumed = new AtomicLong(0);
         CountDownLatch latch = new CountDownLatch(1);
@@ -93,7 +92,7 @@ public abstract class OrderedDeltaEvalFacade extends DeltaEvalFacade {
             log.info("No data to eval, remain count:{}", remainCount);
             latch.countDown();
         }
-        if (latch.getCount() != 0) {
+        if (latch.getCount() == 1) {
             // 单线程拉取消息
             pool.submit(() -> {
                 do {
@@ -127,14 +126,14 @@ public abstract class OrderedDeltaEvalFacade extends DeltaEvalFacade {
                                 message -> prepareOrderKey(parseMessage(message)),
                                 prepareMessageComparator(),
                                 threadNum,
-                                size -> size * 30L // 超时时间计算：每条消息30秒
+                                // 超时时间计算：每条消息30秒
+                                size -> size * messageProcessMaxTime
                         );
                         // 过滤掉处理失败的数据
                         long successCount = processedData.stream().filter(Objects::nonNull).count();
                         consumed.addAndGet(successCount);
-
+                        // 消费完毕
                         if (consumed.get() >= remainCount) {
-                            // 消费完毕
                             latch.countDown();
                             return false;
                         }
