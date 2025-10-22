@@ -24,9 +24,10 @@ public class OrderedBatchRunner {
     public static <T, R> List<R> runOrderedBatch(List<T> data,
                                                  Function<T, R> task,
                                                  Function<T, String> keyExtractor,
+                                                 int threadNum,
                                                  IntToLongFunction timeoutComputer) {
         // comparator为null,同组内先来先执行
-        return runOrderedBatch(data, task, keyExtractor, null, timeoutComputer);
+        return runOrderedBatch(data, task, keyExtractor, null, threadNum, timeoutComputer);
     }
 
     /**
@@ -37,6 +38,7 @@ public class OrderedBatchRunner {
      * @param keyExtractor    key 提取器
      * @param timeoutComputer 超时时间计算器
      * @param comparator      同组内排序器
+     * @param threadNum       线程数
      * @param <T>             输入类型
      * @param <R>             输出类型
      * @return 执行结果
@@ -45,12 +47,13 @@ public class OrderedBatchRunner {
                                                  Function<T, R> task,
                                                  Function<T, String> keyExtractor,
                                                  Comparator<T> comparator,
+                                                 int threadNum,
                                                  IntToLongFunction timeoutComputer) {
         if (CollectionUtils.isEmpty(data)) {
             return Collections.emptyList();
         }
 
-        int loopCount = Runtime.getRuntime().availableProcessors();
+        int loopCount = threadNum;
         long timeoutSeconds = timeoutComputer.applyAsLong(data.size());
 
         // 准备收集器：保证输出顺序与输入一致

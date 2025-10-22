@@ -45,13 +45,13 @@ class OrderedDeltaEvalFacadeTest {
         }
 
         @Override
-        public String getOrderKey(InputData inputData) {
+        public String prepareOrderKey(InputData inputData) {
             Integer caseId = inputData.get("caseId");
             return caseId.toString();
         }
 
         @Override
-        public Comparator<Message> getComparator() {
+        public Comparator<Message> prepareComparator() {
             return (o1, o2) -> {
                 try {
                     String j1 = ((TextMessage) o1).getText();
@@ -98,10 +98,13 @@ class OrderedDeltaEvalFacadeTest {
             @Override
             public List<InputData> prepareDataList() {
                 List<InputData> inputDataList = new ArrayList<>();
-                for (int i = 0; i < 5; i++) {
+                for (int i = 0; i < 20; i++) {
+                    inputDataList.add(new InputData(MapUtils.of("caseId", 4, "query", "" + i, "round", i + 1)));
+                }
+                for (int i = 0; i < 10; i++) {
                     inputDataList.add(new InputData(MapUtils.of("caseId", 2, "query", "" + i, "round", i + 1)));
                 }
-                for (int i = 0; i < 3; i++) {
+                for (int i = 0; i < 20; i++) {
                     inputDataList.add(new InputData(MapUtils.of("caseId", 3, "query", "" + i, "round", i + 1)));
                 }
                 return inputDataList;
@@ -182,6 +185,7 @@ class OrderedDeltaEvalFacadeTest {
                         .evalWorkflow(evalWorkflow)
                         .reportWorkflow(reportWorkflow)
                         .batchSize(10)
+                        .threadNum(10)
                         .build()
         );
         cfe.run();

@@ -42,6 +42,6 @@ public abstract class OrderedApiCompletion extends ApiCompletion {
      */
     @Override
     protected List<ApiCompletionResult> batchInvoke(List<DataItem> dataItems) {
-        return OrderedBatchRunner.runOrderedBatch(dataItems, this::invokeWrapper, this::getOrderKey, config.getComparator(), size -> size * SINGLE_TASK_TIMEOUT);
+        return OrderedBatchRunner.runOrderedBatch(dataItems, this::invokeWrapper, this::getOrderKey, config.getComparator(), config.getThreadNum(), size -> size * SINGLE_TASK_TIMEOUT);
     }
 }
