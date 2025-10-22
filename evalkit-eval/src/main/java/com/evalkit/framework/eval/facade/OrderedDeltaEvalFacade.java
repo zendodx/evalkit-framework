@@ -58,8 +58,12 @@ public abstract class OrderedDeltaEvalFacade extends DeltaEvalFacade {
         ThreadPoolExecutor pool = ThreadPoolManager.get(PoolName.MQ_CONSUME);
         AtomicLong consumed = new AtomicLong(0);
         CountDownLatch latch = new CountDownLatch(1);
-        long total = getRemainDataCount();
-
+        // 没有进行消息确认,每次拉取的都是所有消息数量
+        long remainCount = getRemainDataCount();
+        if (remainCount <= 0) {
+            log.info("No data to eval, remain count:{}", remainCount);
+            latch.countDown();
+        }
         // 单线程拉取消息
         pool.submit(() -> {
             do {
@@ -69,7 +73,6 @@ public abstract class OrderedDeltaEvalFacade extends DeltaEvalFacade {
                     }
                     // 使用OrderedBatchRunner进行有序批量处理
                     List<Message> messageList = batch;
-                    log.info("batch size: {}", messageList.size());
                     List<InputData> processedData = OrderedBatchRunner.runOrderedBatch(
                             messageList,
                             message -> {
@@ -112,7 +115,7 @@ public abstract class OrderedDeltaEvalFacade extends DeltaEvalFacade {
                     long successCount = processedData.stream().filter(Objects::nonNull).count();
                     consumed.addAndGet(successCount);
 
-                    if (consumed.get() >= total) {
+                    if (consumed.get() >= remainCount) {
                         // 消费完毕
                         latch.countDown();
                         return false;
@@ -120,9 +123,8 @@ public abstract class OrderedDeltaEvalFacade extends DeltaEvalFacade {
                     return true;
                 });
                 // 如果消费完毕，则退出循环
-            } while (consumed.get() < total);
+            } while (consumed.get() < remainCount);
         });
-
         // 把等待逻辑包成 CompletableFuture，主线程可以继续干别的
         return CompletableFuture.runAsync(() -> {
             try {

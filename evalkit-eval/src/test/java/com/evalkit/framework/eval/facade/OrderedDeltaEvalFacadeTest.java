@@ -4,6 +4,7 @@ import com.evalkit.framework.common.utils.file.FileUtils;
 import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.common.utils.list.ListUtils;
 import com.evalkit.framework.common.utils.map.MapUtils;
+import com.evalkit.framework.common.utils.statics.StaticsUtils;
 import com.evalkit.framework.common.utils.time.DateUtils;
 import com.evalkit.framework.eval.facade.config.DeltaEvalConfig;
 import com.evalkit.framework.eval.model.ApiCompletionResult;
@@ -124,6 +125,11 @@ class OrderedDeltaEvalFacadeTest {
             protected ApiCompletionResult invoke(DataItem dataItem) {
                 ApiCompletionResult result = new ApiCompletionResult();
                 result.setResultItem(MapUtils.of("response", "Resp of " + dataItem.getInputData().get("query")));
+//                try {
+//                    Thread.sleep(StaticsUtils.random(1000, 3000));
+//                } catch (InterruptedException ignored) {
+//                    log.info("===>Interrupted");
+//                }
                 return result;
             }
         };
@@ -186,6 +192,7 @@ class OrderedDeltaEvalFacadeTest {
                         .reportWorkflow(reportWorkflow)
                         .batchSize(10)
                         .threadNum(10)
+                        .reportInterval(10)
                         .build()
         );
         cfe.run();
