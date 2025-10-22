@@ -1,7 +1,6 @@
 package com.evalkit.framework.eval.facade;
 
 import com.evalkit.framework.common.utils.file.FileUtils;
-import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.common.utils.list.ListUtils;
 import com.evalkit.framework.common.utils.map.MapUtils;
 import com.evalkit.framework.common.utils.time.DateUtils;
@@ -27,8 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.ThrowingSupplier;
 
-import javax.jms.Message;
-import javax.jms.TextMessage;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -54,17 +51,13 @@ class OrderedDeltaEvalFacadeTest {
         }
 
         @Override
-        public Comparator<Message> prepareComparator() {
+        public Comparator<InputData> prepareComparator() {
             return (o1, o2) -> {
                 try {
-                    String j1 = ((TextMessage) o1).getText();
-                    InputData i1 = JsonUtils.fromJson(j1, InputData.class);
-                    String j2 = ((TextMessage) o2).getText();
-                    InputData i2 = JsonUtils.fromJson(j2, InputData.class);
-                    int r1 = i1.get("round");
-                    int r2 = i2.get("round");
+                    int r1 = o1.get("round");
+                    int r2 = o2.get("round");
                     return r1 - r2;
-                } catch (Exception e) {
+                } catch (Exception ignored) {
 
                 }
                 return 0;
@@ -194,6 +187,7 @@ class OrderedDeltaEvalFacadeTest {
                         .reportWorkflow(reportWorkflow)
                         .batchSize(10)
                         .threadNum(10)
+                        .enableResume(false)
                         .build()
         );
 

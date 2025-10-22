@@ -9,8 +9,10 @@ import com.evalkit.framework.eval.model.InputData;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.TextMessage;
+import java.sql.SQLException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -43,7 +45,32 @@ public abstract class OrderedDeltaEvalFacade extends DeltaEvalFacade {
      *
      * @return 比较器
      */
-    public abstract Comparator<Message> prepareComparator();
+    public abstract Comparator<InputData> prepareComparator();
+
+    /**
+     * 比较器兼容处理
+     */
+    protected Comparator<Message> prepareMessageComparator() {
+        return (o1, o2) -> {
+            Comparator<InputData> inputDataComparator = prepareComparator();
+            if (inputDataComparator == null) {
+                return 0;
+            }
+            InputData i1 = parseMessage(o1);
+            InputData i2 = parseMessage(o2);
+            return inputDataComparator.compare(i1, i2);
+        };
+    }
+
+    protected InputData parseMessage(Message message) {
+        String json = null;
+        try {
+            json = ((TextMessage) message).getText();
+            return JsonUtils.fromJson(json, InputData.class);
+        } catch (JMSException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     /**
      * 消费MQ并评测,事务控制,中断后再重启也不会丢失消息
@@ -75,9 +102,8 @@ public abstract class OrderedDeltaEvalFacade extends DeltaEvalFacade {
                             return false;
                         }
                         // 使用OrderedBatchRunner进行有序批量处理
-                        List<Message> messageList = batch;
                         List<InputData> processedData = OrderedBatchRunner.runOrderedBatch(
-                                messageList,
+                                batch,
                                 message -> {
                                     try {
                                         // 幂等检查,已经处理过则跳过
@@ -87,33 +113,22 @@ public abstract class OrderedDeltaEvalFacade extends DeltaEvalFacade {
                                             return null;
                                         }
                                         // 执行评测并落库
-                                        String json = ((TextMessage) message).getText();
-                                        InputData inputData = JsonUtils.fromJson(json, InputData.class);
+                                        InputData inputData = parseMessage(message);
                                         evalAndInsert(inputData);
                                         // 去重表落库
                                         makeProcessed(messageId);
                                         log.info("Eval data consume and eval success, messageId: {}, input: {}", messageId, inputData);
                                         return inputData;
-                                    } catch (Exception e) {
+                                    } catch (SQLException | JMSException e) {
                                         log.error("Error processing message", e);
                                         return null;
                                     }
                                 },
-                                message -> {
-                                    try {
-                                        String json = ((TextMessage) message).getText();
-                                        InputData inputData = JsonUtils.fromJson(json, InputData.class);
-                                        return prepareOrderKey(inputData);
-                                    } catch (Exception e) {
-                                        log.error("Error extracting order key", e);
-                                        return "default";
-                                    }
-                                },
-                                prepareComparator(),
+                                message -> prepareOrderKey(parseMessage(message)),
+                                prepareMessageComparator(),
                                 threadNum,
                                 size -> size * 30L // 超时时间计算：每条消息30秒
                         );
-
                         // 过滤掉处理失败的数据
                         long successCount = processedData.stream().filter(Objects::nonNull).count();
                         consumed.addAndGet(successCount);
