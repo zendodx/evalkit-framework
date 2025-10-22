@@ -6,7 +6,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.evalkit.framework.common.utils.statics.StaticsUtils.*;
+import static com.evalkit.framework.common.utils.math.MathUtils.*;
 
 /**
  * 基础统计器

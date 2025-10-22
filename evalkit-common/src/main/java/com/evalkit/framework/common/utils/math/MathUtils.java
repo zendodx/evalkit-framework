@@ -1,4 +1,4 @@
-package com.evalkit.framework.common.utils.statics;
+package com.evalkit.framework.common.utils.math;
 
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -9,9 +9,9 @@ import java.util.concurrent.ThreadLocalRandom;
 /**
  * 数学统计工具类
  */
-public class StaticsUtils {
+public class MathUtils {
 
-    private StaticsUtils() {
+    private MathUtils() {
     }
 
     /**
