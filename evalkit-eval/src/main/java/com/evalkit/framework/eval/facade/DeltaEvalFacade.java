@@ -4,11 +4,14 @@ import com.evalkit.framework.common.thread.PoolName;
 import com.evalkit.framework.common.thread.ThreadPoolManager;
 import com.evalkit.framework.common.utils.file.FileUtils;
 import com.evalkit.framework.common.utils.json.JsonUtils;
+import com.evalkit.framework.eval.constants.EvalTaskStatus;
 import com.evalkit.framework.eval.context.WorkflowContextOps;
 import com.evalkit.framework.eval.facade.config.DeltaEvalConfig;
 import com.evalkit.framework.eval.mapper.DataItemMapper;
+import com.evalkit.framework.eval.mapper.EvalTaskMapper;
 import com.evalkit.framework.eval.mapper.MQMessageProcessedMapper;
 import com.evalkit.framework.eval.model.DataItem;
+import com.evalkit.framework.eval.model.EvalTask;
 import com.evalkit.framework.eval.model.InputData;
 import com.evalkit.framework.eval.node.dataloader.DataLoader;
 import com.evalkit.framework.eval.node.scorer.strategy.SumScoreStrategy;
@@ -26,6 +29,7 @@ import org.apache.commons.lang3.StringUtils;
 import javax.jms.Message;
 import javax.jms.TextMessage;
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.*;
@@ -53,6 +57,7 @@ public class DeltaEvalFacade extends EvalFacade {
     protected final SQLiteEmbeddedServer sqLiteEmbeddedServer = SQLiteEmbeddedServer.getInstance();
     protected DataItemMapper dataItemMapper;
     protected MQMessageProcessedMapper mqMessageProcessedMapper;
+    protected EvalTaskMapper evalTaskMapper;
 
     public DeltaEvalFacade(DeltaEvalConfig config) {
         validConfig(config);
@@ -99,6 +104,7 @@ public class DeltaEvalFacade extends EvalFacade {
             // 初始化Mapper
             dataItemMapper = new DataItemMapper(sqLiteEmbeddedServer);
             mqMessageProcessedMapper = new MQMessageProcessedMapper(sqLiteEmbeddedServer);
+            evalTaskMapper = new EvalTaskMapper(sqLiteEmbeddedServer);
             log.info("Initialize workflow success, middleware file save path: {}", parentPath + taskName);
         } catch (Exception e) {
             throw new WorkflowException("Initialize workflow error: " + e.getMessage(), e);
@@ -110,7 +116,10 @@ public class DeltaEvalFacade extends EvalFacade {
      */
     @Override
     protected void execute() {
+        String taskName = config.getTaskName();
         try {
+            // 初始化评测任务
+            initEvalTask();
             // 加载评测数据
             loadDataWrapper();
             CompletableFuture<Void> consumeFuture = eval();
@@ -118,7 +127,12 @@ public class DeltaEvalFacade extends EvalFacade {
             report();
             // 等待消费完成
             consumeFuture.get();
+            evalTaskMapper.updateStatus(taskName, EvalTaskStatus.FINISH);
         } catch (Exception e) {
+            try {
+                evalTaskMapper.updateStatus(taskName, EvalTaskStatus.FAILED);
+            } catch (Exception ignored) {
+            }
             throw new WorkflowException("Workflow execution error: " + e.getMessage(), e);
         } finally {
             // 停止上报调度
@@ -133,6 +147,32 @@ public class DeltaEvalFacade extends EvalFacade {
             } catch (Exception ignored) {
 
             }
+        }
+    }
+
+    /**
+     * 初始化评测任务
+     */
+    protected void initEvalTask() {
+        String taskName = config.getTaskName();
+        try {
+            boolean evalTaskExists = evalTaskMapper.isEvalTaskExists(taskName);
+            if (evalTaskExists) {
+                return;
+            }
+            Date now = new Date();
+            EvalTask evalTask = EvalTask.builder()
+                    .taskName(taskName)
+                    .allCount(0)
+                    .status(EvalTaskStatus.INIT)
+                    .createTime(now)
+                    .updateTime(now)
+                    .build();
+            evalTaskMapper.createEvalTask(evalTask);
+            log.info("Init eval task success, taskName: {}", taskName);
+        } catch (SQLException e) {
+            log.error("Init eval task error: {}", e.getMessage(), e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -160,6 +200,12 @@ public class DeltaEvalFacade extends EvalFacade {
                     .map(JsonUtils::toJson)
                     .collect(Collectors.toList());
             activeMQEmbeddedServer.batchSendTextMessageToQueue(taskName, messages);
+        }
+        try {
+            evalTaskMapper.updateAllCount(taskName, activeMQEmbeddedServer.getQueueMessageCount(taskName));
+            evalTaskMapper.updateStatus(taskName, EvalTaskStatus.PROCESSING);
+        } catch (SQLException e) {
+            log.error("Update all count error: {}", e.getMessage(), e);
         }
         log.info("Load data to MQ success, queue size: {}", activeMQEmbeddedServer.getQueueMessageCount(taskName));
     }
@@ -331,6 +377,17 @@ public class DeltaEvalFacade extends EvalFacade {
     public long getProcessedDataCount() {
         try {
             return dataItemMapper.count();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * 获取总数据量
+     */
+    public long getTotalCount() {
+        try {
+            return evalTaskMapper.queryTotalCount(config.getTaskName());
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

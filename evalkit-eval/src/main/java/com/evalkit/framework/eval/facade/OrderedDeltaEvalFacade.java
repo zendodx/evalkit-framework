@@ -60,71 +60,75 @@ public abstract class OrderedDeltaEvalFacade extends DeltaEvalFacade {
         CountDownLatch latch = new CountDownLatch(1);
         // 没有进行消息确认,每次拉取的都是所有消息数量
         long remainCount = getRemainDataCount();
-        if (remainCount <= 0) {
+        long processedCount = getProcessedDataCount();
+        long totalCount = getTotalCount();
+        if (remainCount <= 0 || processedCount == totalCount) {
             log.info("No data to eval, remain count:{}", remainCount);
             latch.countDown();
         }
-        // 单线程拉取消息
-        pool.submit(() -> {
-            do {
-                activeMQEmbeddedServer.batchReceiveInTx(taskName, batchSize, mqReceiveTimeout, (batch, session) -> {
-                    if (batch.isEmpty()) {
-                        return false;
-                    }
-                    // 使用OrderedBatchRunner进行有序批量处理
-                    List<Message> messageList = batch;
-                    List<InputData> processedData = OrderedBatchRunner.runOrderedBatch(
-                            messageList,
-                            message -> {
-                                try {
-                                    // 幂等检查,已经处理过则跳过
-                                    String messageId = message.getJMSMessageID();
-                                    if (isProcess(messageId)) {
-                                        log.info("Message already processed, messageId: {}", messageId);
+        if (latch.getCount() != 0) {
+            // 单线程拉取消息
+            pool.submit(() -> {
+                do {
+                    activeMQEmbeddedServer.batchReceiveInTx(taskName, batchSize, mqReceiveTimeout, (batch, session) -> {
+                        if (batch.isEmpty()) {
+                            return false;
+                        }
+                        // 使用OrderedBatchRunner进行有序批量处理
+                        List<Message> messageList = batch;
+                        List<InputData> processedData = OrderedBatchRunner.runOrderedBatch(
+                                messageList,
+                                message -> {
+                                    try {
+                                        // 幂等检查,已经处理过则跳过
+                                        String messageId = message.getJMSMessageID();
+                                        if (isProcess(messageId)) {
+                                            log.info("Message already processed, messageId: {}", messageId);
+                                            return null;
+                                        }
+                                        // 执行评测并落库
+                                        String json = ((TextMessage) message).getText();
+                                        InputData inputData = JsonUtils.fromJson(json, InputData.class);
+                                        evalAndInsert(inputData);
+                                        // 去重表落库
+                                        makeProcessed(messageId);
+                                        log.info("Eval data consume and eval success, messageId: {}, input: {}", messageId, inputData);
+                                        return inputData;
+                                    } catch (Exception e) {
+                                        log.error("Error processing message", e);
                                         return null;
                                     }
-                                    // 执行评测并落库
-                                    String json = ((TextMessage) message).getText();
-                                    InputData inputData = JsonUtils.fromJson(json, InputData.class);
-                                    evalAndInsert(inputData);
-                                    // 去重表落库
-                                    makeProcessed(messageId);
-                                    log.info("Eval data consume and eval success, messageId: {}, input: {}", messageId, inputData);
-                                    return inputData;
-                                } catch (Exception e) {
-                                    log.error("Error processing message", e);
-                                    return null;
-                                }
-                            },
-                            message -> {
-                                try {
-                                    String json = ((TextMessage) message).getText();
-                                    InputData inputData = JsonUtils.fromJson(json, InputData.class);
-                                    return prepareOrderKey(inputData);
-                                } catch (Exception e) {
-                                    log.error("Error extracting order key", e);
-                                    return "default";
-                                }
-                            },
-                            prepareComparator(),
-                            threadNum,
-                            size -> size * 30L // 超时时间计算：每条消息30秒
-                    );
+                                },
+                                message -> {
+                                    try {
+                                        String json = ((TextMessage) message).getText();
+                                        InputData inputData = JsonUtils.fromJson(json, InputData.class);
+                                        return prepareOrderKey(inputData);
+                                    } catch (Exception e) {
+                                        log.error("Error extracting order key", e);
+                                        return "default";
+                                    }
+                                },
+                                prepareComparator(),
+                                threadNum,
+                                size -> size * 30L // 超时时间计算：每条消息30秒
+                        );
 
-                    // 过滤掉处理失败的数据
-                    long successCount = processedData.stream().filter(Objects::nonNull).count();
-                    consumed.addAndGet(successCount);
+                        // 过滤掉处理失败的数据
+                        long successCount = processedData.stream().filter(Objects::nonNull).count();
+                        consumed.addAndGet(successCount);
 
-                    if (consumed.get() >= remainCount) {
-                        // 消费完毕
-                        latch.countDown();
-                        return false;
-                    }
-                    return true;
-                });
-                // 如果消费完毕，则退出循环
-            } while (consumed.get() < remainCount);
-        });
+                        if (consumed.get() >= remainCount) {
+                            // 消费完毕
+                            latch.countDown();
+                            return false;
+                        }
+                        return true;
+                    });
+                    // 如果消费完毕，则退出循环
+                } while (consumed.get() < remainCount);
+            });
+        }
         // 把等待逻辑包成 CompletableFuture，主线程可以继续干别的
         return CompletableFuture.runAsync(() -> {
             try {

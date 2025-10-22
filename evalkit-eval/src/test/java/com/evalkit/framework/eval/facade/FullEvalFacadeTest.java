@@ -24,11 +24,14 @@ import com.evalkit.framework.workflow.Workflow;
 import com.evalkit.framework.workflow.WorkflowBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.ThrowingSupplier;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 @Slf4j
 class FullEvalFacadeTest {
@@ -154,7 +157,12 @@ class FullEvalFacadeTest {
                         .reportWorkflow(reportWorkflow)
                         .build()
         );
-        cfe.run();
+
+        // 必须在指定时间内跑完，否则认为死锁 / 阻塞
+        assertTimeoutPreemptively(java.time.Duration.ofSeconds(30), (ThrowingSupplier<Void>) () -> {
+            cfe.run();
+            return null;
+        });
     }
 
 }

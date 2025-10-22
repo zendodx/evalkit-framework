@@ -4,7 +4,6 @@ import com.evalkit.framework.common.utils.file.FileUtils;
 import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.common.utils.list.ListUtils;
 import com.evalkit.framework.common.utils.map.MapUtils;
-import com.evalkit.framework.common.utils.statics.StaticsUtils;
 import com.evalkit.framework.common.utils.time.DateUtils;
 import com.evalkit.framework.eval.facade.config.DeltaEvalConfig;
 import com.evalkit.framework.eval.model.ApiCompletionResult;
@@ -26,6 +25,7 @@ import com.evalkit.framework.workflow.Workflow;
 import com.evalkit.framework.workflow.WorkflowBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.ThrowingSupplier;
 
 import javax.jms.Message;
 import javax.jms.TextMessage;
@@ -34,6 +34,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 @Slf4j
 class OrderedDeltaEvalFacadeTest {
@@ -195,6 +197,11 @@ class OrderedDeltaEvalFacadeTest {
                         .reportInterval(10)
                         .build()
         );
-        cfe.run();
+
+        // 必须在指定时间内跑完，否则认为死锁 / 阻塞
+        assertTimeoutPreemptively(java.time.Duration.ofSeconds(60), (ThrowingSupplier<Void>) () -> {
+            cfe.run();
+            return null;
+        });
     }
 }
