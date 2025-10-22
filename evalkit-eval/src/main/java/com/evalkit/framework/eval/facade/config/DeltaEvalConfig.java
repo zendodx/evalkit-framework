@@ -16,7 +16,7 @@ public class DeltaEvalConfig extends EvalConfig {
     protected Workflow evalWorkflow;
     /* 评测结果上报工作流,必填 */
     protected Workflow reportWorkflow;
-    /* 批处理数量,默认1 */
+    /* 批处理数量,默认10 */
     protected int batchSize;
     /* 结果上报间隔,默认30秒 */
     protected int reportInterval;
@@ -108,7 +108,7 @@ public class DeltaEvalConfig extends EvalConfig {
         protected DataLoader dataLoader;
         protected Workflow evalWorkflow;
         protected Workflow reportWorkflow;
-        protected int batchSize = 1;
+        protected int batchSize = 10;
         protected int reportInterval = 30;
         protected int mqReceiveTimeout = 10000;
         protected boolean enableResume = true;
