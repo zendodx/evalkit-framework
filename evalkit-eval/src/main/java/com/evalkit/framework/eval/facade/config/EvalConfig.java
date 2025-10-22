@@ -4,7 +4,6 @@ import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.common.utils.runtime.RuntimeEnvUtils;
 import com.evalkit.framework.common.utils.time.DateUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
-import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
@@ -13,7 +12,6 @@ import java.util.Map;
 /**
  * 评测运行基础配置
  */
-@Data
 public class EvalConfig {
     /* 任务名称,增量评测统一任务需保持任务名称一致, 默认 EvalTest_运行时间 */
     protected String taskName;
@@ -187,5 +185,61 @@ public class EvalConfig {
             evalConfig.checkParams();
             return evalConfig;
         }
+    }
+
+    public String getTaskName() {
+        return taskName;
+    }
+
+    public void setTaskName(String taskName) {
+        this.taskName = taskName;
+    }
+
+    public String getFilePath() {
+        return filePath;
+    }
+
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
+    }
+
+    public int getOffset() {
+        return offset;
+    }
+
+    public void setOffset(int offset) {
+        this.offset = offset;
+    }
+
+    public int getLimit() {
+        return limit;
+    }
+
+    public void setLimit(int limit) {
+        this.limit = limit;
+    }
+
+    public int getThreadNum() {
+        return threadNum;
+    }
+
+    public void setThreadNum(int threadNum) {
+        this.threadNum = threadNum;
+    }
+
+    public double getPassScore() {
+        return passScore;
+    }
+
+    public void setPassScore(double passScore) {
+        this.passScore = passScore;
+    }
+
+    public Map<String, Object> getExtra() {
+        return extra;
+    }
+
+    public void setExtra(Map<String, Object> extra) {
+        this.extra = extra;
     }
 }

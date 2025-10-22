@@ -3,16 +3,12 @@ package com.evalkit.framework.eval.facade.config;
 import com.evalkit.framework.common.utils.runtime.RuntimeEnvUtils;
 import com.evalkit.framework.eval.node.dataloader.DataLoader;
 import com.evalkit.framework.workflow.Workflow;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.util.Map;
 
 /**
  * 增量评测配置
  */
-@EqualsAndHashCode(callSuper = true)
-@Data
 public class DeltaEvalConfig extends EvalConfig {
     /* 数据加载器 */
     private DataLoader dataLoader;
@@ -146,5 +142,61 @@ public class DeltaEvalConfig extends EvalConfig {
             deltaEvalConfig.checkParams();
             return deltaEvalConfig;
         }
+    }
+
+    public DataLoader getDataLoader() {
+        return dataLoader;
+    }
+
+    public void setDataLoader(DataLoader dataLoader) {
+        this.dataLoader = dataLoader;
+    }
+
+    public Workflow getEvalWorkflow() {
+        return evalWorkflow;
+    }
+
+    public void setEvalWorkflow(Workflow evalWorkflow) {
+        this.evalWorkflow = evalWorkflow;
+    }
+
+    public Workflow getReportWorkflow() {
+        return reportWorkflow;
+    }
+
+    public void setReportWorkflow(Workflow reportWorkflow) {
+        this.reportWorkflow = reportWorkflow;
+    }
+
+    public int getBatchSize() {
+        return batchSize;
+    }
+
+    public void setBatchSize(int batchSize) {
+        this.batchSize = batchSize;
+    }
+
+    public int getReportInterval() {
+        return reportInterval;
+    }
+
+    public void setReportInterval(int reportInterval) {
+        this.reportInterval = reportInterval;
+    }
+
+    public int getMqReceiveTimeout() {
+        return mqReceiveTimeout;
+    }
+
+    public void setMqReceiveTimeout(int mqReceiveTimeout) {
+        this.mqReceiveTimeout = mqReceiveTimeout;
+    }
+
+    public boolean isEnableResume() {
+        return enableResume;
+    }
+
+    public void setEnableResume(boolean enableResume) {
+        this.enableResume = enableResume;
     }
 }

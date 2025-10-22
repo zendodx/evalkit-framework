@@ -2,16 +2,12 @@ package com.evalkit.framework.eval.facade.config;
 
 import com.evalkit.framework.eval.node.dataloader.DataLoader;
 import com.evalkit.framework.workflow.Workflow;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.util.Map;
 
 /**
  * 全量式评测配置
  */
-@EqualsAndHashCode(callSuper = true)
-@Data
 public class FullEvalConfig extends EvalConfig {
     /* 数据加载器 */
     protected DataLoader dataLoader;
@@ -72,5 +68,29 @@ public class FullEvalConfig extends EvalConfig {
             fullEvalConfig.checkParams();
             return fullEvalConfig;
         }
+    }
+
+    public DataLoader getDataLoader() {
+        return dataLoader;
+    }
+
+    public void setDataLoader(DataLoader dataLoader) {
+        this.dataLoader = dataLoader;
+    }
+
+    public Workflow getEvalWorkflow() {
+        return evalWorkflow;
+    }
+
+    public void setEvalWorkflow(Workflow evalWorkflow) {
+        this.evalWorkflow = evalWorkflow;
+    }
+
+    public Workflow getReportWorkflow() {
+        return reportWorkflow;
+    }
+
+    public void setReportWorkflow(Workflow reportWorkflow) {
+        this.reportWorkflow = reportWorkflow;
     }
 }
