@@ -155,6 +155,7 @@ class FullEvalFacadeTest {
                         .dataLoader(multiDataLoader)
                         .evalWorkflow(evalWorkflow)
                         .reportWorkflow(reportWorkflow)
+                        .threadNum(10)
                         .build()
         );
 

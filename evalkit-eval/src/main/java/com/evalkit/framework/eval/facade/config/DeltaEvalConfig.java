@@ -4,25 +4,22 @@ import com.evalkit.framework.eval.node.dataloader.DataLoader;
 import com.evalkit.framework.workflow.Workflow;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 
 /**
  * 增量评测配置
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
 @SuperBuilder
-public class DeltaEvalConfig {
-    /* 任务名称,必填 */
-    private String taskName;
+public class DeltaEvalConfig extends EvalConfig {
     /* 数据加载器 */
     private DataLoader dataLoader;
     /* 评测工作流,必填 */
     private Workflow evalWorkflow;
     /* 评测结果上报工作流,必填 */
     private Workflow reportWorkflow;
-    /* 并发处理线程数,默认1 */
-    @Builder.Default
-    int threadNum = 1;
     /* 批处理数量,默认1 */
     @Builder.Default
     int batchSize = 1;

@@ -194,7 +194,6 @@ class OrderedDeltaEvalFacadeTest {
                         .reportWorkflow(reportWorkflow)
                         .batchSize(10)
                         .threadNum(10)
-                        .reportInterval(10)
                         .build()
         );
 

@@ -2,17 +2,17 @@ package com.evalkit.framework.eval.facade.config;
 
 import com.evalkit.framework.eval.node.dataloader.DataLoader;
 import com.evalkit.framework.workflow.Workflow;
-import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
 
 /**
  * 全量式评测配置
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
-@Builder
-public class FullEvalConfig {
-    /* 任务名称,必填 */
-    private String taskName;
+@SuperBuilder
+public class FullEvalConfig extends EvalConfig {
     /* 数据加载器 */
     private DataLoader dataLoader;
     /* 评测工作流 */
