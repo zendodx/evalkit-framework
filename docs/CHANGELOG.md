@@ -1,5 +1,15 @@
 # ChangeLog
 
+## [0.3.0] - 2025-10-22
+
+### Added
+- 增加顺序api调用器
+- 增加顺序增量评测门面
+- UuidUtils增加按key生成uuid方法
+### Fixed
+- 修改api调用器构造,改为配置方式
+### Changed
+
 ## [0.1.2] - 2025-10-16
 
 ### Added
