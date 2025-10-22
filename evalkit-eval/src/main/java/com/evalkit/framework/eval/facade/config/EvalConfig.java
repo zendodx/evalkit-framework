@@ -84,20 +84,20 @@ public class EvalConfig {
         if (offset != null && offset > 0) {
             this.offset = offset;
         }
-        Integer limit = RuntimeEnvUtils.getJVMPropertyInt("limit", -1);
+        Integer limit = RuntimeEnvUtils.getJVMPropertyInt("limit", null);
         if (limit != null && limit >= 0) {
             this.limit = limit;
         }
-        Integer threadNum = RuntimeEnvUtils.getJVMPropertyInt("threadNum", 1);
+        Integer threadNum = RuntimeEnvUtils.getJVMPropertyInt("threadNum", null);
         if (threadNum != null && threadNum > 0) {
             this.threadNum = threadNum;
         }
-        Double passScore = RuntimeEnvUtils.getJVMPropertyDouble("passScore", 0.0);
+        Double passScore = RuntimeEnvUtils.getJVMPropertyDouble("passScore", null);
         if (passScore != null && passScore > 0.0) {
             this.passScore = passScore;
         }
         // extra是json格式
-        String extra = RuntimeEnvUtils.getJVMPropertyString("extra", "");
+        String extra = RuntimeEnvUtils.getJVMPropertyString("extra", null);
         if (StringUtils.isNotEmpty(extra)) {
             this.extra = JsonUtils.fromJson(extra, new TypeReference<Map<String, Object>>() {
             });
