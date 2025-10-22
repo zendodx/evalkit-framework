@@ -35,29 +35,29 @@ public class FullEvalConfig extends EvalConfig {
         this.reportWorkflow = reportWorkflow;
     }
 
-    public static FullEvalConfigBuilder builder() {
-        return new FullEvalConfigBuilder();
+    public static FullEvalConfigBuilder<?> builder() {
+        return new FullEvalConfigBuilder<>();
     }
 
 
-    public static class FullEvalConfigBuilder extends EvalConfigBuilder<FullEvalConfigBuilder> {
+    public static class FullEvalConfigBuilder<B extends FullEvalConfigBuilder<B>> extends EvalConfigBuilder<B> {
         private DataLoader dataLoader;
         private Workflow evalWorkflow;
         private Workflow reportWorkflow;
 
-        public FullEvalConfigBuilder dataLoader(DataLoader dataLoader) {
+        public B dataLoader(DataLoader dataLoader) {
             this.dataLoader = dataLoader;
-            return this;
+            return (B) this;
         }
 
-        public FullEvalConfigBuilder evalWorkflow(Workflow evalWorkflow) {
+        public B evalWorkflow(Workflow evalWorkflow) {
             this.evalWorkflow = evalWorkflow;
-            return this;
+            return (B) this;
         }
 
-        public FullEvalConfigBuilder reportWorkflow(Workflow reportWorkflow) {
+        public B reportWorkflow(Workflow reportWorkflow) {
             this.reportWorkflow = reportWorkflow;
-            return this;
+            return (B) this;
         }
 
         @Override

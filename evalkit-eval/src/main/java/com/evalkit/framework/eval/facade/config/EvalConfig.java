@@ -125,8 +125,8 @@ public class EvalConfig {
         }
     }
 
-    public static EvalConfigBuilder builder() {
-        return new EvalConfigBuilder();
+    public static EvalConfigBuilder<?> builder() {
+        return new EvalConfigBuilder<>();
     }
 
     public static class EvalConfigBuilder<B extends EvalConfigBuilder<B>> {

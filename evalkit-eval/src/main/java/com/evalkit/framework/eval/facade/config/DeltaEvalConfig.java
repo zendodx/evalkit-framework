@@ -25,6 +25,9 @@ public class DeltaEvalConfig extends EvalConfig {
     /* 是否开启断点续评, 默认true */
     boolean enableResume;
 
+    protected DeltaEvalConfig() {
+    }
+
     protected DeltaEvalConfig(String taskName,
                               String filePath,
                               int offset,
@@ -49,8 +52,8 @@ public class DeltaEvalConfig extends EvalConfig {
         this.enableResume = enableResume;
     }
 
-    public static DeltaEvalConfigBuilder builder() {
-        return new DeltaEvalConfigBuilder();
+    public static DeltaEvalConfigBuilder<?> builder() {
+        return new DeltaEvalConfigBuilder<>();
     }
 
     @Override
@@ -88,7 +91,7 @@ public class DeltaEvalConfig extends EvalConfig {
         }
     }
 
-    public static class DeltaEvalConfigBuilder extends EvalConfigBuilder<DeltaEvalConfigBuilder> {
+    public static class DeltaEvalConfigBuilder<B extends DeltaEvalConfigBuilder<B>> extends EvalConfigBuilder<B> {
         /* 子类特有字段 */
         protected DataLoader dataLoader;
         protected Workflow evalWorkflow;
@@ -98,39 +101,39 @@ public class DeltaEvalConfig extends EvalConfig {
         protected int mqReceiveTimeout = 10000;
         protected boolean enableResume = true;
 
-        public DeltaEvalConfigBuilder dataLoader(DataLoader dataLoader) {
+        public B dataLoader(DataLoader dataLoader) {
             this.dataLoader = dataLoader;
-            return this;
+            return (B) this;
         }
 
-        public DeltaEvalConfigBuilder evalWorkflow(Workflow evalWorkflow) {
+        public B evalWorkflow(Workflow evalWorkflow) {
             this.evalWorkflow = evalWorkflow;
-            return this;
+            return (B) this;
         }
 
-        public DeltaEvalConfigBuilder reportWorkflow(Workflow reportWorkflow) {
+        public B reportWorkflow(Workflow reportWorkflow) {
             this.reportWorkflow = reportWorkflow;
-            return this;
+            return (B) this;
         }
 
-        public DeltaEvalConfigBuilder batchSize(int batchSize) {
+        public B batchSize(int batchSize) {
             this.batchSize = batchSize;
-            return this;
+            return (B) this;
         }
 
-        public DeltaEvalConfigBuilder reportInterval(int reportInterval) {
+        public B reportInterval(int reportInterval) {
             this.reportInterval = reportInterval;
-            return this;
+            return (B) this;
         }
 
-        public DeltaEvalConfigBuilder mqReceiveTimeout(int mqReceiveTimeout) {
+        public B mqReceiveTimeout(int mqReceiveTimeout) {
             this.mqReceiveTimeout = mqReceiveTimeout;
-            return this;
+            return (B) this;
         }
 
-        public DeltaEvalConfigBuilder enableResume(boolean enableResume) {
+        public B enableResume(boolean enableResume) {
             this.enableResume = enableResume;
-            return this;
+            return (B) this;
         }
 
         @Override
