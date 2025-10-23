@@ -18,6 +18,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -95,11 +96,18 @@ public abstract class OrderedDeltaEvalFacade extends DeltaEvalFacade {
         if (latch.getCount() == 1) {
             // 单线程拉取消息
             pool.submit(() -> {
+                // 连续空轮询上限
+                final int MAX_EMPTY_ROUNDS = 10;
+                // 空轮询计数器
+                AtomicInteger emptyRounds = new AtomicInteger(0);
                 do {
                     activeMQEmbeddedServer.batchReceiveInTx(taskName, batchSize, mqReceiveTimeout, (batch, session) -> {
                         if (batch.isEmpty()) {
+                            log.info("Empty batch, start empty rounds count:{}", emptyRounds.get());
+                            emptyRounds.incrementAndGet();
                             return false;
                         }
+                        emptyRounds.set(0); // 重置空轮询计数
                         // 使用OrderedBatchRunner进行有序批量处理
                         List<InputData> processedData = OrderedBatchRunner.runOrderedBatch(
                                 batch,
@@ -140,7 +148,7 @@ public abstract class OrderedDeltaEvalFacade extends DeltaEvalFacade {
                         return true;
                     });
                     // 如果消费完毕，则退出循环
-                } while (consumed.get() < remainCount);
+                } while (consumed.get() < remainCount && emptyRounds.get() < MAX_EMPTY_ROUNDS);
             });
         }
         // 把等待逻辑包成 CompletableFuture，主线程可以继续干别的

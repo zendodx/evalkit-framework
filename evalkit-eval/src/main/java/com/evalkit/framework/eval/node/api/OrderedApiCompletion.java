@@ -3,10 +3,11 @@ package com.evalkit.framework.eval.node.api;
 import com.evalkit.framework.common.thread.OrderedBatchRunner;
 import com.evalkit.framework.eval.model.ApiCompletionResult;
 import com.evalkit.framework.eval.model.DataItem;
-import com.evalkit.framework.eval.node.api.config.OrderedApiCompletionConfig;
+import com.evalkit.framework.eval.node.api.config.ApiCompletionConfig;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -15,15 +16,12 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public abstract class OrderedApiCompletion extends ApiCompletion {
-    protected OrderedApiCompletionConfig config;
 
     public OrderedApiCompletion() {
-        super();
     }
 
-    public OrderedApiCompletion(OrderedApiCompletionConfig config) {
+    public OrderedApiCompletion(ApiCompletionConfig config) {
         super(config);
-        this.config = config;
     }
 
     /**
@@ -32,7 +30,13 @@ public abstract class OrderedApiCompletion extends ApiCompletion {
      * @param dataItem 单条输入数据
      * @return 顺序执行key
      */
-    public abstract String getOrderKey(DataItem dataItem);
+    public abstract String prepareOrderKey(DataItem dataItem);
+
+    /**
+     * 获取比较器
+     * @return DataItem比较器
+     */
+    public abstract Comparator<DataItem> prepareComparator();
 
     /**
      * 批量调用
@@ -42,6 +46,7 @@ public abstract class OrderedApiCompletion extends ApiCompletion {
      */
     @Override
     protected List<ApiCompletionResult> batchInvoke(List<DataItem> dataItems) {
-        return OrderedBatchRunner.runOrderedBatch(dataItems, this::invokeWrapper, this::getOrderKey, config.getComparator(), config.getThreadNum(), size -> size * SINGLE_TASK_TIMEOUT);
+        return OrderedBatchRunner.runOrderedBatch(dataItems, this::invokeWrapper, this::prepareOrderKey,
+                (o1, o2) -> prepareComparator().compare(o1, o2), config.getThreadNum(), size -> size * SINGLE_TASK_TIMEOUT);
     }
 }

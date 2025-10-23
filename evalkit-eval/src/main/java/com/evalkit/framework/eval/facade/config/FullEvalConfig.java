@@ -41,9 +41,9 @@ public class FullEvalConfig extends EvalConfig {
 
 
     public static class FullEvalConfigBuilder<B extends FullEvalConfigBuilder<B>> extends EvalConfigBuilder<B> {
-        private DataLoader dataLoader;
-        private Workflow evalWorkflow;
-        private Workflow reportWorkflow;
+        protected DataLoader dataLoader;
+        protected Workflow evalWorkflow;
+        protected Workflow reportWorkflow;
 
         public B dataLoader(DataLoader dataLoader) {
             this.dataLoader = dataLoader;

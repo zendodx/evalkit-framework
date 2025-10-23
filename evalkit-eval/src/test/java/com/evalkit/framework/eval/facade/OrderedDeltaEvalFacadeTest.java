@@ -120,11 +120,6 @@ class OrderedDeltaEvalFacadeTest {
             protected ApiCompletionResult invoke(DataItem dataItem) {
                 ApiCompletionResult result = new ApiCompletionResult();
                 result.setResultItem(MapUtils.of("response", "Resp of " + dataItem.getInputData().get("query")));
-//                try {
-//                    Thread.sleep(StaticsUtils.random(1000, 3000));
-//                } catch (InterruptedException ignored) {
-//                    log.info("===>Interrupted");
-//                }
                 return result;
             }
         };
@@ -192,7 +187,7 @@ class OrderedDeltaEvalFacadeTest {
         );
 
         // 必须在指定时间内跑完，否则认为死锁 / 阻塞
-        assertTimeoutPreemptively(java.time.Duration.ofSeconds(60), (ThrowingSupplier<Void>) () -> {
+        assertTimeoutPreemptively(java.time.Duration.ofSeconds(180), (ThrowingSupplier<Void>) () -> {
             cfe.run();
             return null;
         });

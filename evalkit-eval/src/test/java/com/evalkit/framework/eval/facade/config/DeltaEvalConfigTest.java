@@ -42,7 +42,7 @@ class DeltaEvalConfigTest {
         assertThat(config.getDataLoader()).isNull();
         assertThat(config.getEvalWorkflow()).isNull();
         assertThat(config.getReportWorkflow()).isNull();
-        assertThat(config.getBatchSize()).isEqualTo(1);
+        assertThat(config.getBatchSize()).isEqualTo(10);
         assertThat(config.getReportInterval()).isEqualTo(30);
         assertThat(config.getMqReceiveTimeout()).isEqualTo(10000);
         assertThat(config.isEnableResume()).isTrue();

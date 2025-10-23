@@ -9,13 +9,7 @@ import java.util.Map;
 /**
  * 增量评测配置
  */
-public class DeltaEvalConfig extends EvalConfig {
-    /* 数据加载器 */
-    protected DataLoader dataLoader;
-    /* 评测工作流,必填 */
-    protected Workflow evalWorkflow;
-    /* 评测结果上报工作流,必填 */
-    protected Workflow reportWorkflow;
+public class DeltaEvalConfig extends FullEvalConfig {
     /* 批处理数量,默认10 */
     protected int batchSize;
     /* 结果上报间隔,默认30秒 */
@@ -46,7 +40,7 @@ public class DeltaEvalConfig extends EvalConfig {
                               int mqReceiveTimeout,
                               boolean enableResume,
                               long messageProcessMaxTime) {
-        super(taskName, filePath, offset, limit, threadNum, passScore, extra);
+        super(taskName, filePath, offset, limit, threadNum, passScore, extra, dataLoader, evalWorkflow, reportWorkflow);
         this.dataLoader = dataLoader;
         this.evalWorkflow = evalWorkflow;
         this.reportWorkflow = reportWorkflow;
@@ -103,31 +97,13 @@ public class DeltaEvalConfig extends EvalConfig {
         }
     }
 
-    public static class DeltaEvalConfigBuilder<B extends DeltaEvalConfigBuilder<B>> extends EvalConfigBuilder<B> {
+    public static class DeltaEvalConfigBuilder<B extends DeltaEvalConfigBuilder<B>> extends FullEvalConfigBuilder<B> {
         /* 子类特有字段 */
-        protected DataLoader dataLoader;
-        protected Workflow evalWorkflow;
-        protected Workflow reportWorkflow;
         protected int batchSize = 10;
         protected int reportInterval = 30;
         protected int mqReceiveTimeout = 10000;
         protected boolean enableResume = true;
         protected long messageProcessMaxTime = 60;
-
-        public B dataLoader(DataLoader dataLoader) {
-            this.dataLoader = dataLoader;
-            return (B) this;
-        }
-
-        public B evalWorkflow(Workflow evalWorkflow) {
-            this.evalWorkflow = evalWorkflow;
-            return (B) this;
-        }
-
-        public B reportWorkflow(Workflow reportWorkflow) {
-            this.reportWorkflow = reportWorkflow;
-            return (B) this;
-        }
 
         public B batchSize(int batchSize) {
             this.batchSize = batchSize;
@@ -164,30 +140,6 @@ public class DeltaEvalConfig extends EvalConfig {
             deltaEvalConfig.checkParams();
             return deltaEvalConfig;
         }
-    }
-
-    public DataLoader getDataLoader() {
-        return dataLoader;
-    }
-
-    public void setDataLoader(DataLoader dataLoader) {
-        this.dataLoader = dataLoader;
-    }
-
-    public Workflow getEvalWorkflow() {
-        return evalWorkflow;
-    }
-
-    public void setEvalWorkflow(Workflow evalWorkflow) {
-        this.evalWorkflow = evalWorkflow;
-    }
-
-    public Workflow getReportWorkflow() {
-        return reportWorkflow;
-    }
-
-    public void setReportWorkflow(Workflow reportWorkflow) {
-        this.reportWorkflow = reportWorkflow;
     }
 
     public int getBatchSize() {
