@@ -21,6 +21,18 @@ public class BatchRunner {
     private BatchRunner() {
     }
 
+    /**
+     * 批量执行任务
+     *
+     * @param data            待处理数据
+     * @param task            任务执行器
+     * @param poolName        线程池名称
+     * @param threadNum       线程数量
+     * @param timeoutComputer 超时时间计算器
+     * @param <T>             输入类型
+     * @param <R>             输出类型
+     * @return 执行结果
+     */
     public static <T, R> List<R> runBatch(List<T> data,
                                           Function<T, R> task,
                                           PoolName poolName,

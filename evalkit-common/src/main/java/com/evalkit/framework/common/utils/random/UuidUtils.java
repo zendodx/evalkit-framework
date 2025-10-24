@@ -11,9 +11,21 @@ public class UuidUtils {
     }
 
     /**
-     * 生成uuid
+     * 随机生成uuid
+     *
+     * @return uuid
      */
     public static String generateUuid() {
         return UUID.randomUUID().toString();
+    }
+
+    /**
+     * 根据key生成uuid,相同的key会产生相同的uuid
+     *
+     * @param key 给定的key
+     * @return uuid
+     */
+    public static String generateUuidByKey(String key) {
+        return UUID.nameUUIDFromBytes(key.getBytes()).toString();
     }
 }

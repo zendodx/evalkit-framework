@@ -4,7 +4,7 @@ import com.evalkit.framework.common.utils.file.FileUtils;
 import com.evalkit.framework.common.utils.list.ListUtils;
 import com.evalkit.framework.common.utils.map.MapUtils;
 import com.evalkit.framework.common.utils.time.DateUtils;
-import com.evalkit.framework.eval.facade.config.FullEvalConfig;
+import com.evalkit.framework.eval.facade.config.DeltaEvalConfig;
 import com.evalkit.framework.eval.model.ApiCompletionResult;
 import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.model.InputData;
@@ -28,21 +28,40 @@ import org.junit.jupiter.api.function.ThrowingSupplier;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 @Slf4j
-class FullEvalFacadeTest {
-
+class OrderedDeltaEvalFacadeTest {
     /**
-     * 自定义全量式评测
+     * 自定义增量评测
      */
-    static class CustomFullEval extends FullEvalFacade {
-
-        public CustomFullEval(FullEvalConfig config) {
+    static class CustomDeltaEval extends OrderedDeltaEvalFacade {
+        public CustomDeltaEval(DeltaEvalConfig config) {
             super(config);
+        }
+
+        @Override
+        public String prepareOrderKey(InputData inputData) {
+            Integer caseId = inputData.get("caseId");
+            return caseId.toString();
+        }
+
+        @Override
+        public Comparator<InputData> prepareComparator() {
+            return (o1, o2) -> {
+                try {
+                    int r1 = o1.get("round");
+                    int r2 = o2.get("round");
+                    return r1 - r2;
+                } catch (Exception ignored) {
+
+                }
+                return 0;
+            };
         }
 
         @Override
@@ -64,24 +83,30 @@ class FullEvalFacadeTest {
         // 评测数据加载器
         DataLoader dataLoader1 = new DataLoader() {
             @Override
-            public List<InputData> prepareDataList() throws Exception {
+            public List<InputData> prepareDataList() {
                 return ListUtils.of(
-                        new InputData(MapUtils.of("query", "1")),
-                        new InputData(MapUtils.of("query", "2"))
+                        new InputData(MapUtils.of("caseId", 1, "query", "1", "round", 1)),
+                        new InputData(MapUtils.of("caseId", 1, "query", "2", "round", 2))
                 );
             }
         };
         DataLoader dataLoader2 = new DataLoader() {
             @Override
-            public List<InputData> prepareDataList() throws Exception {
+            public List<InputData> prepareDataList() {
                 List<InputData> inputDataList = new ArrayList<>();
-                for (int i = 0; i < 100; i++) {
-                    inputDataList.add(new InputData(MapUtils.of("query", "" + i)));
+                for (int i = 0; i < 20; i++) {
+                    inputDataList.add(new InputData(MapUtils.of("caseId", 4, "query", "" + i, "round", i + 1)));
+                }
+                for (int i = 0; i < 10; i++) {
+                    inputDataList.add(new InputData(MapUtils.of("caseId", 2, "query", "" + i, "round", i + 1)));
+                }
+                for (int i = 0; i < 20; i++) {
+                    inputDataList.add(new InputData(MapUtils.of("caseId", 3, "query", "" + i, "round", i + 1)));
                 }
                 return inputDataList;
             }
         };
-        MultiDataLoader multiDataLoader = new MultiDataLoader(ListUtils.of(dataLoader1, dataLoader2), 0, -1);
+        MultiDataLoader multiDataLoader = new MultiDataLoader(ListUtils.of(dataLoader1, dataLoader2));
 
         // 评测工作流
         Begin begin = new Begin(
@@ -92,7 +117,7 @@ class FullEvalFacadeTest {
         );
         ApiCompletion apiCompletion = new ApiCompletion() {
             @Override
-            protected ApiCompletionResult invoke(DataItem dataItem) throws InterruptedException {
+            protected ApiCompletionResult invoke(DataItem dataItem) {
                 ApiCompletionResult result = new ApiCompletionResult();
                 result.setResultItem(MapUtils.of("response", "Resp of " + dataItem.getInputData().get("query")));
                 return result;
@@ -136,7 +161,7 @@ class FullEvalFacadeTest {
         };
 
         // 评测结果上报
-        String fileName = "full_eval_test_" + DateUtils.nowToString();
+        String fileName = "ordered_delta_eval_test_" + DateUtils.nowToString();
         BasicCounter basicCounter = new BasicCounter();
         HtmlReporter htmlReporter = new HtmlReporter(fileName);
         JsonReporter jsonReporter = new JsonReporter(fileName);
@@ -149,21 +174,22 @@ class FullEvalFacadeTest {
         Workflow reportWorkflow = new WorkflowBuilder()
                 .link(basicCounter, htmlReporter, jsonReporter).build();
 
-        CustomFullEval cfe = new CustomFullEval(
-                FullEvalConfig.builder()
-                        .taskName("FullEvalTest")
+        CustomDeltaEval cfe = new CustomDeltaEval(
+                DeltaEvalConfig.builder()
+                        .taskName("OrderedDeltaEvalTest")
                         .dataLoader(multiDataLoader)
                         .evalWorkflow(evalWorkflow)
                         .reportWorkflow(reportWorkflow)
+                        .batchSize(10)
                         .threadNum(10)
+                        .enableResume(false)
                         .build()
         );
 
         // 必须在指定时间内跑完，否则认为死锁 / 阻塞
-        assertTimeoutPreemptively(java.time.Duration.ofSeconds(30), (ThrowingSupplier<Void>) () -> {
+        assertTimeoutPreemptively(java.time.Duration.ofSeconds(180), (ThrowingSupplier<Void>) () -> {
             cfe.run();
             return null;
         });
     }
-
 }

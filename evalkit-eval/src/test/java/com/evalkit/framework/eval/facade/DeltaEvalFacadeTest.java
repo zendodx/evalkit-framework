@@ -4,6 +4,7 @@ import com.evalkit.framework.common.utils.file.FileUtils;
 import com.evalkit.framework.common.utils.list.ListUtils;
 import com.evalkit.framework.common.utils.map.MapUtils;
 import com.evalkit.framework.common.utils.time.DateUtils;
+import com.evalkit.framework.eval.facade.config.DeltaEvalConfig;
 import com.evalkit.framework.eval.model.ApiCompletionResult;
 import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.model.InputData;
@@ -23,11 +24,14 @@ import com.evalkit.framework.workflow.Workflow;
 import com.evalkit.framework.workflow.WorkflowBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.ThrowingSupplier;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 @Slf4j
 class DeltaEvalFacadeTest {
@@ -155,6 +159,11 @@ class DeltaEvalFacadeTest {
                         .threadNum(10)
                         .build()
         );
-        cfe.run();
+
+        // 必须在指定时间内跑完，否则认为死锁 / 阻塞
+        assertTimeoutPreemptively(java.time.Duration.ofSeconds(60), (ThrowingSupplier<Void>) () -> {
+            cfe.run();
+            return null;
+        });
     }
 }

@@ -140,7 +140,7 @@ public class RuntimeEnvUtils {
         return value == null ? defaultValue : value;
     }
 
-    public static boolean getJVMPropertyBoolean(String key, Boolean defaultValue) {
+    public static Boolean getJVMPropertyBoolean(String key, Boolean defaultValue) {
         String value = getJVMProperty(key);
         return value == null ? defaultValue : Boolean.valueOf(value);
     }
