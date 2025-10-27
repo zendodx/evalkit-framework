@@ -4,6 +4,7 @@ import com.evalkit.framework.common.client.http.HttpApiClient;
 import com.evalkit.framework.common.client.http.model.HttpApiRequest;
 import com.evalkit.framework.common.client.http.model.HttpApiResponse;
 import com.evalkit.framework.eval.model.InputData;
+import com.evalkit.framework.eval.node.dataloader.config.ApiDataLoaderConfig;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -18,13 +19,11 @@ import java.util.concurrent.TimeUnit;
 public abstract class ApiDataLoader extends JsonDataLoader {
     /* http客户端 */
     protected final HttpApiClient client;
+    protected ApiDataLoaderConfig config;
 
-    public ApiDataLoader(String host, String api, String method) {
-        this(120, TimeUnit.SECONDS, host, api, method);
-    }
-
-    public ApiDataLoader(long timeout, TimeUnit timeUnit, String host, String api, String method) {
-        client = new HttpApiClient(timeout, timeUnit, host, api, method);
+    public ApiDataLoader(ApiDataLoaderConfig config) {
+        this.config = config;
+        this.client = new HttpApiClient(config.getTimeout(), TimeUnit.SECONDS, config.getHost(), config.getApi(), config.getMethod());
     }
 
     /**
