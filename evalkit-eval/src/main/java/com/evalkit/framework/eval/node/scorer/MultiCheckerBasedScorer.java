@@ -47,8 +47,11 @@ public abstract class MultiCheckerBasedScorer extends Scorer {
 
     @Override
     public ScorerResult eval(DataItem dataItem) {
-        // 准备,执行,汇总各检查器结果
+        // 准备检查器
         List<Checker> checkers = prepareCheckers(dataItem);
+        // 执行检查器
+        checkers.forEach(checker -> checker.checkWrapper(dataItem));
+        // 汇总检查结果
         // 动态计算评估器总分,等于所有检查器总分之和
         double score = mergeCheckerScore(checkers);
         String reason = mergeCheckerReason(checkers);

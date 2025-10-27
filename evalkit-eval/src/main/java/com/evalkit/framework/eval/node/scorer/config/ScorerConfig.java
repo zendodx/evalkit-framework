@@ -22,6 +22,10 @@ public class ScorerConfig {
     /* 是否为必过指标,默认false */
     @Builder.Default
     protected boolean star = false;
-    /* 评估器总分数 */
-    protected double totalScore;
+    /* 评估器总分数,默认1 */
+    @Builder.Default
+    protected double totalScore = 1;
+    /* 动态评估器总分数,某些评估的总数分时运行中决定的,需要动态变化 */
+    @Builder.Default
+    protected boolean dynamicTotalScore = false;
 }

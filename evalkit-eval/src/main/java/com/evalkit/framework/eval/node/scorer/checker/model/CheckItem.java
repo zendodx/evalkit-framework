@@ -9,23 +9,23 @@ import org.apache.commons.lang3.StringUtils;
  */
 public class CheckItem {
     /* 检查项名称,默认未命名检查项 */
-    protected String name = "未命名检查项";
+    protected String name;
     /* 检查项得分,默认0 */
-    protected double score = 0;
-    /* 检查项总分数,默认0*/
-    protected double totalScore = 0;
+    protected double score;
+    /* 检查项总分数,默认1*/
+    protected double totalScore;
     /* 检查理由,默认"" */
-    protected String reason = "未执行加床";
+    protected String reason;
     /* 检查项权重,默认1.0 */
-    protected double weight = 1.0;
+    protected double weight;
     /* 是否为必过检查,默认false */
-    protected boolean star = false;
+    protected boolean star;
     /* 是否支持评测,如果不支持会给默认值,默认true */
-    protected boolean support = true;
+    protected boolean support;
     /* 是否执行过 */
     protected boolean executed;
     /* 默认值,不执行评测或者评测失败时的取值,默认0.0 */
-    protected double defaultScore = 0.0;
+    protected double defaultScore;
     /* 检查描述,描述检查项的打分策略,可用于大模型的参考 */
     protected String checkDescription;
     /* 检查方法: LLM检查, 规则检查 */
@@ -44,6 +44,9 @@ public class CheckItem {
         this.reason = support ? CheckItemReason.NO_CHECK : CheckItemReason.UN_SUPPORT;
         this.executed = false;
         this.checkMethod = CheckMethod.NONE;
+
+        // 构造后额外操作
+        checkParams();
     }
 
     /**
@@ -79,12 +82,12 @@ public class CheckItem {
 
     public static class CheckItemBuilder<B extends CheckItemBuilder<B>> {
         protected String name = "未命名检查项";
-        protected double totalScore = 0;
+        protected double totalScore = 1.0;
         protected double weight = 1.0;
         protected boolean star = false;
         protected boolean support = true;
         protected double defaultScore = 0.0;
-        protected String checkDescription;
+        protected String checkDescription = "";
 
         protected CheckItemBuilder() {
         }
@@ -126,9 +129,7 @@ public class CheckItem {
         }
 
         public CheckItem build() {
-            CheckItem checkItem = new CheckItem(name, totalScore, weight, star, support, defaultScore, checkDescription);
-            checkItem.checkParams();
-            return checkItem;
+            return new CheckItem(name, totalScore, weight, star, support, defaultScore, checkDescription);
         }
     }
 
