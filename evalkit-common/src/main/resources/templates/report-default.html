@@ -768,7 +768,7 @@
       <div class="detail-header">
         <span>#${d.inputData.dataIndex}</span>
         <span class="metric-badge ${statusClass}">${statusText}</span>
-        <span class="metric-value ${metricClass}">${score}分</span>
+        <span class="metric-value ${metricClass}">${score}</span>
         <span style="margin-left:auto;font-size:11px;color:#909399">${scoreStrategyName}</span>
       </div>
       <div class="detail-content">
@@ -862,7 +862,7 @@
                             <span>${s.metric}${s.star ? '<span style="color:#ff4757;margin-left:4px">必过</span>' : ''}</span>
                             <span>${s.success ? '' : '<span style="color:#ff4757;margin-left:4px">评测出错</span>'}</span>
                         </div>
-                        <span class="metric-badge ${pass ? 'pass' : 'fail'}">${pass ? '通过' : '未通过'} ${s.score.toFixed(1)} / ${s.threshold}</span>
+                        <span class="metric-badge ${pass ? 'pass' : 'fail'}">${pass ? '通过' : '未通过'} | 阈值 ${s.threshold} | 得分率 ${s.scoreRate.toFixed(2)} | 得分 ${s.score.toFixed(1)} / ${s.totalScore.toFixed(1)}</span>
                       </div>
                       <div style="font-size:12px;color:#606266;margin:5px 0">${s.reason}</div>
                       ${s.extra ? (() => {

@@ -86,6 +86,9 @@ public abstract class Scorer extends WorkflowNode {
                 result.setThreshold(config.getThreshold());
                 result.setPass(resultTmp.getScore() >= config.getThreshold());
                 result.setStar(config.isStar());
+                double totalScore = config.getTotalScore();
+                result.setTotalScore(totalScore);
+                result.setScoreRate(totalScore > 0 ? result.getScore() / totalScore : 0);
             }
 
         } catch (Throwable e) {
@@ -101,6 +104,9 @@ public abstract class Scorer extends WorkflowNode {
             result.setThreshold(config.getThreshold());
             result.setPass(false);
             result.setStar(config.isStar());
+            double totalScore = config.getTotalScore();
+            result.setTotalScore(totalScore);
+            result.setScoreRate(0);
         }
         return afterEval(dataItem, result);
     }

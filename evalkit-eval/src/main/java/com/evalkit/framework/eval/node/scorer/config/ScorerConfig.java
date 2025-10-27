@@ -10,16 +10,18 @@ import lombok.experimental.SuperBuilder;
 @Data
 @SuperBuilder
 public class ScorerConfig {
-    // 指标名称
+    /* 评估器名称 */
     @Builder.Default
     protected String metricName = "未命名指标";
-    // 评估线程数,默认值1
+    /* 评估线程数,默认值1 */
     @Builder.Default
     protected int threadNum = 1;
-    // 评估器通过阈值,默认值0
+    /* 评估器通过阈值,默认值0 */
     @Builder.Default
     protected double threshold = 0.0;
-    // 是否为必过指标,默认false
+    /* 是否为必过指标,默认false */
     @Builder.Default
     protected boolean star = false;
+    /* 评估器总分数 */
+    protected double totalScore;
 }

@@ -25,6 +25,8 @@ import com.evalkit.framework.eval.node.reporter.html.HtmlReporter;
 import com.evalkit.framework.eval.node.scorer.Scorer;
 import com.evalkit.framework.eval.node.scorer.VectorSimilarityScorer;
 import com.evalkit.framework.eval.node.scorer.config.ScorerConfig;
+import com.evalkit.framework.eval.node.scorer.strategy.AvgScoreRateStrategy;
+import com.evalkit.framework.eval.node.scorer.strategy.SumScoreStrategy;
 import com.evalkit.framework.infra.service.llm.LLMService;
 import com.evalkit.framework.infra.service.llm.LLMServiceFactory;
 import com.evalkit.framework.infra.service.llm.config.DeepseekLLMServiceConfig;
@@ -71,7 +73,12 @@ public class CoreTest {
         DeepseekLLMServiceConfig config = DeepseekLLMServiceConfig.builder().apiToken(deepSeekToken).build();
         LLMService llmService = LLMServiceFactory.createLLMService(LLMServiceEnum.DEEPSEEK.name(), config);
 
-        begin = new Begin(BeginConfig.builder().threshold(3).build());
+        begin = new Begin(
+                BeginConfig.builder()
+                        .scoreStrategy(new AvgScoreRateStrategy())
+                        .threshold(1)
+                        .build()
+        );
 
         dataLoader = new DataLoader(DataLoaderConfig.builder().shuffle(true).build()) {
             @Override
@@ -104,7 +111,11 @@ public class CoreTest {
             }
         };
 
-        scorer1 = new Scorer(ScorerConfig.builder().build()) {
+        scorer1 = new Scorer(
+                ScorerConfig.builder()
+                        .metricName("回复长度检查")
+                        .totalScore(1)
+                        .build()) {
             @Override
             public ScorerResult eval(DataItem dataItem) {
                 InputData inputData = dataItem.getInputData();
@@ -126,7 +137,11 @@ public class CoreTest {
         };
 
         scorer2 = new VectorSimilarityScorer(
-                ScorerConfig.builder().metricName("相似度检查level1").threshold(0).build(),
+                ScorerConfig.builder()
+                        .metricName("相似度检查level1")
+                        .threshold(0)
+                        .totalScore(1)
+                        .build(),
                 0) {
             @Override
             public Pair<String, String> prepareFieldPair(DataItem dataItem) {
