@@ -35,7 +35,7 @@ public class AttributeCounter extends Counter {
     }
 
     /**
-     * caseId->问题描述 定义
+     * caseId 问题描述 定义
      */
     @Data
     @AllArgsConstructor

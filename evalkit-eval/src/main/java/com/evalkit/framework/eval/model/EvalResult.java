@@ -127,7 +127,10 @@ public class EvalResult {
      * 更新评测分数,更新策略有以下几种:
      * 1.最小分数策略: 取各评估器的最小分数
      * 2.平均分数策略: 计算各评估器分数的平均值
-     * 默认使用最小分数策略
+     * 3.分数求和策略: 计算各评估器分数之和
+     * 4.平均得分率策略: 计算各评估器得分率平均值
+     * 5.得分率求和策略: 计算各评估器得分率之和
+     * 默认使用分数求和策略
      */
     private void updateScore() {
         this.score = scoreStrategy.calScore(scorerResults);

@@ -22,6 +22,9 @@ public class CheckerConfig {
     /* 合并各检查项后的最终检查分数 */
     @Builder.Default
     private double score = 0.0;
+    /* 检查器总分 */
+    @Builder.Default
+    private double totalScore = 0.0;
     /* 合并各检查项后的检查理由 */
     @Builder.Default
     private String reason = "";

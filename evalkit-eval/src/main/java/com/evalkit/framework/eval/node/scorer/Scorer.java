@@ -69,6 +69,7 @@ public abstract class Scorer extends WorkflowNode {
     public ScorerResult evalWrapper(DataItem dataItem) {
         ScorerResult result = new ScorerResult();
         result.setDataIndex(dataItem.getDataIndex());
+        result.setTotalScore(config.getTotalScore());
         try {
             beforeEval(dataItem);
             long start = System.currentTimeMillis();
@@ -79,6 +80,10 @@ public abstract class Scorer extends WorkflowNode {
                 result.setScore(resultTmp.getScore());
                 result.setReason(resultTmp.getReason());
                 result.setExtra(resultTmp.getExtra());
+                // 评估器的分数可能是动态的
+                if (config.isDynamicTotalScore()) {
+                    result.setTotalScore(resultTmp.getTotalScore());
+                }
                 result.setStatTime(start);
                 result.setEndTime(end);
                 result.setTimeCost(end - start);
@@ -86,8 +91,8 @@ public abstract class Scorer extends WorkflowNode {
                 result.setThreshold(config.getThreshold());
                 result.setPass(resultTmp.getScore() >= config.getThreshold());
                 result.setStar(config.isStar());
+                result.setScoreRate(result.getTotalScore() > 0 ? result.getScore() / result.getTotalScore() : 0);
             }
-
         } catch (Throwable e) {
             log.error("Scorer eval error: ", e);
             orErrorEval(dataItem, e);
@@ -101,6 +106,7 @@ public abstract class Scorer extends WorkflowNode {
             result.setThreshold(config.getThreshold());
             result.setPass(false);
             result.setStar(config.isStar());
+            result.setScoreRate(0);
         }
         return afterEval(dataItem, result);
     }

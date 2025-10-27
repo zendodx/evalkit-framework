@@ -12,9 +12,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * 兴趣点 mocker
  * <p>
  * 景区类POI
- * {{scenic}} -> 中国景区
- * {{scenic 河北省}} -> 河北省景区
- * {{scenic 河北省 廊坊市}} -> 河北省廊坊市景区
+ * {{scenic}}  中国景区
+ * {{scenic 河北省}}  河北省景区
+ * {{scenic 河北省 廊坊市}}  河北省廊坊市景区
  */
 public class ChinaPOIMocker implements Mocker {
     private final static Map<String, POIStrategy> STRATEGY_POOL = new ConcurrentHashMap<>();

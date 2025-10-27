@@ -18,8 +18,12 @@ public class ScorerResult {
     private Long dataIndex;
     /* 指标名称 */
     private String metric;
-    /* 评估器分数 */
+    /* 评估器得分 */
     private double score;
+    /* 评估器得分率 */
+    private double scoreRate;
+    /* 评估器总分 */
+    private double totalScore;
     /* 评估器理由 */
     private String reason;
     /* 额外信息 */
@@ -43,12 +47,17 @@ public class ScorerResult {
     }
 
     public ScorerResult(String metric, double score, String reason) {
-        this(metric, score, reason, null);
+        this(metric, score, 0, reason, null);
     }
 
-    public ScorerResult(String metric, double score, String reason, Map<String, Object> extra) {
+    public ScorerResult(String metric, double score, double totalScore, String reason) {
+        this(metric, score, totalScore, reason, null);
+    }
+
+    public ScorerResult(String metric, double score, double totalScore, String reason, Map<String, Object> extra) {
         this.metric = metric;
         this.score = score;
+        this.totalScore = totalScore;
         this.reason = reason;
         this.extra = extra;
     }

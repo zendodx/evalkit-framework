@@ -12,7 +12,7 @@ public abstract class PolishDataLoaderWrapper extends PromptDataLoaderWrapper {
     protected PolishDataLoaderWrapperConfig config;
 
     public PolishDataLoaderWrapper(PolishDataLoaderWrapperConfig config) {
-        super(config.getThreadNum(), config.getLlmService());
+        super(config);
         this.config = config;
     }
 

@@ -1,6 +1,7 @@
 package com.evalkit.framework.eval.node.dataloader;
 
 import com.evalkit.framework.eval.model.InputData;
+import com.evalkit.framework.eval.node.dataloader.config.JdbcDataLoaderConfig;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
@@ -19,18 +20,19 @@ import java.util.Map;
  */
 @Slf4j
 public abstract class JdbcDataLoader extends DataLoader {
-
     protected final HikariDataSource ds;
+    protected JdbcDataLoaderConfig config;
 
-    public JdbcDataLoader(String driverClassName, String jdbcUrl, String user, String pwd) {
+    public JdbcDataLoader(JdbcDataLoaderConfig config) {
+        super(config);
         HikariConfig cfg = new HikariConfig();
-        cfg.setDriverClassName(driverClassName);
-        cfg.setJdbcUrl(jdbcUrl);
-        cfg.setUsername(user);
-        cfg.setPassword(pwd);
-        cfg.setMaximumPoolSize(10);
-        cfg.setMinimumIdle(2);
-        cfg.setConnectionTimeout(5000);
+        cfg.setDriverClassName(config.getDriver());
+        cfg.setJdbcUrl(config.getUrl());
+        cfg.setUsername(config.getUser());
+        cfg.setPassword(config.getPassword());
+        cfg.setMaximumPoolSize(config.getMaximumPoolSize());
+        cfg.setMinimumIdle(config.getMinimumIdle());
+        cfg.setConnectionTimeout(config.getConnectionTimeout());
         this.ds = new HikariDataSource(cfg);
     }
 
