@@ -27,9 +27,12 @@ public abstract class MultiCheckerBasedScorer extends Scorer {
     /* 合并各检查器结果的策略,默认 求和策略 */
     protected MergeCheckerScoreStrategy strategy;
 
+    public MultiCheckerBasedScorer(MergeCheckerScoreStrategy strategy) {
+        this(ScorerConfig.builder().build(), strategy);
+    }
+
     public MultiCheckerBasedScorer(ScorerConfig config) {
-        super(config);
-        this.strategy = new SumMergeCheckerScoreStrategy();
+        this(config, new SumMergeCheckerScoreStrategy());
     }
 
     public MultiCheckerBasedScorer(ScorerConfig config, MergeCheckerScoreStrategy strategy) {
@@ -46,7 +49,7 @@ public abstract class MultiCheckerBasedScorer extends Scorer {
     public ScorerResult eval(DataItem dataItem) {
         // 准备,执行,汇总各检查器结果
         List<Checker> checkers = prepareCheckers(dataItem);
-        checkers.forEach(checker -> checker.checkWrapper(dataItem));
+        // 动态计算评估器总分,等于所有检查器总分之和
         double score = mergeCheckerScore(checkers);
         String reason = mergeCheckerReason(checkers);
         // 额外信息存储各检查器的结果
@@ -57,7 +60,8 @@ public abstract class MultiCheckerBasedScorer extends Scorer {
             String key = checker.getCheckName();
             List<CheckItem> checkItems = checker.getCheckItems();
             checkerResults.put(key, JsonUtils.toJson(checkItems));
-            totalScore.updateAndGet(v -> v + checker.getScore());
+            // 累加检查器总分得到评估器分数
+            totalScore.updateAndGet(v -> v + checker.getTotalScore());
         });
         ScorerResult scorerResult = new ScorerResult(config.getMetricName(), score, totalScore.get(), reason, null);
         scorerResult.addExtraItems(checkerResults);

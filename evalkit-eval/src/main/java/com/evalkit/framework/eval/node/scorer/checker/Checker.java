@@ -26,6 +26,11 @@ public interface Checker {
     double getScore();
 
     /**
+     * 获取检查器总分
+     */
+    double getTotalScore();
+
+    /**
      * 获取检查器理由
      */
     String getReason();
