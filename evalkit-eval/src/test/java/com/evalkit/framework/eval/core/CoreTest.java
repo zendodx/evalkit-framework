@@ -25,8 +25,7 @@ import com.evalkit.framework.eval.node.reporter.html.HtmlReporter;
 import com.evalkit.framework.eval.node.scorer.Scorer;
 import com.evalkit.framework.eval.node.scorer.VectorSimilarityScorer;
 import com.evalkit.framework.eval.node.scorer.config.ScorerConfig;
-import com.evalkit.framework.eval.node.scorer.strategy.AvgScoreRateStrategy;
-import com.evalkit.framework.eval.node.scorer.strategy.SumScoreStrategy;
+import com.evalkit.framework.eval.node.scorer.strategy.MaxScoreRateStrategy;
 import com.evalkit.framework.infra.service.llm.LLMService;
 import com.evalkit.framework.infra.service.llm.LLMServiceFactory;
 import com.evalkit.framework.infra.service.llm.config.DeepseekLLMServiceConfig;
@@ -75,7 +74,7 @@ public class CoreTest {
 
         begin = new Begin(
                 BeginConfig.builder()
-                        .scoreStrategy(new AvgScoreRateStrategy())
+                        .scoreStrategy(new MaxScoreRateStrategy())
                         .threshold(1)
                         .build()
         );
