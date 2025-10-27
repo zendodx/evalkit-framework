@@ -90,7 +90,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 读取Excel为List->Map，支持自定义header、分页
+     * 读取Excel为ListMap，支持自定义header、分页
      */
     public static List<Map<String, String>> readExcelAsListMap(String filePath, int sheetIndex, List<String> headers, int offset, int limit) throws IOException {
         try (InputStream inputStream = FileUtils.getInputStream(filePath)) {

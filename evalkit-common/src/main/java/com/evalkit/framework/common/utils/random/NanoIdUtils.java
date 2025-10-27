@@ -30,7 +30,7 @@ public class NanoIdUtils {
     /**
      * 完全自定义
      *
-     * @param size     长度 > 0
+     * @param size     长度 大于 0
      * @param alphabet 字母表长度 [2,256]
      */
     public static String random(int size, char[] alphabet) {
