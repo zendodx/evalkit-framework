@@ -44,9 +44,6 @@ public class CheckItem {
         this.reason = support ? CheckItemReason.NO_CHECK : CheckItemReason.UN_SUPPORT;
         this.executed = false;
         this.checkMethod = CheckMethod.NONE;
-
-        // 构造后额外操作
-        checkParams();
     }
 
     /**
@@ -80,7 +77,7 @@ public class CheckItem {
         return new CheckItemBuilder<>();
     }
 
-    protected static class CheckItemBuilder<B extends CheckItemBuilder<B>> {
+    public static class CheckItemBuilder<B extends CheckItemBuilder<B>> {
         protected String name = "未命名检查项";
         protected double totalScore = 0;
         protected double weight = 1.0;
@@ -129,7 +126,9 @@ public class CheckItem {
         }
 
         public CheckItem build() {
-            return new CheckItem(name, totalScore, weight, star, support, defaultScore, checkDescription);
+            CheckItem checkItem = new CheckItem(name, totalScore, weight, star, support, defaultScore, checkDescription);
+            checkItem.checkParams();
+            return checkItem;
         }
     }
 
