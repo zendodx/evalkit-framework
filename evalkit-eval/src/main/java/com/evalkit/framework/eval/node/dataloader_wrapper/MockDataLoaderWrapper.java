@@ -2,6 +2,7 @@ package com.evalkit.framework.eval.node.dataloader_wrapper;
 
 import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.model.InputData;
+import com.evalkit.framework.eval.node.dataloader_wrapper.config.MockDataLoaderWrapperConfig;
 import com.evalkit.framework.eval.node.dataloader_wrapper.mock.MockRuleEngine;
 import com.evalkit.framework.eval.node.dataloader_wrapper.mock.SpelMockRuleEngine;
 import com.evalkit.framework.eval.node.dataloader_wrapper.mock.mocker.Mocker;
@@ -23,18 +24,19 @@ public abstract class MockDataLoaderWrapper extends DataLoaderWrapper {
     protected static final Pattern RULE_PATTERN = Pattern.compile("\\{\\{([^{}]*)}}");
     /* mock规则引擎 */
     protected final MockRuleEngine engine;
-    /* 各字段相同标记是否mock为统一字符 */
-    protected boolean sameMock;
+    protected MockDataLoaderWrapperConfig config;
 
 
     public MockDataLoaderWrapper() {
-        this(false, false);
+        super();
+        this.config = MockDataLoaderWrapperConfig.builder().build();
+        this.engine = new SpelMockRuleEngine(config.isFillEmptyStringOnMockFail());
     }
 
-    public MockDataLoaderWrapper(boolean sameMock, boolean fillEmptyStringOnMockFail) {
-        this.sameMock = sameMock;
-        // 默认仅支持基于表达式的规则引擎
-        engine = new SpelMockRuleEngine(fillEmptyStringOnMockFail);
+    public MockDataLoaderWrapper(MockDataLoaderWrapperConfig config) {
+        super(config);
+        this.config = config;
+        this.engine = new SpelMockRuleEngine(config.isFillEmptyStringOnMockFail());
     }
 
     /**
@@ -67,7 +69,7 @@ public abstract class MockDataLoaderWrapper extends DataLoaderWrapper {
             return;
         }
         InputData inputData = dataItem.getInputData();
-        if (sameMock) {
+        if (config.isSameMock()) {
             mockSameValue(inputData, fields);
         } else {
             mockRandomValue(inputData, fields);

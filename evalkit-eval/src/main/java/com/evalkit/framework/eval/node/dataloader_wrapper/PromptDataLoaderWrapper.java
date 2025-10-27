@@ -1,8 +1,8 @@
 package com.evalkit.framework.eval.node.dataloader_wrapper;
 
-import com.evalkit.framework.eval.exception.EvalException;
 import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.model.InputData;
+import com.evalkit.framework.eval.node.dataloader_wrapper.config.DataLoaderWrapperConfig;
 import com.evalkit.framework.infra.service.llm.LLMService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -12,19 +12,11 @@ import org.apache.commons.lang3.StringUtils;
  */
 @Slf4j
 public abstract class PromptDataLoaderWrapper extends DataLoaderWrapper {
-    /* 大模型服务 */
-    protected final LLMService llmService;
+    protected DataLoaderWrapperConfig config;
 
-    public PromptDataLoaderWrapper(LLMService llmService) {
-        this(1, llmService);
-    }
-
-    public PromptDataLoaderWrapper(int threadNum, LLMService llmService) {
-        super(threadNum);
-        if (llmService == null) {
-            throw new EvalException("llmService is null");
-        }
-        this.llmService = llmService;
+    public PromptDataLoaderWrapper(DataLoaderWrapperConfig config) {
+        super(config);
+        this.config = config;
     }
 
     /**
@@ -48,6 +40,7 @@ public abstract class PromptDataLoaderWrapper extends DataLoaderWrapper {
         }
         String prompt = preparePrompt();
         String msg = String.format("%s\n\n输出要求: 直接输出处理后的结果,不要任何解释\n\n输入文本: %s", prompt, value);
+        LLMService llmService = config.getLlmService();
         String llmReply = llmService.chat(msg);
         inputData.set(field, llmReply);
         log.info("Finish wrapper dataItem: {}", dataItem);
