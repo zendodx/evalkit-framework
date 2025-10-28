@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.Date;
 import java.util.List;
@@ -17,10 +18,14 @@ import java.util.concurrent.TimeUnit;
  * 线程安全、可扩展的日期 Mocker
  * <p>
  * {{date pattern}} 当前时间
- * {{future_date days pattern}}  未来 days 天内
  * {{future_date days}}  未来 days 天内
+ * {{future_date days pattern}}  未来 days 天内
+ * {{future_date days days}}  未来 days~days 天内
+ * {{future_date days days pattern}}  未来 days~days 天内
  * {{past_date days}}  过去 days 天内
- * {{past_date  days pattern}}  过去 days 天内
+ * {{past_date days pattern}}  过去 days 天内
+ * {{past_date days days}}  过去 days~days 天内
+ * {{past_date days days pattern}}  过去 days~days 天内
  */
 @Slf4j
 public class DateMocker implements Mocker {
@@ -52,17 +57,26 @@ public class DateMocker implements Mocker {
 
     /**
      * 日期参数上下文:
-     * None -> 没有参数,使用默认值
-     * [日期格式] -> 第1位是日期参数,使用指定日期格式
-     * [天数] -> 第1位是天数,使用默认日期格式
-     * [天数] [日期格式] -> 第1位是天数,第2位是日期格式
+     * None  没有参数,使用默认值
+     * [日期格式]   第1位是日期参数,使用指定日期格式
+     * [天数]   第1位是天数,使用默认日期格式
+     * [天数] [日期格式]   第1位是天数,第2位是日期格式
+     * [天数] [天数]  第1位是至少天数,第2位是至多天数,使用默认日期格式
+     * [天数] [天数]  [日期格式]  第1位是至少天数,第2位是至多天数,第3位是日期格式
      */
     @Data
     private static class DateContext {
+        /* 默认日期格式 */
         private final static String DEFAULT_PATTERN = "yyyy-MM-dd HH:mm:ss";
+        /* 默认至少天数0 */
+        private final static int DEFAULT_AT_LEAST = 0;
+        /* 默认至多天数7 */
         private final static int DEFAULT_AT_MOST = 7;
+        /* 日期合适 */
         private String pattern;
-        /* 天数 */
+        /* 至少天数 */
+        private int atLeast;
+        /* 至多天数 */
         private int atMost;
 
         public DateContext(List<String> args) {
@@ -73,26 +87,50 @@ public class DateMocker implements Mocker {
          * 解析参数
          */
         public void updateParams(List<String> args) {
-            if (CollectionUtils.isEmpty(args)) {
-                this.pattern = DEFAULT_PATTERN;
-                this.atMost = DEFAULT_AT_MOST;
-            } else if (args.size() == 1) {
-                try {
-                    this.atMost = Integer.parseInt(args.get(0));
+            try {
+                if (CollectionUtils.isEmpty(args)) {
+                    // None  没有参数,使用默认值
                     this.pattern = DEFAULT_PATTERN;
-                } catch (Exception e) {
-                    this.pattern = args.get(0);
+                    this.atLeast = DEFAULT_AT_LEAST;
                     this.atMost = DEFAULT_AT_MOST;
+                } else if (args.size() == 1) {
+                    // [日期格式]  第1位是日期参数,使用指定日期格式
+                    // [天数]   第1位是天数,使用默认日期格式
+                    if (NumberUtils.isCreatable(args.get(0))) {
+                        this.atLeast = DEFAULT_AT_LEAST;
+                        this.atMost = Integer.parseInt(args.get(0));
+                        this.pattern = DEFAULT_PATTERN;
+                    } else {
+                        this.pattern = args.get(0);
+                        this.atLeast = DEFAULT_AT_LEAST;
+                        this.atMost = DEFAULT_AT_MOST;
+                    }
+                } else if (args.size() == 2) {
+                    // [天数] [日期格式] 第1位是天数,第2位是日期格式
+                    // [天数] [天数]  第1位是至少天数,第2位是至多天数,使用默认日期格式
+                    if (NumberUtils.isCreatable(args.get(0)) && NumberUtils.isCreatable(args.get(1))) {
+                        this.atLeast = Integer.parseInt(args.get(0));
+                        this.atMost = Integer.parseInt(args.get(1));
+                        this.pattern = DEFAULT_PATTERN;
+                    } else if (NumberUtils.isCreatable(args.get(0)) && !NumberUtils.isCreatable(args.get(1))) {
+                        this.atLeast = DEFAULT_AT_LEAST;
+                        this.atMost = Integer.parseInt(args.get(0));
+                        this.pattern = args.get(1);
+                    }
+                } else if (args.size() == 3) {
+                    // [天数] [天数] [日期格式]  第1位是至少天数,第2位是至多天数,第3位是日期格式
+                    this.atLeast = Integer.parseInt(args.get(0));
+                    this.atMost = Integer.parseInt(args.get(1));
+                    this.pattern = args.get(2);
+                } else {
+                    throw new IllegalArgumentException("Invalid number of arguments");
                 }
-            } else if (args.size() == 2) {
-                try {
-                    this.atMost = Integer.parseInt(args.get(0));
-                    this.pattern = args.get(1);
-                } catch (Exception e) {
-                    throw new IllegalArgumentException("Error parsing args: " + args);
+                // 日期patten格式校验
+                if (!DateUtils.isValidPattern(pattern)) {
+                    throw new IllegalArgumentException("Invalid date pattern");
                 }
-            } else {
-                throw new IllegalArgumentException("Invalid number of arguments");
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Error parsing args: " + args, e);
             }
         }
     }
@@ -120,8 +158,11 @@ public class DateMocker implements Mocker {
     private static class FutureStrategy implements DateStrategy {
         @Override
         public String generate(DateContext ctx) {
-            int days = ctx.getAtMost();
-            long offset = ThreadLocalRandom.current().nextLong(TimeUnit.DAYS.toMillis(days));
+            int atLeast = ctx.getAtLeast();
+            int atMost = ctx.getAtMost();
+            // 直接生成指定范围内的随机天数
+            int days = ThreadLocalRandom.current().nextInt(atLeast, atMost + 1);
+            long offset = TimeUnit.DAYS.toMillis(days);
             Date future = new Date(System.currentTimeMillis() + offset);
             return DateUtils.dateToString(future, ctx.getPattern());
         }
@@ -133,8 +174,12 @@ public class DateMocker implements Mocker {
     private static class PastStrategy implements DateStrategy {
         @Override
         public String generate(DateContext ctx) {
-            int days = ctx.getAtMost();
-            long offset = ThreadLocalRandom.current().nextLong(TimeUnit.DAYS.toMillis(days));
+            int atLeast = ctx.getAtLeast();
+            int atMost = ctx.getAtMost();
+            // 直接生成指定范围内的随机天数
+            int days = ThreadLocalRandom.current().nextInt(atLeast, atMost + 1);
+            long offset = TimeUnit.DAYS.toMillis(days);
+            // 计算过去的时间
             Date past = new Date(System.currentTimeMillis() - offset);
             return DateUtils.dateToString(past, ctx.getPattern());
         }
