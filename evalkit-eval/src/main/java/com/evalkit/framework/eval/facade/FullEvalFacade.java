@@ -90,6 +90,9 @@ public class FullEvalFacade extends EvalFacade {
             return 0;
         }
         List<DataItem> dataItems = WorkflowContextOps.getDataItems(workflowContext);
+        if (CollectionUtils.isEmpty(dataItems)) {
+            return 0;
+        }
         List<DataItem> collect = dataItems.stream().filter(dataItem -> {
             InputData inputData = dataItem.getInputData();
             ApiCompletionResult apiCompletionResult = dataItem.getApiCompletionResult();
