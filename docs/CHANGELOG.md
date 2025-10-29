@@ -1,5 +1,14 @@
 # ChangeLog
 
+## [0.4.2] - 2025-10-30
+
+### Added
+- Checker增加必过配置
+### Fixed
+- 优化csv,excel文件上报
+### Changed
+- 
+
 ## [0.4.1] - 2025-10-29
 
 ### Added
