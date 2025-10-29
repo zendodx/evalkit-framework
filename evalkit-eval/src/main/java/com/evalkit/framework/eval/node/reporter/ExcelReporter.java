@@ -1,11 +1,12 @@
 package com.evalkit.framework.eval.node.reporter;
 
+import com.evalkit.framework.common.utils.file.ExcelUtils;
 import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.model.ReportData;
-import com.evalkit.framework.common.utils.file.ExcelUtils;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
@@ -31,9 +32,15 @@ public class ExcelReporter extends FileReporter {
         List<DataItem> dataItems = reportData.getDataItems();
         Map<String, String> countResultMap = reportData.getCountResultMap();
         String outputFilename = StringUtils.isNotBlank(this.fileName) ? this.fileName : generateDefaultOutputFileName();
-        String dataItemsFileName = String.format("%s/%s.xlsx", this.parentDir, outputFilename);
-        ExcelUtils.writeExcel(dataItemsFileName, convertDataItems(dataItems), true);
-        String countFileName = String.format("%s/%s.count.xlsx", this.parentDir, outputFilename);
-        ExcelUtils.writeExcel(countFileName, convertCountResult(countResultMap), true);
+        List<Map<String, Object>> dataItemMapList = convertDataItems(dataItems);
+        if (CollectionUtils.isNotEmpty(dataItemMapList)) {
+            String dataItemsFileName = String.format("%s/%s.xlsx", this.parentDir, outputFilename);
+            ExcelUtils.writeExcel(dataItemsFileName, dataItemMapList, true);
+        }
+        List<Map<String, Object>> countResultMapList = convertCountResult(countResultMap);
+        if (CollectionUtils.isNotEmpty(countResultMapList)) {
+            String countFileName = String.format("%s/%s.count.xlsx", this.parentDir, outputFilename);
+            ExcelUtils.writeExcel(countFileName, countResultMapList, true);
+        }
     }
 }
