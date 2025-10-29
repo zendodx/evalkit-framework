@@ -26,10 +26,17 @@ public class FullEvalConfig extends EvalConfig {
                              int threadNum,
                              double passScore,
                              Map<String, Object> extra,
+                             boolean openInjectData,
+                             boolean injectDataIndex,
+                             boolean injectInputData,
+                             boolean injectApiCompletionResult,
+                             boolean injectEvalResult,
+                             boolean injectExtra,
                              DataLoader dataLoader,
                              Workflow evalWorkflow,
                              Workflow reportWorkflow) {
-        super(taskName, filePath, offset, limit, threadNum, passScore, extra);
+        super(taskName, filePath, offset, limit, threadNum, passScore, extra,
+                openInjectData, injectDataIndex, injectInputData, injectApiCompletionResult, injectEvalResult, injectExtra);
         this.dataLoader = dataLoader;
         this.evalWorkflow = evalWorkflow;
         this.reportWorkflow = reportWorkflow;
@@ -63,6 +70,7 @@ public class FullEvalConfig extends EvalConfig {
         @Override
         public FullEvalConfig build() {
             FullEvalConfig fullEvalConfig = new FullEvalConfig(taskName, filePath, offset, limit, threadNum, passScore, extra,
+                    openInjectData, injectDataIndex, injectInputData, injectApiCompletionResult, injectEvalResult, injectExtra,
                     dataLoader, evalWorkflow, reportWorkflow);
             fullEvalConfig.updateConfigFromEnv();
             fullEvalConfig.checkParams();

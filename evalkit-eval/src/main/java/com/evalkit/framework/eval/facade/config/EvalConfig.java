@@ -27,6 +27,14 @@ public class EvalConfig {
     protected double passScore;
     /* 额外配置 */
     protected Map<String, Object> extra;
+    /* 开启输入注入 */
+    protected boolean openInjectData;
+    /* 按需注入开关 */
+    protected boolean injectDataIndex;
+    protected boolean injectInputData;
+    protected boolean injectApiCompletionResult;
+    protected boolean injectEvalResult;
+    protected boolean injectExtra;
 
     protected EvalConfig() {
 
@@ -38,7 +46,13 @@ public class EvalConfig {
                          int limit,
                          int threadNum,
                          double passScore,
-                         Map<String, Object> extra) {
+                         Map<String, Object> extra,
+                         boolean openInjectData,
+                         boolean injectDataIndex,
+                         boolean injectInputData,
+                         boolean injectApiCompletionResult,
+                         boolean injectEvalResult,
+                         boolean injectExtra) {
         this.taskName = taskName;
         this.filePath = filePath;
         this.offset = offset;
@@ -46,6 +60,12 @@ public class EvalConfig {
         this.threadNum = threadNum;
         this.passScore = passScore;
         this.extra = extra;
+        this.openInjectData = openInjectData;
+        this.injectDataIndex = injectDataIndex;
+        this.injectInputData = injectInputData;
+        this.injectApiCompletionResult = injectApiCompletionResult;
+        this.injectEvalResult = injectEvalResult;
+        this.injectExtra = injectExtra;
     }
 
     /**
@@ -102,6 +122,30 @@ public class EvalConfig {
             this.extra = JsonUtils.fromJson(extra, new TypeReference<Map<String, Object>>() {
             });
         }
+        Boolean openInjectData = RuntimeEnvUtils.getJVMPropertyBoolean("openInjectData", null);
+        if (openInjectData != null) {
+            this.openInjectData = openInjectData;
+        }
+        Boolean injectDataIndex = RuntimeEnvUtils.getJVMPropertyBoolean("injectDataIndex", null);
+        if (injectDataIndex != null) {
+            this.injectDataIndex = injectDataIndex;
+        }
+        Boolean injectInputData = RuntimeEnvUtils.getJVMPropertyBoolean("injectInputData", null);
+        if (injectInputData != null) {
+            this.injectInputData = injectInputData;
+        }
+        Boolean injectApiCompletionResult = RuntimeEnvUtils.getJVMPropertyBoolean("injectApiCompletionResult", null);
+        if (injectApiCompletionResult != null) {
+            this.injectApiCompletionResult = injectApiCompletionResult;
+        }
+        Boolean injectEvalResult = RuntimeEnvUtils.getJVMPropertyBoolean("injectEvalResult", null);
+        if (injectEvalResult != null) {
+            this.injectEvalResult = injectEvalResult;
+        }
+        Boolean injectExtra = RuntimeEnvUtils.getJVMPropertyBoolean("injectExtra", null);
+        if (injectExtra != null) {
+            this.injectExtra = injectExtra;
+        }
     }
 
     /**
@@ -137,6 +181,12 @@ public class EvalConfig {
         protected int threadNum = 1;
         protected double passScore = 0.0;
         protected Map<String, Object> extra;
+        protected boolean openInjectData = false;
+        protected boolean injectDataIndex = true;
+        protected boolean injectInputData = true;
+        protected boolean injectApiCompletionResult = true;
+        protected boolean injectEvalResult = true;
+        protected boolean injectExtra = true;
 
         protected EvalConfigBuilder() {
         }
@@ -176,11 +226,42 @@ public class EvalConfig {
             return (B) this;
         }
 
+        public B openInjectData(boolean openInjectData) {
+            this.openInjectData = openInjectData;
+            return (B) this;
+        }
+
+        public B injectDataIndex(boolean injectDataIndex) {
+            this.injectDataIndex = injectDataIndex;
+            return (B) this;
+        }
+
+        public B injectInputData(boolean injectInputData) {
+            this.injectInputData = injectInputData;
+            return (B) this;
+        }
+
+        public B injectApiCompletionResult(boolean injectApiCompletionResult) {
+            this.injectApiCompletionResult = injectApiCompletionResult;
+            return (B) this;
+        }
+
+        public B injectEvalResult(boolean injectEvalResult) {
+            this.injectEvalResult = injectEvalResult;
+            return (B) this;
+        }
+
+        public B injectExtra(boolean injectExtra) {
+            this.injectExtra = injectExtra;
+            return (B) this;
+        }
+
         /**
          * 最终 build：一定会触发环境变量覆盖 + 校验
          */
         public EvalConfig build() {
-            EvalConfig evalConfig = new EvalConfig(taskName, filePath, offset, limit, threadNum, passScore, extra);
+            EvalConfig evalConfig = new EvalConfig(taskName, filePath, offset, limit, threadNum, passScore, extra,
+                    openInjectData, injectDataIndex, injectInputData, injectApiCompletionResult, injectEvalResult, injectExtra);
             evalConfig.updateConfigFromEnv();
             evalConfig.checkParams();
             return evalConfig;
@@ -241,5 +322,53 @@ public class EvalConfig {
 
     public void setExtra(Map<String, Object> extra) {
         this.extra = extra;
+    }
+
+    public boolean isOpenInjectData() {
+        return openInjectData;
+    }
+
+    public void setOpenInjectData(boolean openInjectData) {
+        this.openInjectData = openInjectData;
+    }
+
+    public boolean isInjectDataIndex() {
+        return injectDataIndex;
+    }
+
+    public void setInjectDataIndex(boolean injectDataIndex) {
+        this.injectDataIndex = injectDataIndex;
+    }
+
+    public boolean isInjectInputData() {
+        return injectInputData;
+    }
+
+    public void setInjectInputData(boolean injectInputData) {
+        this.injectInputData = injectInputData;
+    }
+
+    public boolean isInjectApiCompletionResult() {
+        return injectApiCompletionResult;
+    }
+
+    public void setInjectApiCompletionResult(boolean injectApiCompletionResult) {
+        this.injectApiCompletionResult = injectApiCompletionResult;
+    }
+
+    public boolean isInjectEvalResult() {
+        return injectEvalResult;
+    }
+
+    public void setInjectEvalResult(boolean injectEvalResult) {
+        this.injectEvalResult = injectEvalResult;
+    }
+
+    public boolean isInjectExtra() {
+        return injectExtra;
+    }
+
+    public void setInjectExtra(boolean injectExtra) {
+        this.injectExtra = injectExtra;
     }
 }

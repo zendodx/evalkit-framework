@@ -32,6 +32,12 @@ public class DeltaEvalConfig extends FullEvalConfig {
                               int threadNum,
                               double passScore,
                               Map<String, Object> extra,
+                              boolean openInjectData,
+                              boolean injectDataIndex,
+                              boolean injectInputData,
+                              boolean injectApiCompletionResult,
+                              boolean injectEvalResult,
+                              boolean injectExtra,
                               DataLoader dataLoader,
                               Workflow evalWorkflow,
                               Workflow reportWorkflow,
@@ -40,7 +46,9 @@ public class DeltaEvalConfig extends FullEvalConfig {
                               int mqReceiveTimeout,
                               boolean enableResume,
                               long messageProcessMaxTime) {
-        super(taskName, filePath, offset, limit, threadNum, passScore, extra, dataLoader, evalWorkflow, reportWorkflow);
+        super(taskName, filePath, offset, limit, threadNum, passScore, extra,
+                openInjectData, injectDataIndex, injectInputData, injectApiCompletionResult, injectEvalResult, injectExtra,
+                dataLoader, evalWorkflow, reportWorkflow);
         this.dataLoader = dataLoader;
         this.evalWorkflow = evalWorkflow;
         this.reportWorkflow = reportWorkflow;
@@ -134,6 +142,7 @@ public class DeltaEvalConfig extends FullEvalConfig {
         public DeltaEvalConfig build() {
             DeltaEvalConfig deltaEvalConfig = new DeltaEvalConfig(
                     taskName, filePath, offset, limit, threadNum, passScore, extra,
+                    openInjectData, injectDataIndex, injectInputData, injectApiCompletionResult, injectEvalResult, injectExtra,
                     dataLoader, evalWorkflow, reportWorkflow, batchSize, reportInterval,
                     mqReceiveTimeout, enableResume, messageProcessMaxTime);
             deltaEvalConfig.updateConfigFromEnv();

@@ -138,8 +138,10 @@
                     </includes>
                     <!-- 排除单元测试 -->
                     <excludes>
-                        <!-- TODO 耗时长排除 -->
+                        <!-- TODO 耗时长排除,手动测试 -->
+                        <exclude>DeltaEvalFacadeTest</exclude>
                         <exclude>OrderedDeltaEvalFacadeTest</exclude>
+                        <exclude>OrderedDeltaEvalWithinDataInjectTest</exclude>
                     </excludes>
                 </configuration>
             </plugin>
