@@ -255,6 +255,7 @@ public class ActiveMQEmbeddedServer {
             }
         } catch (Exception e) {
             rollback(session);
+            log.error("MQ batch receive failed, error: {}", e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
             closeQuietly(session, conn);

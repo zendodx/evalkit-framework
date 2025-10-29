@@ -15,6 +15,8 @@ import com.evalkit.framework.eval.node.begin.config.BeginConfig;
 import com.evalkit.framework.eval.node.counter.BasicCounter;
 import com.evalkit.framework.eval.node.dataloader.DataLoader;
 import com.evalkit.framework.eval.node.dataloader.MultiDataLoader;
+import com.evalkit.framework.eval.node.reporter.CsvReporter;
+import com.evalkit.framework.eval.node.reporter.ExcelReporter;
 import com.evalkit.framework.eval.node.reporter.JsonReporter;
 import com.evalkit.framework.eval.node.reporter.html.HtmlReporter;
 import com.evalkit.framework.eval.node.scorer.Scorer;
@@ -163,8 +165,10 @@ class OrderedDeltaEvalFacadeTest {
         // 评测结果上报
         String fileName = "ordered_delta_eval_test_" + DateUtils.nowToString();
         BasicCounter basicCounter = new BasicCounter();
-        HtmlReporter htmlReporter = new HtmlReporter(fileName);
-        JsonReporter jsonReporter = new JsonReporter(fileName);
+        HtmlReporter htmlReporter = new HtmlReporter(fileName, fileName);
+        JsonReporter jsonReporter = new JsonReporter(fileName, fileName);
+        ExcelReporter excelReporter = new ExcelReporter(fileName, fileName);
+        CsvReporter csvReporter = new CsvReporter(fileName, fileName);
 
         List<Scorer> scorers = ListUtils.of(scorer1, scorer2, scorer3);
 
@@ -172,7 +176,7 @@ class OrderedDeltaEvalFacadeTest {
                 .link(begin, apiCompletion)
                 .link(apiCompletion, scorers).build();
         Workflow reportWorkflow = new WorkflowBuilder()
-                .link(basicCounter, htmlReporter, jsonReporter).build();
+                .link(basicCounter, htmlReporter, jsonReporter, excelReporter, csvReporter).build();
 
         CustomDeltaEval cfe = new CustomDeltaEval(
                 DeltaEvalConfig.builder()

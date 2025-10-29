@@ -72,7 +72,8 @@ public class OrderedBatchRunner {
                                 R r = task.apply(t.raw);
                                 resultBox.set(t.index, r);
                             } catch (Exception e) {
-                                log.error("Ordered task error, key={}", t.key, e);
+                                log.error("Ordered batch run task error, key={}", t.key, e);
+                                throw e;
                             } finally {
                                 done.countDown();
                             }
