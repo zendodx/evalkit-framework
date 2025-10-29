@@ -1,5 +1,19 @@
 # ChangeLog
 
+## [0.4.1] - 2025-10-29
+
+### Added
+- DataLoader支持数据注入
+- DateMocker支持范围内日期生成
+### Fixed
+- 修改csv,excel文件上报内容格式
+- 修改PolishDataLoaderWrapper的sysPrompt
+- 修改评测总分数和检查项总分数
+- 修复JsonDataLoader未关联父配置的bug
+- 修复FullEvalFacade获取剩余数据大小空指针bug
+### Changed
+- 更新用户手册
+
 ## [0.4.0] - 2025-10-22
 
 ### Added
