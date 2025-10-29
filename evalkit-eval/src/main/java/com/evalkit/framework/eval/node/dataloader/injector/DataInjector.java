@@ -23,12 +23,16 @@ public class DataInjector {
      */
     private static void injectDataIndex(DataItem dataItem) {
         InputData inputData = dataItem.getInputData();
-        Integer dataIndexTmp = inputData.get(DataItemField.dataIndexKey, null);
-        if (dataIndexTmp == null) {
-            return;
+        Object dataIndexObj = inputData.get(DataItemField.dataIndexKey, null);
+        if (dataIndexObj instanceof Long) {
+            dataItem.setDataIndex((Long) dataIndexObj);
+        } else if (dataIndexObj instanceof String) {
+            dataItem.setDataIndex(Long.valueOf((String) dataIndexObj));
+        } else if (dataIndexObj instanceof Integer) {
+            dataItem.setDataIndex(new Long((Integer) dataIndexObj));
+        } else {
+            throw new IllegalArgumentException("数据索引类型错误");
         }
-        Long dataIndex = new Long(dataIndexTmp);
-        dataItem.setDataIndex(dataIndex);
     }
 
     /**
