@@ -25,6 +25,12 @@ class EvalConfigTest {
         System.clearProperty("threadNum");
         System.clearProperty("passScore");
         System.clearProperty("extra");
+        System.clearProperty("openInjectData");
+        System.clearProperty("injectDataIndex");
+        System.clearProperty("injectInputData");
+        System.clearProperty("injectApiCompletionResult");
+        System.clearProperty("injectEvalResult");
+        System.clearProperty("injectExtra");
     }
 
     @Test
@@ -36,6 +42,12 @@ class EvalConfigTest {
         assertThat(config.getThreadNum()).isOne();
         assertThat(config.getPassScore()).isZero();
         assertThat(config.getExtra()).isNull();
+        assertThat(config.isOpenInjectData()).isFalse();
+        assertThat(config.isInjectDataIndex()).isTrue();
+        assertThat(config.isInjectInputData()).isTrue();
+        assertThat(config.isInjectApiCompletionResult()).isTrue();
+        assertThat(config.isInjectEvalResult()).isTrue();
+        assertThat(config.isInjectExtra()).isTrue();
     }
 
     @Test
@@ -48,6 +60,7 @@ class EvalConfigTest {
         setProp("threadNum", "8");
         setProp("passScore", "0.85");
         setProp("extra", "{\"model\":\"gpt-4\",\"timeout\":30}");
+        setProp("openInjectData", "true");
         // when
         EvalConfig config = EvalConfig.builder().build();
         // then
@@ -59,6 +72,7 @@ class EvalConfigTest {
         assertThat(config.getPassScore()).isEqualTo(0.85);
         assertThat(config.getExtra()).containsEntry("model", "gpt-4")
                 .containsEntry("timeout", 30);
+        assertThat(config.isOpenInjectData()).isTrue();
     }
 
     @Test
@@ -67,16 +81,19 @@ class EvalConfigTest {
         setProp("taskName", "");
         setProp("threadNum", "0");
         setProp("passScore", "0.0");
+        setProp("openInjectData", "true");
         // given
         EvalConfig config = EvalConfig.builder()
                 .taskName("customTask")
                 .threadNum(16)
                 .passScore(0.9)
+                .openInjectData(false)
                 .build();
         // then
         assertThat(config.getTaskName()).isEqualTo("customTask"); // 空串不覆盖
         assertThat(config.getThreadNum()).isEqualTo(16);          // 0 不覆盖
         assertThat(config.getPassScore()).isEqualTo(0.9);         // 0.0 不覆盖
+        assertThat(config.isOpenInjectData()).isTrue();
     }
 
     @Test

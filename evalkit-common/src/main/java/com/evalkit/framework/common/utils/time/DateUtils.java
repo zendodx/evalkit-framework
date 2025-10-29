@@ -3,6 +3,8 @@ package com.evalkit.framework.common.utils.time;
 import org.apache.commons.lang3.time.DateFormatUtils;
 
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
@@ -103,5 +105,37 @@ public class DateUtils {
 
     public static long timeCost(String start, String end, String format) {
         return timeCost(parse(start, format), parse(end, format));
+    }
+
+    /**
+     * 判断日期的pattern是否合法
+     *
+     * @param pattern 日期格式
+     * @return true/false
+     */
+    public static boolean isValidPattern(String pattern) {
+        if (pattern == null || pattern.trim().isEmpty()) {
+            return false;
+        }
+        try {
+            new SimpleDateFormat(pattern);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    /**
+     * 给定日期增加天数
+     *
+     * @param date 给定日期
+     * @param days 增加的天数
+     * @return 增加天数后的日期
+     */
+    public static Date addDays(Date date, int days) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.add(Calendar.DATE, days);
+        return calendar.getTime();
     }
 }

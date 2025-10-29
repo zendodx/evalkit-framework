@@ -3,6 +3,7 @@ package com.evalkit.framework.eval.node.reporter;
 import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.common.utils.random.NanoIdUtils;
 import com.evalkit.framework.common.utils.time.DateUtils;
+import com.evalkit.framework.eval.constants.DataItemField;
 import com.evalkit.framework.eval.model.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,6 +22,7 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public abstract class FileReporter extends Reporter {
+
     /* 输出文件名 */
     protected String fileName;
     /* 输出文件夹 */
@@ -72,28 +74,19 @@ public abstract class FileReporter extends Reporter {
         for (DataItem item : items) {
             Map<String, Object> itemMap = new HashMap<>();
             // 保存数据索引
-            itemMap.put("dataIndex", item.getDataIndex());
+            itemMap.put(DataItemField.dataIndexKey, item.getDataIndex());
             // 保存输入数据
             InputData inputData = item.getInputData();
-            if (inputData != null) {
-                Map<String, Object> inputDataMap = inputData.getInputItem();
-                itemMap.putAll(inputDataMap);
-            }
+            itemMap.put(DataItemField.inputDataKey, JsonUtils.toJson(inputData));
             // 保存接口数据
             ApiCompletionResult apiCompletionResult = item.getApiCompletionResult();
-            if (apiCompletionResult != null) {
-                Map<String, Object> apiCompletionResultMap = apiCompletionResult.getResultItem();
-                itemMap.putAll(apiCompletionResultMap);
-            }
+            itemMap.put(DataItemField.apiCompletionResultKey, JsonUtils.toJson(apiCompletionResult));
             // 保存评测结果
             EvalResult evalResult = item.getEvalResult();
-            if (evalResult != null) {
-                List<ScorerResult> scorerResults = evalResult.getScorerResults();
-                for (ScorerResult scorerResult : scorerResults) {
-                    String metric = scorerResult.getMetric();
-                    itemMap.put(metric, JsonUtils.toJson(scorerResult));
-                }
-            }
+            itemMap.put(DataItemField.evalResultKey, JsonUtils.toJson(evalResult));
+            // 保存额外数据
+            Map<String, Object> extra = item.getExtra();
+            itemMap.put(DataItemField.extraKey, JsonUtils.toJson(extra));
             result.add(itemMap);
         }
         return result;

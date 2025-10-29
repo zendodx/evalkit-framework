@@ -5,6 +5,7 @@ import com.evalkit.framework.common.thread.PoolName;
 import com.evalkit.framework.common.thread.ThreadPoolManager;
 import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.eval.facade.config.DeltaEvalConfig;
+import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.model.InputData;
 import lombok.extern.slf4j.Slf4j;
 
@@ -62,10 +63,11 @@ public abstract class OrderedDeltaEvalFacade extends DeltaEvalFacade {
     }
 
     protected InputData parseMessage(Message message) {
-        String json = null;
+        String json;
         try {
             json = ((TextMessage) message).getText();
-            return JsonUtils.fromJson(json, InputData.class);
+            DataItem dataItem = JsonUtils.fromJson(json, DataItem.class);
+            return dataItem.getInputData();
         } catch (JMSException e) {
             throw new RuntimeException(e);
         }
@@ -100,55 +102,61 @@ public abstract class OrderedDeltaEvalFacade extends DeltaEvalFacade {
                 final int MAX_EMPTY_ROUNDS = 10;
                 // 空轮询计数器
                 AtomicInteger emptyRounds = new AtomicInteger(0);
-                do {
-                    activeMQEmbeddedServer.batchReceiveInTx(taskName, batchSize, mqReceiveTimeout, (batch, session) -> {
-                        if (batch.isEmpty()) {
-                            log.info("Empty batch, start empty rounds count:{}", emptyRounds.get());
-                            emptyRounds.incrementAndGet();
-                            return false;
-                        }
-                        emptyRounds.set(0); // 重置空轮询计数
-                        // 使用OrderedBatchRunner进行有序批量处理
-                        List<InputData> processedData = OrderedBatchRunner.runOrderedBatch(
-                                batch,
-                                message -> {
-                                    try {
-                                        // 幂等检查,已经处理过则跳过
-                                        String messageId = message.getJMSMessageID();
-                                        if (isProcess(messageId)) {
-                                            log.info("Message already processed, messageId: {}", messageId);
+                try {
+                    do {
+                        activeMQEmbeddedServer.batchReceiveInTx(taskName, batchSize, mqReceiveTimeout, (batch, session) -> {
+                            if (batch.isEmpty()) {
+                                log.info("Empty batch, start empty rounds count:{}", emptyRounds.get());
+                                emptyRounds.incrementAndGet();
+                                return false;
+                            }
+                            emptyRounds.set(0); // 重置空轮询计数
+                            // 使用OrderedBatchRunner进行有序批量处理
+                            List<Message> processedData = OrderedBatchRunner.runOrderedBatch(
+                                    batch,
+                                    message -> {
+                                        try {
+                                            // 幂等检查,已经处理过则跳过
+                                            String messageId = message.getJMSMessageID();
+                                            if (isProcess(messageId)) {
+                                                log.info("Message already processed, messageId: {}", messageId);
+                                                return null;
+                                            }
+                                            // 执行评测并落库
+                                            evalAndInsert(message);
+                                            // 去重表落库
+                                            makeProcessed(messageId);
+                                            log.info("Eval data consume and eval success, messageId: {}, message: {}", messageId, ((TextMessage) message).getText());
+                                            return message;
+                                        } catch (SQLException | JMSException e) {
+                                            log.error("Error processing message", e);
                                             return null;
                                         }
-                                        // 执行评测并落库
-                                        InputData inputData = parseMessage(message);
-                                        evalAndInsert(inputData);
-                                        // 去重表落库
-                                        makeProcessed(messageId);
-                                        log.info("Eval data consume and eval success, messageId: {}, input: {}", messageId, inputData);
-                                        return inputData;
-                                    } catch (SQLException | JMSException e) {
-                                        log.error("Error processing message", e);
-                                        return null;
-                                    }
-                                },
-                                message -> prepareOrderKey(parseMessage(message)),
-                                prepareMessageComparator(),
-                                threadNum,
-                                // 超时时间计算：每条消息30秒
-                                size -> size * messageProcessMaxTime
-                        );
-                        // 过滤掉处理失败的数据
-                        long successCount = processedData.stream().filter(Objects::nonNull).count();
-                        consumed.addAndGet(successCount);
-                        // 消费完毕
-                        if (consumed.get() >= remainCount) {
-                            latch.countDown();
-                            return false;
-                        }
-                        return true;
-                    });
-                    // 如果消费完毕，则退出循环
-                } while (consumed.get() < remainCount && emptyRounds.get() < MAX_EMPTY_ROUNDS);
+                                    },
+                                    message -> prepareOrderKey(parseMessage(message)),
+                                    prepareMessageComparator(),
+                                    threadNum,
+                                    // 超时时间计算：每条消息30秒
+                                    size -> size * messageProcessMaxTime
+                            );
+                            // 过滤掉处理失败的数据
+                            long successCount = processedData.stream().filter(Objects::nonNull).count();
+                            consumed.addAndGet(successCount);
+                            // 消费完毕
+                            if (consumed.get() >= remainCount) {
+                                latch.countDown();
+                                return false;
+                            }
+                            return true;
+                        });
+                        // 如果消费完毕，则退出循环
+                    } while (consumed.get() < remainCount && emptyRounds.get() < MAX_EMPTY_ROUNDS);
+                } catch (Exception e) {
+                    log.error("Eval failed, error: {}", e.getMessage(), e);
+                    throw e;
+                } finally {
+                    latch.countDown();
+                }
             });
         }
         // 把等待逻辑包成 CompletableFuture，主线程可以继续干别的

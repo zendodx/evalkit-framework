@@ -170,6 +170,106 @@ JsonFileDataLoader jsonFileDataLoader = new JsonFileDataLoader(
 
 用于对数据加载器进行装饰, 装饰后的数据加载器会作为上下文传递给后续节点
 
+### MockDataLoaderWrapper
+
+用于对数据加载器进行装饰, 装饰后的数据加载器会作为上下文传递给后续节点, 装饰后的数据加载器会返回mock数据
+
+#### Mocker接口
+
+基于策略模式实现, 具体实现类如下:
+
+```java
+
+/**
+ * 数据Mock
+ */
+public interface Mocker {
+    /**
+     * 判断是否支持mock
+     *
+     * @param ruleName   规则名称
+     * @param ruleParams 规则参数
+     * @return 是否支持mock
+     */
+    boolean support(String ruleName, List<String> ruleParams);
+
+    /**
+     * mock数据
+     *
+     * @param ruleName   规则名称
+     * @param ruleParams 规则参数
+     * @return mock数据
+     */
+    String mock(String ruleName, List<String> ruleParams);
+
+    /**
+     * 随机选择
+     *
+     * @param list 待选择数据集合
+     * @param <T>  数据类型
+     * @return 随机选择的数据
+     */
+    static <T> T randomChoose(List<? extends T> list) {
+        if (list == null || list.isEmpty()) {
+            return null;
+        }
+        int idx = ThreadLocalRandom.current().nextInt(list.size());
+        return list.get(idx);
+    }
+}
+```
+
+#### DateMocker
+
+DateMocker 是一个 线程安全、可扩展 的日期生成工具，用于根据规则生成当前时间、未来时间或过去时间，并支持自定义日期格式与随机范围。
+
+支持的规则格式:
+
+(1)当前时间
+
+| 规则                 | 参数说明                  | 示例                    | 说明          |
+|--------------------|-----------------------|-----------------------|-------------|
+| `{{date pattern}}` | `pattern` 为日期格式       | `{{date yyyy/MM/dd}}` | 按指定格式返回当前时间 |
+| 无参数时默认格式           | `yyyy-MM-dd HH:mm:ss` | `{{date}}`            | 默认返回当前时间    |
+
+
+(2)未来日期
+
+| 规则                                  | 参数说明                                    | 示例                                  | 说明                         |
+|-------------------------------------|-----------------------------------------|-------------------------------------|----------------------------|
+| `{{future_date days}}`              | `days` 为最大天数                            | `{{future_date 7}}`                 | 返回未来 0~days 天内的随机日期        |
+| `{{future_date days pattern}}`      | `days` 为最大天数，`pattern` 为格式              | `{{future_date 7 yyyy/MM/dd}}`      | 返回未来 0~days 天内的随机日期，按指定格式  |
+| `{{future_date days days}}`         | 第一个 `days` 为最小天数，第二个为最大天数               | `{{future_date 14 365}}`            | 返回未来 min~max 天内的随机日期       |
+| `{{future_date days days pattern}}` | 第一个 `days` 为最小天数，第二个为最大天数，`pattern` 为格式 | `{{future_date 14 365 yyyy/MM/dd}}` | 返回未来 min~max 天内的随机日期，按指定格式 |
+
+---
+
+(3)过去日期
+
+| 规则                                | 参数说明                                    | 示例                                | 说明                         |
+|-----------------------------------|-----------------------------------------|-----------------------------------|----------------------------|
+| `{{past_date days}}`              | `days` 为最大天数                            | `{{past_date 7}}`                 | 返回过去 0~days 天内的随机日期        |
+| `{{past_date days pattern}}`      | `days` 为最大天数，`pattern` 为格式              | `{{past_date 7 yyyy/MM/dd}}`      | 返回过去 0~days 天内的随机日期，按指定格式  |
+| `{{past_date days days}}`         | 第一个 `days` 为最小天数，第二个为最大天数               | `{{past_date 14 365}}`            | 返回过去 min~max 天内的随机日期       |
+| `{{past_date days days pattern}}` | 第一个 `days` 为最小天数，第二个为最大天数，`pattern` 为格式 | `{{past_date 14 365 yyyy/MM/dd}}` | 返回过去 min~max 天内的随机日期，按指定格式 |
+
+参数解析规则
+
+| 参数数量            | 解析规则                                    |
+|-----------------|-----------------------------------------|
+| 无参数             | 使用默认格式 `yyyy-MM-dd HH:mm:ss`，默认天数范围 0~7 |
+| 1 参数（数字）        | 最大天数，最小天数为 0，默认格式                       |
+| 1 参数（非数字）       | 作为日期格式，默认天数范围 0~7                       |
+| 2 参数（数字,数字）     | 第一个为最小天数，第二个为最大天数，默认格式                  |
+| 2 参数（数字,非数字）    | 第一个为最大天数，第二个为日期格式                       |
+| 3 参数（数字,数字,非数字） | 第一个为最小天数，第二个为最大天数，第三个为日期格式              |
+
+默认值
+- **默认日期格式**：`yyyy-MM-dd HH:mm:ss`
+- **默认最小天数**：`0`
+- **默认最大天数**：`7`
+
+
 ## 接口调用
 
 ### ApiCompletion

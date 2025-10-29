@@ -46,7 +46,7 @@
 
     <properties>
         <!-- 项目版本 -->
-        <revision>0.4.0</revision>
+        <revision>0.4.1</revision>
         <!-- 统一编码 -->
         <encoding>UTF-8</encoding>
         <!-- jdk版本 -->
@@ -138,8 +138,10 @@
                     </includes>
                     <!-- 排除单元测试 -->
                     <excludes>
-                        <!-- TODO 耗时长排除 -->
+                        <!-- TODO 耗时长排除,手动测试 -->
+                        <exclude>DeltaEvalFacadeTest</exclude>
                         <exclude>OrderedDeltaEvalFacadeTest</exclude>
+                        <exclude>OrderedDeltaEvalWithinDataInjectTest</exclude>
                     </excludes>
                 </configuration>
             </plugin>

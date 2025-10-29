@@ -14,6 +14,8 @@ import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.model.EvalTask;
 import com.evalkit.framework.eval.model.InputData;
 import com.evalkit.framework.eval.node.dataloader.DataLoader;
+import com.evalkit.framework.eval.node.dataloader.config.DataLoaderConfig;
+import com.evalkit.framework.eval.node.dataloader.injector.DataInjector;
 import com.evalkit.framework.eval.node.scorer.strategy.SumScoreStrategy;
 import com.evalkit.framework.infra.server.mq.ActiveMQEmbeddedServer;
 import com.evalkit.framework.infra.server.sql.SQLiteEmbeddedServer;
@@ -26,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.TextMessage;
 import java.sql.SQLException;
@@ -193,10 +196,31 @@ public class DeltaEvalFacade extends EvalFacade {
             log.info("Data already loaded to MQ, queue size: {}", queueSize);
             return;
         }
+        // 加载输入数据
         DataLoader dataLoader = config.getDataLoader();
-        List<InputData> dataList = dataLoader.loadWrapper();
-        if (CollectionUtils.isNotEmpty(dataList)) {
-            List<String> messages = dataList.stream()
+        List<InputData> inputDataList = dataLoader.loadWrapper();
+        if (CollectionUtils.isEmpty(inputDataList)) {
+            return;
+        }
+        // 构建dataItem
+        List<DataItem> dataItems = new CopyOnWriteArrayList<>();
+        inputDataList.forEach(inputData -> {
+            DataItem dataItem = new DataItem();
+            dataItem.setDataIndex(inputData.getDataIndex());
+            dataItem.setInputData(inputData);
+            dataItems.add(dataItem);
+        });
+        // 数据加载器开启数据注入后需要将inputData中的已有数据注入到dataItem
+        DataLoaderConfig dataLoaderConfig = dataLoader.getConfig();
+        boolean openInjectData = dataLoaderConfig.isOpenInjectData();
+        if (openInjectData) {
+            DataInjector.batchInject(dataItems, dataLoaderConfig.isInjectDataIndex(), dataLoaderConfig.isInjectInputData(),
+                    dataLoaderConfig.isInjectApiCompletionResult(), dataLoaderConfig.isInjectEvalResult(),
+                    dataLoaderConfig.isInjectExtra());
+        }
+        // MQ存储dataItems
+        if (CollectionUtils.isNotEmpty(dataItems)) {
+            List<String> messages = dataItems.stream()
                     .map(JsonUtils::toJson)
                     .collect(Collectors.toList());
             activeMQEmbeddedServer.batchSendTextMessageToQueue(taskName, messages);
@@ -237,10 +261,7 @@ public class DeltaEvalFacade extends EvalFacade {
                                 log.info("Message already processed, messageId: {}", messageId);
                                 continue;
                             }
-                            // 执行评测并落库
-                            String json = ((TextMessage) m).getText();
-                            InputData inputData = JsonUtils.fromJson(json, InputData.class);
-                            evalAndInsert(inputData);
+                            evalAndInsert(m);
                             // 去重表落库
                             makeProcessed(messageId);
                             log.info("Eval data consume and eval success, messageId: {}", messageId);
@@ -271,13 +292,18 @@ public class DeltaEvalFacade extends EvalFacade {
     /**
      * 执行评测并将结果落库
      */
-    protected void evalAndInsert(InputData inputData) throws SQLException {
+    protected void evalAndInsert(Message message) throws SQLException, JMSException {
+        // 执行评测并落库
+        String json = ((TextMessage) message).getText();
+        DataItem dataItem = JsonUtils.fromJson(json, DataItem.class);
         // 构建DataItem
         List<DataItem> dataItems = new CopyOnWriteArrayList<>();
-        DataItem dataItem = new DataItem();
-        dataItem.setDataIndex(inputData.getDataIndex());
-        dataItem.setInputData(inputData);
         dataItems.add(dataItem);
+        // 数据加载器开启数据注入后需要将inputData中的已有数据注入到dataItem
+        boolean openInjectData = config.getDataLoader().getConfig().isOpenInjectData();
+        if (openInjectData) {
+            DataInjector.batchInject(dataItems);
+        }
         // 克隆工作流
         Workflow evalWorkflow = config.getEvalWorkflow().clone();
         // 禁用自动关闭线程池

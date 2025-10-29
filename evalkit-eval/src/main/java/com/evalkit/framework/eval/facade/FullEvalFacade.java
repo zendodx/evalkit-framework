@@ -7,6 +7,8 @@ import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.model.EvalResult;
 import com.evalkit.framework.eval.model.InputData;
 import com.evalkit.framework.eval.node.dataloader.DataLoader;
+import com.evalkit.framework.eval.node.dataloader.config.DataLoaderConfig;
+import com.evalkit.framework.eval.node.dataloader.injector.DataInjector;
 import com.evalkit.framework.workflow.Workflow;
 import com.evalkit.framework.workflow.model.WorkflowContext;
 import lombok.extern.slf4j.Slf4j;
@@ -58,6 +60,14 @@ public class FullEvalFacade extends EvalFacade {
             dataItem.setInputData(inputData);
             dataItems.add(dataItem);
         });
+        // 数据加载器开启数据注入后需要将inputData中的已有数据注入到dataItem
+        DataLoaderConfig dataLoaderConfig = dataLoader.getConfig();
+        boolean openInjectData = dataLoaderConfig.isOpenInjectData();
+        if (openInjectData) {
+            DataInjector.batchInject(dataItems, dataLoaderConfig.isInjectDataIndex(), dataLoaderConfig.isInjectInputData(),
+                    dataLoaderConfig.isInjectApiCompletionResult(), dataLoaderConfig.isInjectEvalResult(),
+                    dataLoaderConfig.isInjectExtra());
+        }
         // dataItem存入上下文
         WorkflowContextOps.setDataItems(workflowContext, dataItems);
     }
@@ -90,6 +100,9 @@ public class FullEvalFacade extends EvalFacade {
             return 0;
         }
         List<DataItem> dataItems = WorkflowContextOps.getDataItems(workflowContext);
+        if (CollectionUtils.isEmpty(dataItems)) {
+            return 0;
+        }
         List<DataItem> collect = dataItems.stream().filter(dataItem -> {
             InputData inputData = dataItem.getInputData();
             ApiCompletionResult apiCompletionResult = dataItem.getApiCompletionResult();

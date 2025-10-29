@@ -8,6 +8,7 @@ import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.model.EvalResult;
 import com.evalkit.framework.eval.model.InputData;
 import com.evalkit.framework.eval.node.dataloader.config.DataLoaderConfig;
+import com.evalkit.framework.eval.node.dataloader.injector.DataInjector;
 import com.evalkit.framework.eval.node.scorer.strategy.ScoreStrategy;
 import com.evalkit.framework.workflow.model.WorkflowContext;
 import com.evalkit.framework.workflow.model.WorkflowNode;
@@ -191,6 +192,11 @@ public abstract class DataLoader extends WorkflowNode {
             double threshold = WorkflowContextOps.getThreshold(ctx);
             ScoreStrategy scoreStrategy = WorkflowContextOps.getScorerStrategy(ctx);
             inputDataList.forEach(inputData -> dataItems.add(buildDataItem(inputData.getDataIndex(), inputData, threshold, scoreStrategy)));
+            // 开启数据注入后,会将inputData中和DataItem相关的值直接注入到工作流上下文
+            if (config.isOpenInjectData()) {
+                DataInjector.batchInject(dataItems, config.isInjectDataIndex(), config.isInjectInputData(), config.isInjectApiCompletionResult(), config.isInjectEvalResult(), config.isInjectExtra());
+                log.info("Inject data success, data size: {}, time cost: {}ms", inputDataList.size(), System.currentTimeMillis() - start);
+            }
             log.info("Load data success, data size: {}, time cost: {}ms", inputDataList.size(), System.currentTimeMillis() - start);
         } catch (Exception e) {
             throw new EvalException("Load eval data error:" + e.getMessage(), e);
