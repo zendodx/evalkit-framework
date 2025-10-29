@@ -34,4 +34,7 @@ public class CheckerConfig {
     /* 检查通过阈值 */
     @Builder.Default
     private double threshold = 0.0;
+    /* 是否为必过checker */
+    @Builder.Default
+    private boolean star = false;
 }
