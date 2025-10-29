@@ -20,6 +20,7 @@ public abstract class JsonDataLoader extends DataLoader {
     }
 
     public JsonDataLoader(DataLoaderConfig config) {
+        super(config);
         this.config = config;
     }
 
