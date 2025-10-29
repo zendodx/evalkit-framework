@@ -90,19 +90,60 @@ public class DataInjector {
         dataItem.setExtra(map);
     }
 
-    private static void inject(DataItem dataItem) {
-        injectDataIndex(dataItem);
-        injectApiCompletionResult(dataItem);
-        injectEvalResult(dataItem);
-        injectExtra(dataItem);
-        // input放在最后注入
-        injectInputData(dataItem);
+    /**
+     * 注入数据
+     *
+     * @param dataItem                  输入数据
+     * @param injectDataIndex           是否注入数据索引
+     * @param injectInputData           是否注入输入数据
+     * @param injectApiCompletionResult 是否注入接口调用结果
+     * @param injectEvalResult          是否注入评测结果
+     * @param injectExtra               是否注入额外数据
+     */
+    private static void inject(DataItem dataItem, boolean injectDataIndex, boolean injectInputData, boolean injectApiCompletionResult, boolean injectEvalResult, boolean injectExtra) {
+        if (injectDataIndex) {
+            injectDataIndex(dataItem);
+        }
+        if (injectApiCompletionResult) {
+            injectApiCompletionResult(dataItem);
+        }
+        if (injectEvalResult) {
+            injectEvalResult(dataItem);
+        }
+        if (injectExtra) {
+            injectExtra(dataItem);
+        }
+        if (injectInputData) {
+            injectInputData(dataItem);
+        }
     }
 
+    /**
+     * 批量注入数据, 全部注入
+     *
+     * @param dataItems 输入数据集
+     */
     public static void batchInject(List<DataItem> dataItems) {
         if (CollectionUtils.isEmpty(dataItems)) {
             return;
         }
-        dataItems.forEach(DataInjector::inject);
+        dataItems.forEach(dataItem -> inject(dataItem, true, true, true, true, true));
+    }
+
+    /**
+     * 批量注入数据
+     *
+     * @param dataItems                 输入数据
+     * @param injectDataIndex           是否注入数据索引
+     * @param injectInputData           是否注入输入数据
+     * @param injectApiCompletionResult 是否注入接口调用结果
+     * @param injectEvalResult          是否注入评测结果
+     * @param injectExtra               是否注入额外数据
+     */
+    public static void batchInject(List<DataItem> dataItems, boolean injectDataIndex, boolean injectInputData, boolean injectApiCompletionResult, boolean injectEvalResult, boolean injectExtra) {
+        if (CollectionUtils.isEmpty(dataItems)) {
+            return;
+        }
+        dataItems.forEach(dataItem -> inject(dataItem, injectDataIndex, injectInputData, injectApiCompletionResult, injectEvalResult, injectExtra));
     }
 }

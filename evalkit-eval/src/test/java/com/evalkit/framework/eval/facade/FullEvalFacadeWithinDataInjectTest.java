@@ -66,6 +66,7 @@ class FullEvalFacadeWithinDataInjectTest {
                         .jsonPath("$.dataItems")
                         .filePath(filePath)
                         .openInjectData(true)
+                        .injectEvalResult(false)
                         .build()
         );
 

@@ -194,7 +194,7 @@ public abstract class DataLoader extends WorkflowNode {
             inputDataList.forEach(inputData -> dataItems.add(buildDataItem(inputData.getDataIndex(), inputData, threshold, scoreStrategy)));
             // 开启数据注入后,会将inputData中和DataItem相关的值直接注入到工作流上下文
             if (config.isOpenInjectData()) {
-                DataInjector.batchInject(dataItems);
+                DataInjector.batchInject(dataItems, config.isInjectDataIndex(), config.isInjectInputData(), config.isInjectApiCompletionResult(), config.isInjectEvalResult(), config.isInjectExtra());
                 log.info("Inject data success, data size: {}, time cost: {}ms", inputDataList.size(), System.currentTimeMillis() - start);
             }
             log.info("Load data success, data size: {}, time cost: {}ms", inputDataList.size(), System.currentTimeMillis() - start);

@@ -30,4 +30,15 @@ public class DataLoaderConfig {
     /* 是否开启注入数据 */
     @Builder.Default
     protected boolean openInjectData = false;
+    /* 如果开启注入数据,则默认注入所有 */
+    @Builder.Default
+    protected boolean injectDataIndex = true;
+    @Builder.Default
+    protected boolean injectInputData = true;
+    @Builder.Default
+    protected boolean injectApiCompletionResult = true;
+    @Builder.Default
+    protected boolean injectEvalResult = true;
+    @Builder.Default
+    protected boolean injectExtra = true;
 }

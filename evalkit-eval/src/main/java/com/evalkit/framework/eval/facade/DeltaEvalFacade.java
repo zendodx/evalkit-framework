@@ -14,6 +14,7 @@ import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.model.EvalTask;
 import com.evalkit.framework.eval.model.InputData;
 import com.evalkit.framework.eval.node.dataloader.DataLoader;
+import com.evalkit.framework.eval.node.dataloader.config.DataLoaderConfig;
 import com.evalkit.framework.eval.node.dataloader.injector.DataInjector;
 import com.evalkit.framework.eval.node.scorer.strategy.SumScoreStrategy;
 import com.evalkit.framework.infra.server.mq.ActiveMQEmbeddedServer;
@@ -210,9 +211,12 @@ public class DeltaEvalFacade extends EvalFacade {
             dataItems.add(dataItem);
         });
         // 数据加载器开启数据注入后需要将inputData中的已有数据注入到dataItem
-        boolean openInjectData = dataLoader.getConfig().isOpenInjectData();
+        DataLoaderConfig dataLoaderConfig = dataLoader.getConfig();
+        boolean openInjectData = dataLoaderConfig.isOpenInjectData();
         if (openInjectData) {
-            DataInjector.batchInject(dataItems);
+            DataInjector.batchInject(dataItems, dataLoaderConfig.isInjectDataIndex(), dataLoaderConfig.isInjectInputData(),
+                    dataLoaderConfig.isInjectApiCompletionResult(), dataLoaderConfig.isInjectEvalResult(),
+                    dataLoaderConfig.isInjectExtra());
         }
         // MQ存储dataItems
         if (CollectionUtils.isNotEmpty(dataItems)) {
