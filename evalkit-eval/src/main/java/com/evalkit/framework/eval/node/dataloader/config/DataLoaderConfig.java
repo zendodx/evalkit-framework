@@ -27,4 +27,7 @@ public class DataLoaderConfig {
     // 是否打乱顺序
     @Builder.Default
     protected boolean shuffle = false;
+    /* 是否开启注入数据 */
+    @Builder.Default
+    protected boolean openInjectData = false;
 }
