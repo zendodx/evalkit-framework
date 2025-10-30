@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * 平均得分率策略
  */
-public class AvgScoreRateStrategy implements ScoreStrategy {
+public class AvgScoreRateStrategy implements ScoreRateStrategy {
 
     @Override
     public String getStrategyName() {

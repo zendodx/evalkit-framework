@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * 最小得分率策略
  */
-public class MinScoreRateStrategy implements ScoreStrategy {
+public class MinScoreRateStrategy implements ScoreRateStrategy {
     @Override
     public String getStrategyName() {
         return "最小得分率策略";

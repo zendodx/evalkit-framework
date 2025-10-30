@@ -8,7 +8,9 @@ import com.evalkit.framework.eval.exception.EvalException;
 import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.model.ScorerResult;
 import com.evalkit.framework.eval.node.scorer.config.ScorerConfig;
+import com.evalkit.framework.eval.node.scorer.strategy.ScoreRateStrategy;
 import com.evalkit.framework.eval.node.scorer.strategy.ScoreStrategy;
+import com.evalkit.framework.eval.node.scorer.strategy.ScoreValueStrategy;
 import com.evalkit.framework.workflow.model.WorkflowContext;
 import com.evalkit.framework.workflow.model.WorkflowNode;
 import com.evalkit.framework.workflow.utils.WorkflowUtils;
@@ -89,9 +91,18 @@ public abstract class Scorer extends WorkflowNode {
                 result.setTimeCost(end - start);
                 result.setSuccess(true);
                 result.setThreshold(config.getThreshold());
-                result.setPass(resultTmp.getScore() >= config.getThreshold());
                 result.setStar(config.isStar());
-                result.setScoreRate(result.getTotalScore() > 0 ? result.getScore() / result.getTotalScore() : 0);
+                double scoreRate = result.getTotalScore() > 0 ? result.getScore() / result.getTotalScore() : 0;
+                result.setScoreRate(scoreRate);
+                // 要根据打分策略来判断是否通过
+                ScoreStrategy scorerStrategy = WorkflowContextOps.getScorerStrategy(getWorkflowContext());
+                if (scorerStrategy instanceof ScoreValueStrategy) {
+                    result.setPass(resultTmp.getScore() >= config.getThreshold());
+                } else if (scorerStrategy instanceof ScoreRateStrategy) {
+                    result.setPass(scoreRate >= config.getThreshold());
+                } else {
+                    throw new IllegalArgumentException("Unsupported scorer strategy: " + scorerStrategy.getClass().getName());
+                }
             }
         } catch (Throwable e) {
             log.error("Scorer eval error: ", e);

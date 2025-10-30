@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * 分数求和策略: 计算各评估器分数的和
  */
-public class SumScoreStrategy implements ScoreStrategy {
+public class SumScoreStrategy implements ScoreValueStrategy {
     @Override
     public String getStrategyName() {
         return "分数求和策略";

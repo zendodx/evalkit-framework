@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * 最小分数策略: 取各评估器的最小分数
  */
-public class MinScoreStrategy implements ScoreStrategy {
+public class MinScoreStrategy implements ScoreValueStrategy {
     @Override
     public String getStrategyName() {
         return "最小分数策略";

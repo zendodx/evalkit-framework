@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * 最大得分率策略
  */
-public class MaxScoreRateStrategy implements ScoreStrategy {
+public class MaxScoreRateStrategy implements ScoreRateStrategy {
     @Override
     public String getStrategyName() {
         return "最大得分率策略";

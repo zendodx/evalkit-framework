@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * 平均分数策略: 计算各评估器分数的平均值
  */
-public class AvgScoreStrategy implements ScoreStrategy {
+public class AvgScoreStrategy implements ScoreValueStrategy {
     @Override
     public String getStrategyName() {
         return "平均分数策略";
