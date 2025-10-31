@@ -43,6 +43,11 @@ public abstract class ApiDataLoader extends JsonDataLoader {
 
     @Override
     public List<InputData> prepareDataList() throws IOException {
+        return parseJson(prepareJson(), prepareJsonpath());
+    }
+
+    @Override
+    public String prepareJson() {
         Map<String, Object> body = prepareBody();
         if (body != null) {
             client.setBody(body);
@@ -59,22 +64,10 @@ public abstract class ApiDataLoader extends JsonDataLoader {
         try {
             HttpApiResponse response = client.invoke();
             log.info("Call api success, request: {}, response: {}", request, response);
-            return parseInputDataList(response, prepareJsonpath());
+            return response.getBody();
         } catch (Exception e) {
-            log.error("Call api error:{}, request: {}", e.getMessage(), request, e);
-            throw e;
-        }
-    }
-
-    /**
-     * 按照jsonpath从响应数据中提取评测数据
-     */
-    private List<InputData> parseInputDataList(HttpApiResponse response, String jsonpath) {
-        try {
-            return parseJson(response.getBody(), jsonpath);
-        } catch (Exception e) {
-            log.error("Api data loader parse input data error, response:{}, jsonpath:{}", response, jsonpath);
-            throw e;
+            log.info("Call api failed, request: {}, error: {}", request, e.getMessage(), e);
+            throw new RuntimeException("Call api failed, error: " + e.getMessage(), e);
         }
     }
 }

@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * 得分率求和策略
  */
-public class SumScoreRateStrategy implements ScoreStrategy {
+public class SumScoreRateStrategy implements ScoreRateStrategy {
     @Override
     public String getStrategyName() {
         return "得分率求和策略";

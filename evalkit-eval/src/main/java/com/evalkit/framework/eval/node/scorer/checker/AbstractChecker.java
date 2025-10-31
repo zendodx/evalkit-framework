@@ -125,4 +125,9 @@ public abstract class AbstractChecker implements Checker {
     public List<CheckItem> getCheckItems() {
         return config.getCheckItems();
     }
+
+    @Override
+    public boolean isStar() {
+        return config.isStar();
+    }
 }

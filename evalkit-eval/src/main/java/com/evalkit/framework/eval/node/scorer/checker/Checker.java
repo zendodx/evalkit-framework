@@ -44,4 +44,9 @@ public interface Checker {
      * 获取检查项结果
      */
     List<CheckItem> getCheckItems();
+
+    /**
+     * 是否为必过checker
+     */
+    boolean isStar();
 }

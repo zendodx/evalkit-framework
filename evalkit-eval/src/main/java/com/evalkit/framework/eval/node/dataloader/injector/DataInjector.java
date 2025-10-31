@@ -1,5 +1,6 @@
 package com.evalkit.framework.eval.node.dataloader.injector;
 
+import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.common.utils.map.MapUtils;
 import com.evalkit.framework.eval.constants.DataItemField;
 import com.evalkit.framework.eval.model.ApiCompletionResult;
@@ -31,7 +32,7 @@ public class DataInjector {
         } else if (dataIndexObj instanceof Integer) {
             dataItem.setDataIndex(new Long((Integer) dataIndexObj));
         } else {
-            throw new IllegalArgumentException("数据索引类型错误");
+            throw new IllegalArgumentException("Data index type error");
         }
     }
 
@@ -42,11 +43,8 @@ public class DataInjector {
      */
     private static void injectInputData(DataItem dataItem) {
         InputData inputData = dataItem.getInputData();
-        Map<String, Object> map = inputData.get(DataItemField.inputDataKey, null);
-        if (map == null) {
-            return;
-        }
-        InputData result = MapUtils.fromMap(map, InputData.class);
+        Object obj = inputData.get(DataItemField.inputDataKey, null);
+        InputData result = convertObject(obj, InputData.class);
         dataItem.setInputData(result);
     }
 
@@ -57,11 +55,8 @@ public class DataInjector {
      */
     private static void injectApiCompletionResult(DataItem dataItem) {
         InputData inputData = dataItem.getInputData();
-        Map<String, Object> map = inputData.get(DataItemField.apiCompletionResultKey, null);
-        if (map == null) {
-            return;
-        }
-        ApiCompletionResult result = MapUtils.fromMap(map, ApiCompletionResult.class);
+        Object obj = inputData.get(DataItemField.apiCompletionResultKey, null);
+        ApiCompletionResult result = convertObject(obj, ApiCompletionResult.class);
         dataItem.setApiCompletionResult(result);
     }
 
@@ -72,11 +67,8 @@ public class DataInjector {
      */
     private static void injectEvalResult(DataItem dataItem) {
         InputData inputData = dataItem.getInputData();
-        Map<String, Object> map = inputData.get(DataItemField.evalResultKey, null);
-        if (map == null) {
-            return;
-        }
-        EvalResult result = MapUtils.fromMap(map, EvalResult.class);
+        Object obj = inputData.get(DataItemField.evalResultKey, null);
+        EvalResult result = convertObject(obj, EvalResult.class);
         dataItem.setEvalResult(result);
     }
 
@@ -87,11 +79,28 @@ public class DataInjector {
      */
     private static void injectExtra(DataItem dataItem) {
         InputData inputData = dataItem.getInputData();
-        Map<String, Object> map = inputData.get(DataItemField.extraKey, null);
-        if (map == null) {
-            return;
+        Object obj = inputData.get(DataItemField.extraKey, null);
+        Map<String, Object> result = convertObject(obj, Map.class);
+        dataItem.setExtra(result);
+    }
+
+    private static <T> T convertObject(Object obj, Class<T> clazz) {
+        if (obj == null) {
+            return null;
+        } else if (obj instanceof String) {
+            return JsonUtils.fromJson((String) obj, clazz);
+        } else if (obj instanceof Map) {
+            try {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> map = (Map<String, Object>) obj;
+                return MapUtils.fromMap(map, clazz);
+            } catch (ClassCastException e) {
+                throw new IllegalArgumentException("Struct error，expect: Map<String, Object>，real: " + obj.getClass(), e);
+            }
+        } else if (clazz.isInstance(obj)) {
+            return clazz.cast(obj);
         }
-        dataItem.setExtra(map);
+        return null;
     }
 
     /**

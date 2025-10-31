@@ -16,7 +16,7 @@ public class AvgMergeCheckerScoreStrategy implements MergeCheckerScoreStrategy {
 
     @Override
     public double mergeScore(List<Checker> checkers) {
-        if (CollectionUtils.isEmpty(checkers)) {
+        if (CollectionUtils.isEmpty(checkers) || !isAllStarCheckerPassed(checkers)) {
             return 0;
         }
         double score = 0;
