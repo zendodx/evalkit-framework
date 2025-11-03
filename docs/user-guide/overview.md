@@ -1,8 +1,6 @@
-# <img src="docs/files/evalkit_logo.png" width="80" height="80"> EvalKit Framework
+# 概述
 
-##### 📖 中文文档 | 📖 [English Documentation](README_en.md)
-
-## 概述
+## 框架简介
 
 EvalKit Framework是基于Java语言开发的自动化评测框架, 具有以下特性:
 
@@ -20,6 +18,8 @@ EvalKit Framework是基于Java语言开发的自动化评测框架, 具有以下
 
 ## Maven引入
 
+其他版本可参考: [发版历史](../changelog.md)
+
 ```xml
 <!-- https://mvnrepository.com/artifact/io.github.zendodx/evalkit-eval -->
 <dependency>
@@ -28,13 +28,3 @@ EvalKit Framework是基于Java语言开发的自动化评测框架, 具有以下
     <version>0.4.3</version>
 </dependency>
 ```
-
-## 相关文档
-
-- [用户手册](docs/user-guide/user-guide.md)
-- [版本变更](docs/changelog.md)
-- [开发须知](docs/contribute.md)
-
-## 开源协议
-
-EvalKit Framework是在 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) 协议下的开源项目

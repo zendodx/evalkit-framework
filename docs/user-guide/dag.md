@@ -1,57 +1,3 @@
-# 用户手册
-
-# 概述
-
-EvalKit-framework是基于Java的AI自动化评测框架, 具有以下特性:
-
-- 评测全流程编排: 快速实现数据构造,评测执行,结果上报输出,评测总结流程
-- 可扩展: 除了系统内置的节点外,可扩展自定义节点
-- 高性能: 基于DAG实现,多线程执行DAG节点
-- LLM: 支持快速集成LLM服务
-- 依赖少: 依赖框架少,不依赖Spring,可快速接入其他Java工程
-- 全量/增量评测: 支持全量数据评测和增量评测,增量评测还支持评测断点续评
-
-# 环境
-
-- JDK1.8+
-- Maven3.x
-
-# 引入依赖
-
-其他版本可参考: [发版历史](CHANGELOG.md)
-
-```xml
-
-<dependency>
-    <groupId>io.github.zendodx</groupId>
-    <artifactId>evalkit-eval</artifactId>
-    <version>0.4.3</version>
-</dependency>
-```
-
-# 评测方式
-
-框架提供4种执行评测的方式
-
-## Raw DAG
-
-搭建评测DAG工作流的方式执行评测
-
-## EvalFacade
-
-框架封装了评测的门面,可快速实现全量/增量评测
-
-### FullEvalFacade
-
-全量评测,不会生成缓存,适用于小数据量任务,评测过程中端会丢失数据
-
-## DeltaEvalFacade
-
-增量评测,会生成缓存,适用于大数据量任务,支持断点续评
-
-## OrderedDeltaEvalFacade
-
-有序增量评测,会生成缓存,适用于大数据量任务,支持断点续评,且保证评测结果有序
 
 # 工作流节点定义
 
@@ -105,7 +51,7 @@ class CustomScoreStrategy implements ScoreStrategy {
 
 **体系结构**
 
-![数据加载器体系结构](files/dataloader_structure.png)
+![数据加载器体系结构](../files/dataloader_structure.png)
 
 ### DataLoader
 
@@ -399,7 +345,7 @@ MultiDataLoader multiDataLoader = new MultiDataLoader(ListUtils.of(d1, d2));
 
 **体系结构**
 
-![数据装饰器体系结构](files/dataloaderwrapper_stucture.png)
+![数据装饰器体系结构](../files/dataloaderwrapper_stucture.png)
 
 ### DataLoaderWrapper
 
@@ -664,7 +610,7 @@ PolishDataLoaderWrapper polishDataLoaderWrapper = new PolishDataLoaderWrapper(
 
 **体系结构**
 
-![接口调用器体系结构](files/apicompletion_structure.png)
+![接口调用器体系结构](../files/apicompletion_structure.png)
 
 ### ApiCompletion
 
@@ -809,7 +755,7 @@ class TestApiCompletion extends OrderedApiCompletion {
 
 **体系结构**
 
-![评估器体系结构](files/scorer_structure.png)
+![评估器体系结构](../files/scorer_structure.png)
 
 ### Scorer
 
@@ -1224,7 +1170,7 @@ public interface Checker {
 
 **体系结构**
 
-![检查器体系结构](files/checker_structure.png)
+![检查器体系结构](../files/checker_structure.png)
 
 #### AbstractChecker
 
@@ -1345,7 +1291,7 @@ LLMBasedChecker checker = new LLMBasedChecker(
 
 **体系结构**
 
-![结构统计器体系结构](files/counter_structure.png)
+![结构统计器体系结构](../files/counter_structure.png)
 
 ### Counter
 
@@ -1394,7 +1340,7 @@ AttributeCounter attributeCounter = new AttributeCounter(
 
 **体系结构**
 
-![img.png](files/reporter_structure.png)
+![img.png](../files/reporter_structure.png)
 
 ### Reporter
 
