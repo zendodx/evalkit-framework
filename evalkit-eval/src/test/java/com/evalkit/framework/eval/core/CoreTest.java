@@ -57,6 +57,7 @@ public class CoreTest {
     ApiCompletion apiCompletion;
     Scorer scorer1;
     Scorer scorer2;
+    Scorer scorer3;
     BasicCounter basicCounter;
     AttributeCounter attributeCounter;
     Reporter reporter;
@@ -148,6 +149,25 @@ public class CoreTest {
             }
         };
 
+        scorer3 = new Scorer(
+                ScorerConfig.builder()
+                        .metricName("异常测试")
+                        .threshold(0)
+                        .totalScore(1)
+                        .build()
+        ) {
+            @Override
+            public ScorerResult eval(DataItem dataItem) throws Exception {
+                ScorerResult result = new ScorerResult();
+                InputData inputData = dataItem.getInputData();
+                result.setDataIndex(inputData.getDataIndex());
+                int i = 1 / 0;
+                result.setMetric("评测异常");
+                return result;
+            }
+        };
+
+
         basicCounter = new BasicCounter();
         attributeCounter = new AttributeCounter(llmService);
 
@@ -180,7 +200,7 @@ public class CoreTest {
 
     @Test
     public void test() {
-        List<Scorer> scorers = ListUtils.of(scorer1, scorer2);
+        List<Scorer> scorers = ListUtils.of(scorer1, scorer2, scorer3);
         List<Counter> counters = ListUtils.of(basicCounter, attributeCounter);
         List<Reporter> reporters = ListUtils.of(reporter, htmlReporter, csvReporter, excelReporter, jsonReporter);
         new WorkflowBuilder()

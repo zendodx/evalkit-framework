@@ -69,59 +69,103 @@ public abstract class Scorer extends WorkflowNode {
      * 包含钩子的评估,单数据项评估失败不能影响整体运行
      */
     public ScorerResult evalWrapper(DataItem dataItem) {
-        ScorerResult result = new ScorerResult();
-        result.setDataIndex(dataItem.getDataIndex());
-        result.setTotalScore(config.getTotalScore());
         try {
             beforeEval(dataItem);
-            long start = System.currentTimeMillis();
-            ScorerResult resultTmp = eval(dataItem);
-            long end = System.currentTimeMillis();
-            if (resultTmp != null) {
-                result.setMetric(resultTmp.getMetric());
-                result.setScore(resultTmp.getScore());
-                result.setReason(resultTmp.getReason());
-                result.setExtra(resultTmp.getExtra());
-                // 评估器的分数可能是动态的
-                if (config.isDynamicTotalScore()) {
-                    result.setTotalScore(resultTmp.getTotalScore());
-                }
-                result.setStatTime(start);
-                result.setEndTime(end);
-                result.setTimeCost(end - start);
-                result.setSuccess(true);
-                result.setThreshold(config.getThreshold());
-                result.setStar(config.isStar());
-                double scoreRate = result.getTotalScore() > 0 ? result.getScore() / result.getTotalScore() : 0;
-                result.setScoreRate(scoreRate);
-                // 要根据打分策略来判断是否通过
-                ScoreStrategy scorerStrategy = WorkflowContextOps.getScorerStrategy(getWorkflowContext());
-                if (scorerStrategy instanceof ScoreValueStrategy) {
-                    result.setPass(resultTmp.getScore() >= config.getThreshold());
-                } else if (scorerStrategy instanceof ScoreRateStrategy) {
-                    result.setPass(scoreRate >= config.getThreshold());
-                } else {
-                    throw new IllegalArgumentException("Unsupported scorer strategy: " + scorerStrategy.getClass().getName());
-                }
-            }
+            return doEval(dataItem);
         } catch (Throwable e) {
-            log.error("Scorer eval error: ", e);
+            log.error("Scorer eval error, dataIndex={}", dataItem.getDataIndex(), e);
             orErrorEval(dataItem, e);
-            // 评估出错返回错误的评估结果
-            // 分数设置为-1标记评估出错,不参与后续指标计算
-            result.setMetric(config.getMetricName());
-            result.setScore(0);
-            result.setReason("评测出错");
-            result.setExtra(null);
-            result.setSuccess(false);
-            result.setThreshold(config.getThreshold());
-            result.setPass(false);
-            result.setStar(config.isStar());
-            result.setScoreRate(0);
+            return buildErrorResult(dataItem, e);
+        } finally {
+            // 钩子后置处理无论成功失败都要执行
+            afterEval(dataItem, null /* 由子类决定是否复用结果 */);
         }
-        return afterEval(dataItem, result);
     }
 
+    /**
+     * 执行评估返回评估结果
+     *
+     * @param item 评测数据项
+     * @return 评测结果
+     * @throws Exception 评测异常
+     */
+    protected ScorerResult doEval(DataItem item) throws Exception {
+        long start = System.currentTimeMillis();
+        ScorerResult tmp = Objects.requireNonNull(eval(item), "eval() returned null");
+        long end = System.currentTimeMillis();
+
+        double scoreRate = calcScoreRate(tmp.getScore(), tmp.getTotalScore());
+        boolean pass = decidePass(tmp.getScore(), scoreRate);
+
+        return ScorerResult.builder()
+                .dataIndex(item.getDataIndex())
+                .metric(tmp.getMetric())
+                .score(tmp.getScore())
+                .totalScore(config.isDynamicTotalScore() ? tmp.getTotalScore() : config.getTotalScore())
+                .reason(tmp.getReason())
+                .extra(tmp.getExtra())
+                .threshold(config.getThreshold())
+                .star(config.isStar())
+                .success(true)
+                .statTime(start)
+                .endTime(end)
+                .timeCost(end - start)
+                .scoreRate(scoreRate)
+                .pass(pass)
+                .build();
+    }
+
+    /**
+     * 构建评测失败的结果
+     *
+     * @param item 当前数据项
+     * @param ex   异常信息
+     * @return 评测失败时失败结果
+     */
+    protected ScorerResult buildErrorResult(DataItem item, Throwable ex) {
+        return ScorerResult.builder()
+                .dataIndex(item.getDataIndex())
+                .metric(config.getMetricName())
+                .score(0)
+                .totalScore(config.getTotalScore())
+                .reason("Error: " + ex.getMessage())
+                .success(false)
+                .threshold(config.getThreshold())
+                .star(config.isStar())
+                .pass(false)
+                .scoreRate(0)
+                .build();
+    }
+
+    /**
+     * 计算得分率
+     *
+     * @param score 当前分数
+     * @param total 总分数
+     * @return 得分率
+     */
+    protected static double calcScoreRate(double score, double total) {
+        return total > 0 ? score / total : 0;
+    }
+
+    /**
+     * 判断评估器是否通过
+     *
+     * @param scoreValue 分数值
+     * @param scoreRate  得分率
+     * @return 是否通过
+     */
+    protected boolean decidePass(double scoreValue, double scoreRate) {
+        ScoreStrategy strategy = WorkflowContextOps.getScorerStrategy(getWorkflowContext());
+        double threshold = config.getThreshold();
+        if (strategy instanceof ScoreValueStrategy) {
+            return scoreValue >= threshold;
+        } else if (strategy instanceof ScoreRateStrategy) {
+            return scoreRate >= threshold;
+        } else {
+            throw new IllegalArgumentException("Unsupported scorer strategy: " + strategy.getClass().getName());
+        }
+    }
 
     @Override
     public void doExecute() {
