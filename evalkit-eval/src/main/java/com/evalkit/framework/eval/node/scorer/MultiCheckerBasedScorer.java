@@ -11,6 +11,7 @@ import com.evalkit.framework.eval.node.scorer.config.ScorerConfig;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -83,9 +84,17 @@ public abstract class MultiCheckerBasedScorer extends Scorer {
      */
     private String mergeCheckerReason(List<Checker> checkers) {
         StringBuilder sb = new StringBuilder();
+        boolean first = true;
         for (Checker checker : checkers) {
-            sb.append(String.format("[%s]:[%s]", checker.getCheckName(), checker.getReason()));
-            sb.append("\n");
+            String reason = checker.getReason();
+            String checkName = checker.getCheckName();
+            if (StringUtils.isNotEmpty(reason)) {
+                if (!first) {
+                    sb.append(" | ");
+                }
+                sb.append(String.format("%s:%s", checkName, reason));
+                first = false;
+            }
         }
         return sb.toString();
     }

@@ -26,8 +26,7 @@ public class CheckerConfig {
     @Builder.Default
     private double totalScore = 0.0;
     /* 合并各检查项后的检查理由 */
-    @Builder.Default
-    private String reason = "";
+    private String reason;
     /*  检查项分数合并策略,默认是求和 */
     @Builder.Default
     private CheckItemScoreMergeStrategy strategy = new SumCheckItemScoreMergeStrategy();

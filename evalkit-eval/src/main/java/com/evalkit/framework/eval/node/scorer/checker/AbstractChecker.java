@@ -105,15 +105,11 @@ public abstract class AbstractChecker implements Checker {
      */
     @Override
     public String getReason() {
-        String reason = "";
-        if (config.getReason() == null) {
-            reason = config.getCheckItems().stream()
-                    .filter(item -> item.getScore() == 0.0)
-                    .map(CheckItem::getReason)
-                    .collect(Collectors.joining(" | "));
-            config.setReason(reason);
-        }
-        return reason;
+        // 过滤出分数为0的检查项的原因
+        return config.getCheckItems().stream()
+                .filter(item -> item.getScore() == 0.0)
+                .map(CheckItem::getReason)
+                .collect(Collectors.joining(" | "));
     }
 
     @Override
