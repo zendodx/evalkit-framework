@@ -1,11 +1,8 @@
 package com.evalkit.framework.eval.node.counter;
 
-import com.evalkit.framework.eval.model.Attribute;
-import com.evalkit.framework.eval.model.AttributeCountResult;
-import com.evalkit.framework.eval.model.CountResult;
-import com.evalkit.framework.eval.model.DataItem;
-import com.evalkit.framework.infra.service.llm.LLMService;
 import com.evalkit.framework.common.utils.json.JsonUtils;
+import com.evalkit.framework.eval.model.*;
+import com.evalkit.framework.infra.service.llm.LLMService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -66,8 +63,12 @@ public class AttributeCounter extends Counter {
     private List<CaseInput> buildCaseInputs(List<DataItem> dataItems) {
         List<CaseInput> caseInputs = new ArrayList<>();
         for (DataItem dataItem : dataItems) {
-            CaseInput caseInput = new CaseInput(dataItem.getDataIndex(), dataItem.getEvalResult().getReason());
-            caseInputs.add(caseInput);
+            EvalResult evalResult = dataItem.getEvalResult();
+            // 仅筛选有不通过原因的用例
+            if (evalResult != null && evalResult.isSuccess() && StringUtils.isNotEmpty(evalResult.getReason())) {
+                CaseInput caseInput = new CaseInput(dataItem.getDataIndex(), dataItem.getEvalResult().getReason());
+                caseInputs.add(caseInput);
+            }
         }
         return caseInputs;
     }
@@ -114,7 +115,7 @@ public class AttributeCounter extends Counter {
      * 单条 Case 可能返回多个类型，逗号分隔
      */
     private List<Pair<Long, String>> extract(CaseInput c) {
-        String prompt = "你是一名客服工单分析师，请用不超过10个字的短语精确概括下列用户问题；\n" + "如存在多种不同现象，请用中文'#'分隔，相同现象必须返回完全一致的关键词。\n" + "用户问题：" + c.getDescription() + "\n问题类型：";
+        String prompt = "你是一名客服工单分析师，请用不超过20个字的短语精确概括下列用户问题；\n" + "如存在多种不同现象，请用中文'#'分隔，相同现象必须返回完全一致的关键词。\n" + "用户问题：" + c.getDescription() + "\n问题类型：";
         String reply = llmService.chat(prompt);
         if (StringUtils.isEmpty(reply)) {
             List<Pair<Long, String>> r = new ArrayList<>();

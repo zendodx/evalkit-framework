@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title th:text="${reportName}">评测报告</title>
+    <title>核心链路测试_2025-11-04T08:21:11</title>
     <!-- 先声明一次，后面复用 -->
-    <th:block th:with="cdnDomain=${#strings.isEmpty(cdn) ? 'cdn.jsdelivr.net' : cdn}">
-        <link rel="stylesheet"
-              th:href="@{https://{domain}/npm/json-viewer-js@1.0.8/dist/json-viewer.css(domain=${cdnDomain})}"/>
-        <script th:src="@{https://{domain}/npm/chart.js@4.4.0/dist/chart.umd.min.js(domain=${cdnDomain})}"></script>
-        <script th:src="@{https://{domain}/npm/json-viewer-js@1.0.8/dist/json-viewer.min.js(domain=${cdnDomain})}"></script>
-        <script src="https://pfau-software.de/json-viewer/dist/iife/index.js"></script>
-    </th:block>
-    <th:block th:replace="~{fragments/report-default-style :: core-style}"/>
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/json-viewer-js@1.0.8/dist/json-viewer.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/json-viewer-js@1.0.8/dist/json-viewer.min.js"></script>
+    <script src="https://pfau-software.de/json-viewer/dist/iife/index.js"></script>
+    <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 <div class="sidebar">
@@ -29,31 +27,29 @@
 </div>
 
 <div class="main-content">
-    <div class="scroll-wrapper">
-        <!-- 总览 -->
-        <div id="overviewContent" class="overview">
-            <div class="overview-left">
-                <div class="report-name" th:text="${reportName}">评测报告</div>
-                <div class="metric-name">基础指标</div>
-                <div class="metrics-grid" id="basicMetricsGrid"></div>
-                <div class="metric-name">接口调用指标</div>
-                <div class="metrics-grid" id="completionMetricsGrid"></div>
-                <div class="metric-name">评测指标</div>
-                <div class="metrics-grid" id="evalMetricsGrid"></div>
+    <!-- 总览 -->
+    <div id="overviewContent" class="overview">
+        <div class="overview-left">
+            <div class="report-name">核心链路测试_2025-11-04T08:21:11</div>
+            <div class="metric-name">基础指标</div>
+            <div class="metrics-grid" id="basicMetricsGrid"></div>
+            <div class="metric-name">接口调用指标</div>
+            <div class="metrics-grid" id="completionMetricsGrid"></div>
+            <div class="metric-name">评测指标</div>
+            <div class="metrics-grid" id="evalMetricsGrid"></div>
+        </div>
+        <div class="overview-right">
+            <div class="chart-box">
+                <div class="chart-title">通过率趋势</div>
+                <canvas id="passTrendChart"></canvas>
             </div>
-            <div class="overview-right">
-                <div class="chart-box">
-                    <div class="chart-title">通过率趋势</div>
-                    <canvas id="passTrendChart"></canvas>
-                </div>
-                <div class="chart-box">
-                    <div class="chart-title">指标分布</div>
-                    <canvas id="distChart"></canvas>
-                </div>
-                <div class="chart-box">
-                    <div class="chart-title">接口TP指标</div>
-                    <canvas id="tpChart"></canvas>
-                </div>
+            <div class="chart-box">
+                <div class="chart-title">指标分布</div>
+                <canvas id="distChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <div class="chart-title">接口TP指标</div>
+                <canvas id="tpChart"></canvas>
             </div>
         </div>
     </div>
@@ -70,10 +66,130 @@
 </div>
 
 <!-- Script -->
-<script th:inline="javascript">
-    const evaluationData = /*[[${evaluationData}]]*/ [];
-    const metricsData = /*[[${metricsData}]]*/ {};
-    const attributeCountResult = /*[[${attributeCountResult}]]*/ {};
+<script>
+    const evaluationData = [{
+        "dataIndex": 0,
+        "inputData": {"dataIndex": 0, "inputItem": {"query": "hello, \u9752\u5E74\u8282", "type": "1"}},
+        "apiCompletionResult": {
+            "dataIndex": 0,
+            "resultItem": {"response": "Mock response for hello, \u9752\u5E74\u8282"},
+            "startTime": 1762215672185,
+            "endTime": 1762215672186,
+            "timeCost": 1,
+            "success": true
+        },
+        "evalResult": {
+            "dataIndex": 0,
+            "score": 0.0,
+            "reason": "[{\"\u8BC4\u4F30\u6307\u6807\":\"\u56DE\u590D\u957F\u5EA6\u68C0\u67E5\",\"\u8BC4\u4F30\u7406\u7531\":\"hello, \u9752\u5E74\u8282 \u7684\u56DE\u590D\u957F\u5EA6\u8D85\u8FC75\u4E2A\u5B57\u7B26\"},{\"\u8BC4\u4F30\u6307\u6807\":\"\u5F02\u5E38\u6D4B\u8BD5\",\"\u8BC4\u4F30\u7406\u7531\":\"Error: \/ by zero\"},{\"\u8BC4\u4F30\u6307\u6807\":\"\u76F8\u4F3C\u5EA6\u68C0\u67E5level1\",\"\u8BC4\u4F30\u7406\u7531\":\"\u76F8\u4F3C\u5EA6\u4E3A0.0000\uFF0C\u5C0F\u4E8E\u9608\u503C0.0000\"}]",
+            "startTime": 1762215672195,
+            "endTime": 1762215672195,
+            "timeCost": 0,
+            "scorerResults": [{
+                "dataIndex": 0,
+                "metric": "\u56DE\u590D\u957F\u5EA6\u68C0\u67E5",
+                "score": 1.0,
+                "scoreRate": 0.0,
+                "totalScore": 1.0,
+                "reason": "hello, \u9752\u5E74\u8282 \u7684\u56DE\u590D\u957F\u5EA6\u8D85\u8FC75\u4E2A\u5B57\u7B26",
+                "extra": null,
+                "statTime": 1762215672195,
+                "endTime": 1762215672195,
+                "timeCost": 0,
+                "success": true,
+                "pass": true,
+                "threshold": 0.0,
+                "star": false
+            }, {
+                "dataIndex": 0,
+                "metric": "\u5F02\u5E38\u6D4B\u8BD5",
+                "score": 0.0,
+                "scoreRate": 0.0,
+                "totalScore": 1.0,
+                "reason": "Error: \/ by zero",
+                "extra": null,
+                "statTime": 0,
+                "endTime": 0,
+                "timeCost": 0,
+                "success": false,
+                "pass": false,
+                "threshold": 0.0,
+                "star": false
+            }, {
+                "dataIndex": 0,
+                "metric": "\u76F8\u4F3C\u5EA6\u68C0\u67E5level1",
+                "score": 0.0,
+                "scoreRate": 0.0,
+                "totalScore": 1.0,
+                "reason": "\u76F8\u4F3C\u5EA6\u4E3A0.0000\uFF0C\u5C0F\u4E8E\u9608\u503C0.0000",
+                "extra": {"similarity": 0.0, "similarityThreshold": 0.0},
+                "statTime": 1762215672208,
+                "endTime": 1762215672476,
+                "timeCost": 268,
+                "success": true,
+                "pass": true,
+                "threshold": 0.0,
+                "star": false
+            }],
+            "success": true,
+            "pass": false,
+            "threshold": 1.0,
+            "scoreStrategyName": "\u6700\u5927\u5F97\u5206\u7387\u7B56\u7565"
+        },
+        "extra": null
+    }];
+    const metricsData = {
+        "counterName": "basicCountResult",
+        "type": 0,
+        "typeName": "\u57FA\u7840\u7EDF\u8BA1",
+        "passRate": 0.0,
+        "unPassRate": 1.0,
+        "completionErrorRate": 0.0,
+        "completionSuccessRate": 1.0,
+        "evalErrorRate": 0.0,
+        "evalSuccessRate": 1.0,
+        "passCount": 0,
+        "unPassCount": 1,
+        "totalCount": 1,
+        "completionErrorCount": 0,
+        "completionSuccessCount": 1,
+        "evalErrorCount": 0,
+        "evalSuccessCount": 1,
+        "completionAvgTimeCost": 1.0,
+        "completionMinTimeCost": 1,
+        "completionMaxTimeCost": 1,
+        "completionTP99TimeCost": 1,
+        "completionTP95TimeCost": 1,
+        "completionTP90TimeCost": 1,
+        "completionTP80TimeCost": 1,
+        "completionTP70TimeCost": 1,
+        "completionTP60TimeCost": 1,
+        "completionTP50TimeCost": 1,
+        "evalAvgTimeCost": 0.0,
+        "evalMinTimeCost": 0,
+        "evalMaxTimeCost": 0,
+        "minScore": 0.0,
+        "maxScore": 0.0,
+        "avgScore": 0.0,
+        "tp99Score": 0.0,
+        "tp95Score": 0.0,
+        "tp90Score": 0.0,
+        "tp80Score": 0.0,
+        "tp70Score": 0.0,
+        "tp60Score": 0.0,
+        "tp50Score": 0.0,
+        "scoreStdDev": 0.0
+    };
+    const attributeCountResult = {
+        "counterName": "attributeCountResult",
+        "overallAttribution": [{
+            "issueName": "\u56DE\u590D\u8D85\u957F",
+            "caseIds": [0]
+        }, {"issueName": "\u76F8\u4F3C\u5EA6\u8FC7\u4F4E", "caseIds": [0]}, {
+            "issueName": "\u9664\u96F6\u9519\u8BEF",
+            "caseIds": [0]
+        }]
+    };
     let currentFilter = 'all';
     let selectedCase = null;
     let passChart, distChart, tpChart;
@@ -307,7 +423,7 @@
             </div>
             <div class="attribution-card-body">
               <ul class="attribute-case-list">${attr.caseIds.map(id => `<li>${id}</li>`).join('')}</ul>
-              <button class="attribute-copy-btn" onclick="copyCases('${attr.issueName}',${JSON.stringify(attr.caseIds)})">复制全部 CaseId</button>
+              <button class="attribute-copy-btn" onclick="copyCases('${attr.issueName}',${JSON.stringify(attr.caseIds)})">复制全部</button>
             </div>
           </div>`).join('');
 

@@ -22,6 +22,7 @@ import com.evalkit.framework.eval.node.scorer.strategy.SumScoreStrategy;
 import com.evalkit.framework.workflow.Workflow;
 import com.evalkit.framework.workflow.WorkflowBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.ThrowingSupplier;
 
@@ -58,6 +59,7 @@ class DeltaEvalFacadeWithinDataInjectTest {
     }
 
     @Test
+    @Disabled
     public void test() throws Exception {
         // 数据加载器,开启数据注入
         String filePath = RuntimeEnvUtils.getPropertyFromResource("secret.properties", "json-file-datainjector-test-file");

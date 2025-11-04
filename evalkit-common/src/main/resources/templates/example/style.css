@@ -1,0 +1,409 @@
+/* ---------- 通用 ---------- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    overscroll-behavior: none; /* 关闭弹性拖动 */
+    border-radius: 3px;
+}
+
+body {
+    font: 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    color: #333;
+    background: #f5f7fa;
+    display: flex;
+}
+
+.scroll-wrapper {
+    flex: 1; /* 占满父级高度 */
+    overflow-y: auto; /* 内容溢出时出滚动条 */
+    padding: 0 0;
+}
+
+/* ---------- 左侧 ---------- */
+.sidebar {
+    width: 240px;
+    background: #fff;
+    border-right: 1px solid #e4e7f1;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/* ---------- 左侧筛选组件 ---------- */
+.filter {
+    padding: 6px 8px;
+    border-bottom: 1px solid #e4e7f1;
+    display: flex;
+    gap: 4px;
+    height: 5%;
+}
+
+.filter-btn {
+    flex: 1;
+    height: 24px;
+    border: 1px solid #dcdfe6;
+    background: #fff;
+    border-radius: 3px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: .2s
+}
+
+.filter-btn:hover {
+    border-color: #409eff
+}
+
+.filter-btn.active {
+    background: #409eff;
+    color: #fff;
+    border-color: #409eff
+}
+
+/* ---------- 左侧评测列表组件 ---------- */
+.case-list {
+    flex: 1;
+    overflow-y: auto;
+    height: 95%;
+}
+
+.case-item {
+    padding: 6px 8px;
+    border-bottom: 1px solid #f0f2f5;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center
+}
+
+.case-item:hover {
+    background: #f5f7fa
+}
+
+.case-item.active {
+    background: #ecf5ff;
+    color: #409eff
+}
+
+.case-title {
+    font-size: 12px;
+    font-weight: 500
+}
+
+.case-status {
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 4px
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%
+}
+
+.status-dot.pass {
+    background: #67c23a
+}
+
+.status-dot.fail {
+    background: #f56c6c
+}
+
+.status-dot.evalerror {
+    background: #ff8010
+}
+
+/* ---------- 主内容 ---------- */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    overflow: auto;
+    padding-bottom: 24px;
+    height: 100vh;
+}
+
+.detail-header {
+    padding: 8px 12px;
+    border-bottom: 1px solid #e4e7f1;
+    background: #fafbfc;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px
+}
+
+.detail-content {
+    flex: 1;
+    padding: 3px 3px;
+    overflow-y: auto;
+}
+
+.detail-section {
+    border: 1px solid #e4e7f1;
+    border-radius: 3px;
+    margin-bottom: 3px;
+}
+
+.detail-section-header {
+    padding: 6px 8px;
+    background: #f5f7fa;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.detail-section-content {
+    padding: 6px 8px;
+    font-size: 12px;
+}
+
+.detail-row {
+    display: flex;
+    padding: 2px 0;
+}
+
+.detail-label {
+    width: 100px;
+    color: #909399;
+    flex-shrink: 0
+}
+
+.detail-value {
+    flex: 1;
+    color: #606266
+}
+
+.metric-badge {
+    display: inline-block;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 11px;
+    margin-left: 4px
+}
+
+.metric-badge.pass {
+    background: #e1f3d8;
+    color: #67c23a
+}
+
+.metric-badge.fail {
+    background: #fde2e2;
+    color: #f56c6c
+}
+
+.metric-badge.evalerror {
+    background: #ede1ad;
+    color: #ff8010
+}
+
+
+/* 单行展示 */
+/*pre.json-viewer{max-height:300px;overflow:auto;margin:0;padding:4px;font-size:11px}*/
+
+/* 换行展示 */
+pre.json-viewer {
+    max-height: 300px;
+    overflow: auto;
+    margin: 0;
+    padding: 4px;
+    font-size: 11px;
+    white-space: pre-wrap;
+}
+
+/* ---------- 总览 ---------- */
+.overview {
+    display: flex;
+    flex: 1;
+    overflow: hidden
+}
+
+.overview-left {
+    width: 50%;
+    padding: 8px 12px;
+    overflow-y: auto
+}
+
+.overview-right {
+    width: 50%;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px
+}
+
+.report-name {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 8px
+}
+
+.metric-name {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 8px 0 4px 0;
+    padding-left: 4px;
+    border-left: 3px solid #409eff
+}
+
+.metrics-grid {
+    display: grid;
+    grid-template-columns:repeat(auto-fill, minmax(140px, 1fr));
+    gap: 6px
+}
+
+.metric-card {
+    padding: 8px;
+    border: 1px solid #e4e7f1;
+    border-radius: 3px;
+    background: #fafbfc
+}
+
+.metric-label {
+    font-size: 11px;
+    color: #909399
+}
+
+.metric-value {
+    font-size: 13px;
+    font-weight: 600
+}
+
+.metric-value.good {
+    color: #67c23a
+}
+
+.metric-value.bad {
+    color: #f56c6c
+}
+
+.metric-value.evalerror {
+    color: #ff8010
+}
+
+.chart-box {
+    flex: 1;
+    background: #fafbfc;
+    border: 1px solid #e4e7f1;
+    border-radius: 3px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column
+}
+
+.chart-title {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    text-align: center
+}
+
+canvas {
+    max-height: 180px
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #909399;
+    font-size: 12px
+}
+
+/* ---------- 归因卡片 ---------- */
+.attribute-content {
+    flex: 1;
+    padding: 3px 3px;
+    overflow-y: auto;
+}
+
+.attribution-header {
+    display: flex;
+    align-items: center;
+    margin: 3px 3px;
+    flex: 1;
+}
+
+.attribution-stat {
+    font-size: 13px;
+    color: #666;
+    margin-left: 10px;
+}
+
+.attribution-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 3px 3px;
+    border-radius: 3px;
+}
+
+.attribution-card {
+    flex: 0 0 250px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    transition: all .2s;
+}
+
+.attribution-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
+}
+
+.attribution-card-header {
+    padding: 12px 16px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.attribution-card-header .badge {
+    background: #f2f3f5;
+    color: #333;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+}
+
+.attribution-card-body {
+    padding: 0 16px 16px;
+    display: none;
+}
+
+.attribution-card.expanded .attribution-card-body {
+    display: block;
+}
+
+.attribute-case-list {
+    max-height: 160px;
+    overflow: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    padding: 6px;
+    background: #fafafa;
+    font-size: 13px;
+}
+
+.attribute-case-list li {
+    margin: 2px 0;
+    word-break: break-all;
+}
+
+.attribute-copy-btn {
+    margin-top: 6px;
+    font-size: 12px;
+    padding: 4px 8px;
+    border: 1px solid #bbb;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+}
+
+.attribute-copy-btn:hover {
+    background: #f2f3f5;
+}

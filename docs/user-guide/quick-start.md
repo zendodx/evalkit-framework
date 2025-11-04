@@ -1,38 +1,25 @@
-# <img src="docs/files/evalkit_logo.png" width="80" height="80"> EvalKit Framework
+# 快速开始
 
-##### 📖 [English Documentation](README.md) | 📖 中文文档
+## 环境准备
 
-## 概述
-基于Java的AI自动化评测框架, 具有以下特性:
-
-- 评测全流程编排: 快速实现数据构造,评测执行,结果上报输出,评测总结流程
-- 可扩展: 除了系统内置的节点外,可扩展自定义节点
-- 高性能: 基于DAG实现,多线程执行DAG节点
-- LLM: 支持快速集成LLM服务
-- 依赖少: 依赖框架少,不依赖Spring,可快速接入其他Java工程
-- 全量/增量评测: 支持全量数据评测和增量评测,增量评测还支持评测断点续评
-
-## 快速开始
-
-### 工具准备
-
-在开始之前,请先安装以下工具:
 - JDK1.8+
-- Maven3.x
+- Maven3.6+
 
-### 引入依赖
+## 引入依赖
+
+版本发布历史: [发版历史](../changelog.md)
 
 ```xml
 <dependency>
     <groupId>io.github.zendodx</groupId>
     <artifactId>evalkit-eval</artifactId>
-    <version>0.3.0</version>
+    <version>${最新版本}</version>
 </dependency>
 ```
 
-### 准备评测编排
+## 开始评测
 
-#### 原始DAG评测
+### DAG工作流评测
 
 此处给出了一个评估相似度和文本长度的评测编排例子
 
@@ -189,7 +176,7 @@ public class BasicEvalTest {
 }
 ```
 
-#### 全量式评测
+### 全量评测
 
 ```java
 package com.evalkit.framework.eval.facade;
@@ -353,7 +340,7 @@ class FullEvalFacadeTest {
 }
 ```
 
-#### 增量式评测
+### 增量评测
 
 ```java
 package com.evalkit.framework.eval.facade;
@@ -518,12 +505,4 @@ class DeltaEvalFacadeTest {
 }
 ```
 
-## 相关文档
 
-- [API文档](docs/api_doc.md)
-- [版本变更](docs/CHANGELOG.md)
-- [开发须知](docs/contribute.md)
-
-## 开源协议
-
-EvalKit Framework是在 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) 协议下的开源项目
