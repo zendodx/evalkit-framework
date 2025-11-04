@@ -4,6 +4,7 @@ import com.evalkit.framework.common.utils.address.AddressUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,12 +27,22 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ChinaAddressMocker implements Mocker {
     private static final Map<String, AddressStrategy> STRATEGY_POOL = new ConcurrentHashMap<>();
+    /* 中国省份简称映射表 */
+    private static final Map<String, String> SIMPLE_PROVINCE_MAP = new HashMap<>();
 
     static {
         STRATEGY_POOL.put("province", new ProvinceStrategy());
         STRATEGY_POOL.put("city", new CityStrategy());
         STRATEGY_POOL.put("area", new AreaStrategy());
         STRATEGY_POOL.put("street", new StreetStrategy());
+        // 初始化中国省份简称映射表
+        SIMPLE_PROVINCE_MAP.put("内蒙古", "内蒙古自治区");
+        SIMPLE_PROVINCE_MAP.put("西藏", "西藏自治区");
+        SIMPLE_PROVINCE_MAP.put("广西", "广西壮族自治区");
+        SIMPLE_PROVINCE_MAP.put("宁夏", "宁夏回族自治区");
+        SIMPLE_PROVINCE_MAP.put("新疆", "新疆维吾尔自治区");
+        SIMPLE_PROVINCE_MAP.put("香港", "香港特别行政区");
+        SIMPLE_PROVINCE_MAP.put("澳门", "澳门特别行政区");
     }
 
     @Override
@@ -70,6 +81,10 @@ public class ChinaAddressMocker implements Mocker {
                 area = args.get(2);
             } else {
                 throw new IllegalArgumentException("Invalid number of arguments");
+            }
+            // 简称转换全称
+            if (SIMPLE_PROVINCE_MAP.containsKey(province)) {
+                province = SIMPLE_PROVINCE_MAP.get(province);
             }
         }
     }
