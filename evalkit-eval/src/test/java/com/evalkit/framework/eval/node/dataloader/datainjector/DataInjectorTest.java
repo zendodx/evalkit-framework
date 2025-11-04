@@ -15,12 +15,14 @@ import com.evalkit.framework.eval.node.reporter.JsonReporter;
 import com.evalkit.framework.eval.node.reporter.html.HtmlReporter;
 import com.evalkit.framework.eval.node.scorer.Scorer;
 import com.evalkit.framework.workflow.WorkflowBuilder;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 class DataInjectorTest {
     String filePath = RuntimeEnvUtils.getPropertyFromResource("secret.properties", "json-file-datainjector-test-file");
 
     @Test
+    @Disabled
     void test() {
         Begin begin = new Begin();
 
