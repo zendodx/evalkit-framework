@@ -27,31 +27,29 @@
 </div>
 
 <div class="main-content">
-    <div class="scroll-wrapper">
-        <!-- 总览 -->
-        <div id="overviewContent" class="overview">
-            <div class="overview-left">
-                <div class="report-name">核心链路测试_2025-11-04T08:21:11</div>
-                <div class="metric-name">基础指标</div>
-                <div class="metrics-grid" id="basicMetricsGrid"></div>
-                <div class="metric-name">接口调用指标</div>
-                <div class="metrics-grid" id="completionMetricsGrid"></div>
-                <div class="metric-name">评测指标</div>
-                <div class="metrics-grid" id="evalMetricsGrid"></div>
+    <!-- 总览 -->
+    <div id="overviewContent" class="overview">
+        <div class="overview-left">
+            <div class="report-name">核心链路测试_2025-11-04T08:21:11</div>
+            <div class="metric-name">基础指标</div>
+            <div class="metrics-grid" id="basicMetricsGrid"></div>
+            <div class="metric-name">接口调用指标</div>
+            <div class="metrics-grid" id="completionMetricsGrid"></div>
+            <div class="metric-name">评测指标</div>
+            <div class="metrics-grid" id="evalMetricsGrid"></div>
+        </div>
+        <div class="overview-right">
+            <div class="chart-box">
+                <div class="chart-title">通过率趋势</div>
+                <canvas id="passTrendChart"></canvas>
             </div>
-            <div class="overview-right">
-                <div class="chart-box">
-                    <div class="chart-title">通过率趋势</div>
-                    <canvas id="passTrendChart"></canvas>
-                </div>
-                <div class="chart-box">
-                    <div class="chart-title">指标分布</div>
-                    <canvas id="distChart"></canvas>
-                </div>
-                <div class="chart-box">
-                    <div class="chart-title">接口TP指标</div>
-                    <canvas id="tpChart"></canvas>
-                </div>
+            <div class="chart-box">
+                <div class="chart-title">指标分布</div>
+                <canvas id="distChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <div class="chart-title">接口TP指标</div>
+                <canvas id="tpChart"></canvas>
             </div>
         </div>
     </div>
@@ -425,7 +423,7 @@
             </div>
             <div class="attribution-card-body">
               <ul class="attribute-case-list">${attr.caseIds.map(id => `<li>${id}</li>`).join('')}</ul>
-              <button class="attribute-copy-btn" onclick="copyCases('${attr.issueName}',${JSON.stringify(attr.caseIds)})">复制全部 CaseId</button>
+              <button class="attribute-copy-btn" onclick="copyCases('${attr.issueName}',${JSON.stringify(attr.caseIds)})">复制全部</button>
             </div>
           </div>`).join('');
 

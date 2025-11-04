@@ -4,6 +4,7 @@
     padding: 0;
     box-sizing: border-box;
     overscroll-behavior: none; /* 关闭弹性拖动 */
+    border-radius: 3px;
 }
 
 body {
@@ -144,7 +145,7 @@ body {
 
 .detail-section {
     border: 1px solid #e4e7f1;
-    border-radius: 4px;
+    border-radius: 3px;
     margin-bottom: 3px;
 }
 
@@ -260,7 +261,7 @@ pre.json-viewer {
 .metric-card {
     padding: 8px;
     border: 1px solid #e4e7f1;
-    border-radius: 4px;
+    border-radius: 3px;
     background: #fafbfc
 }
 
@@ -290,7 +291,7 @@ pre.json-viewer {
     flex: 1;
     background: #fafbfc;
     border: 1px solid #e4e7f1;
-    border-radius: 4px;
+    border-radius: 3px;
     padding: 8px;
     display: flex;
     flex-direction: column
@@ -317,17 +318,15 @@ canvas {
 /* ---------- 归因卡片 ---------- */
 .attribute-content {
     flex: 1;
-    display: flex;
-    flex-direction: column;
-    background: #fff;
-    overflow: hidden;
-    padding-bottom: 24px
+    padding: 3px 3px;
+    overflow-y: auto;
 }
 
 .attribution-header {
     display: flex;
     align-items: center;
-    margin: 5px 12px;
+    margin: 3px 3px;
+    flex: 1;
 }
 
 .attribution-stat {
@@ -340,13 +339,13 @@ canvas {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
-    margin: 5px 10px;
+    margin: 3px 3px;
+    border-radius: 3px;
 }
 
 .attribution-card {
-    flex: 0 0 280px;
+    flex: 0 0 250px;
     border: 1px solid #e5e7eb;
-    border-radius: 8px;
     background: #fff;
     transition: all .2s;
 }
