@@ -84,8 +84,10 @@ public class CoreTest {
             @Override
             public List<InputData> prepareDataList() {
                 List<InputData> inputDatas = new ArrayList<>();
-                inputDatas.add(new InputData(1L, JsonUtils.fromJson("{\t\"query\":\"hello, {{holiday}}\",\"type\":\"1\"}", new TypeReference<Map<String, Object>>() {
-                })));
+                for (int i = 0; i < 200; i++) {
+                    inputDatas.add(new InputData(1L, JsonUtils.fromJson("{\t\"query\":\"hello, {{holiday}}\",\"type\":\"1\"}", new TypeReference<Map<String, Object>>() {
+                    })));
+                }
                 return inputDatas;
             }
         };
