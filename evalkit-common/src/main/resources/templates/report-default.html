@@ -75,6 +75,8 @@
     let currentFilter = 'all';
     let selectedCase = null;
     let passChart, distChart, tpChart;
+    // 统一小数点后位数
+    let toFixedNumber = 2;
 
     /* ---------- 初始化 ---------- */
     function init() {
@@ -109,7 +111,7 @@
         const md = metricsData || {};
 
         function safePercent(val) {
-            return typeof val === 'number' ? (val * 100).toFixed(1) + '%' : '-';
+            return typeof val === 'number' ? (val * 100).toFixed(toFixedNumber) + '%' : '-';
         }
 
         function safeInt(val) {
@@ -117,11 +119,11 @@
         }
 
         function safeFloat(val) {
-            return typeof val === 'number' ? val.toFixed(1) : '-';
+            return typeof val === 'number' ? val.toFixed(toFixedNumber) : '-';
         }
 
         function safeMs(val) {
-            return typeof val === 'number' ? val.toFixed(1) + 'ms' : '-';
+            return typeof val === 'number' ? val.toFixed(toFixedNumber) + 'ms' : '-';
         }
 
         /* 指标卡片 */
@@ -191,7 +193,7 @@
             // 过滤时保证 evalResult 存在且 pass 字段有意义
             const pass = slice.filter(d => d.evalResult && d.evalResult.pass === true).length;
             labels.push(`${i + 1}-${Math.min(i + step, evaluationData.length)}`);
-            passRates.push(slice.length ? (pass / slice.length * 100).toFixed(1) : '0.0');
+            passRates.push(slice.length ? (pass / slice.length * 100).toFixed(toFixedNumber) : '0.0');
         }
         const lineCfg = {
             type: 'line',
@@ -266,7 +268,7 @@
             const success = evalResult.success;
             // score 为空时显示 '-'，避免 toFixed 报错
             const score = typeof evalResult.score === 'number'
-                ? evalResult.score.toFixed(1)
+                ? evalResult.score.toFixed(toFixedNumber)
                 : '-';
             // 状态判断
             let statusClass, statusText, metricClass;
@@ -374,7 +376,7 @@
         const evalResult = d.evalResult || {};
         const pass = evalResult.pass;
         const success = evalResult.success;
-        const score = typeof evalResult.score === 'number' ? evalResult.score.toFixed(1) : '-';
+        const score = typeof evalResult.score === 'number' ? evalResult.score.toFixed(toFixedNumber) : '-';
         const scoreStrategyName = evalResult.scoreStrategyName || '-';
 
         let statusClass, statusText, metricClass;
@@ -454,7 +456,7 @@
         }
         // 安全处理各字段
         const pass = r.pass === true;
-        const score = typeof r.score === 'number' ? r.score.toFixed(1) : '-';
+        const score = typeof r.score === 'number' ? r.score.toFixed(toFixedNumber) : '-';
         const reason = r.reason || '-';
         const scoreStrategyName = r.scoreStrategyName || '-';
         const threshold = typeof r.threshold === 'number' ? r.threshold : '-';
@@ -490,7 +492,7 @@
                             <span>${s.metric}${s.star ? '<span style="color:#ff4757;margin-left:4px">必过</span>' : ''}</span>
                             <span>${s.success ? '' : '<span style="color:#ff4757;margin-left:4px">评测出错</span>'}</span>
                         </div>
-                        <span class="metric-badge ${pass ? 'pass' : 'fail'}">${pass ? '通过' : '未通过'} | 阈值 ${s.threshold} | 得分率 ${s.scoreRate.toFixed(2)} | 得分 ${s.score.toFixed(1)} / ${s.totalScore.toFixed(1)}</span>
+                        <span class="metric-badge ${pass ? 'pass' : 'fail'}">${pass ? '通过' : '未通过'} | 阈值 ${s.threshold} | 得分率 ${s.scoreRate.toFixed(toFixedNumber)} | 得分 ${s.score.toFixed(toFixedNumber)} / ${s.totalScore.toFixed(toFixedNumber)}</span>
                       </div>
                       <div style="font-size:12px;color:#606266;margin:5px 0">${s.reason}</div>
                       ${s.extra ? (() => {
@@ -536,9 +538,9 @@
             // 3. 转换
             const map = {};
             arr.forEach(it => {
-                const weightScore = (it.score * it.weight).toFixed(2);
+                const weightScore = (it.score * it.weight).toFixed(toFixedNumber);
                 map[it.name] = {
-                    '分数 | 权重 | 权重分数': `${it.score.toFixed(2)} | ${it.weight.toFixed(2)} | ${weightScore}`,
+                    '分数 | 权重 | 权重分数': `${it.score.toFixed(toFixedNumber)} | ${it.weight.toFixed(toFixedNumber)} | ${weightScore}`,
                     '默认分数': it.defaultScore,
                     '理由': it.reason,
                     '类型': it.star ? '必过检查' : '普通检查',
