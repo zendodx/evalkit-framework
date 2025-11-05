@@ -17,7 +17,7 @@ class LLMServiceFactoryTest {
         LLMServiceFactory.registerLLMService("DeepSeek_Test", new LLMServiceFactory.LLMServiceBuilder<LLMService, LLMServiceConfig>() {
             @Override
             public LLMService build(LLMServiceConfig config) {
-                return new DeepseekLLMService((DeepseekLLMServiceConfig) config);
+                return new DeepSeekLLMService((DeepseekLLMServiceConfig) config);
             }
         });
 

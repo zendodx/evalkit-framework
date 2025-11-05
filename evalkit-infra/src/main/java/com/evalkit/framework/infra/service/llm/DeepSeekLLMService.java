@@ -15,35 +15,36 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Deepseek大模型服务
+ * DeepSeek大模型服务
  */
-public class DeepseekLLMService implements LLMService {
-    // Deepseek客户端
+public class DeepSeekLLMService extends AbstractLLMService {
+    /* DeepSeek客户端 */
     private final DeepseekClient client = DeepseekClient.INSTANCE;
-    // 接口访问密钥
-    private DeepseekLLMServiceConfig config;
+    /* DeepSeek大模型服务配置 */
+    private final DeepseekLLMServiceConfig config;
 
-    public DeepseekLLMService(DeepseekLLMServiceConfig config) {
+    public DeepSeekLLMService(DeepseekLLMServiceConfig config) {
+        super(config);
         this.config = config;
     }
 
     @Override
-    public String chat(String prompt) {
+    public String doChat(String prompt) {
         client.initClient(config.getApiToken());
         List<Message> messages = new ArrayList<>();
         messages.add(new UserMessage(prompt));
         DeepseekChatCompletionsRequest request = DeepseekChatCompletionsRequest.builder()
                 .messages(messages)
                 .model(config.getModel())
-                .frequencyPenalty(0.0)
+                .frequencyPenalty(config.getFrequencyPenalty())
                 .maxTokens((int) config.getMaxTokens())
-                .presencePenalty(0)
+                .presencePenalty((int) config.getPresencePenalty())
                 .responseFormat(new ResponseFormat(ResponseFormatOption.TEXT))
                 .stop(null)
                 .stream(false)
                 .streamOptions(null)
-                .temperature(1.0)
-                .topP(1.0)
+                .temperature(config.getTemperature())
+                .topP(config.getTopP())
                 .tools(null)
                 .toolChoice(ToolChoiceOption.NONE)
                 .logprobs(false)
@@ -52,15 +53,15 @@ public class DeepseekLLMService implements LLMService {
         DeepseekChatCompletionsResponse response;
         try {
             response = client.chatCompletions(request);
-            assert response != null : "DeepseekLLMService chat failed, response is null!";
+            assert response != null : "DeepSeekLLMService chat failed, response is null!";
             return response.getContent();
         } catch (Exception e) {
-            throw new RuntimeException("Deepseek LLM service chat error:" + e.getMessage(), e);
+            throw new RuntimeException("DeepSeek LLM service chat error:" + e.getMessage(), e);
         }
     }
 
     @Override
     public String getModel() {
-        return "deepseek-chat";
+        return config.getModel();
     }
 }
