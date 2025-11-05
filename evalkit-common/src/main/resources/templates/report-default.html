@@ -80,6 +80,25 @@
     function init() {
         renderCaseList();
         renderOverview();
+        // 等待50ms后执行,目的是等待json预览框组件渲染完成,不然不展示数据
+        setTimeout(() => {
+            // 处理 URL 跳转
+            jumpByUrlParam();
+        }, 50);
+    }
+
+    /* ---------- URL 快速定位 ---------- */
+    function jumpByUrlParam() {
+        const params = new URLSearchParams(location.search);
+        const idx = params.get('dataIndex');
+        if (idx == null) return;               // 没有参数就跳过
+        const target = evaluationData.find(d => String(d.dataIndex) === idx);
+        if (!target) return;                   // 数据里找不到也跳过
+
+        currentFilter = 'all';                 // 先保证“全部”过滤器
+        selectedCase = target;                 // 设定当前选中
+        renderCaseList();                      // 重刷左侧列表（会标亮）
+        renderDetail();                        // 刷右侧详情
     }
 
     /* ---------- 总览 ---------- */
@@ -342,6 +361,10 @@
         selectedCase = evaluationData.find(d => d.dataIndex === idx);
         renderCaseList();
         renderDetail();
+        /* === 新增：自动同步 URL === */
+        const url = new URL(location.href);
+        url.searchParams.set('dataIndex', idx);
+        window.history.replaceState(null, '', url);
     }
 
     function renderDetail() {
