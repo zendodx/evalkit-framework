@@ -37,7 +37,14 @@
         border-bottom: 1px solid #e4e7f1;
         display: flex;
         gap: 4px;
-        height: 5%;
+        height: 8%;
+        flex-direction: column; /* 关键：列方向 */
+    }
+
+    .filter-btn-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
     }
 
     .filter-btn {
@@ -61,11 +68,70 @@
         border-color: #409eff
     }
 
+
+    .filter-search {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 3px;
+    }
+
+    .search-box {
+        position: relative; /* 让清空按钮相对它定位 */
+        width: 240px; /* 控制整体宽度 */
+    }
+
+    #caseSearch {
+        width: 220px;
+        height: 25px;
+        margin-left: auto; /* 靠右 */
+        font-size: 12px;
+        border: 1px solid #dcdfe6;
+        border-radius: 3px;
+        outline: none;
+        transition: border .2s;
+        position: relative; /* 让它成为定位包含块 */
+        /* 给 ✕ 留空间 */
+        padding: 0 28px 0 8px;
+    }
+
+    #caseSearch:focus {
+        border-color: #409eff;
+    }
+
+    #clearSearch {
+        position: absolute;
+        top: 50%;
+        right: 6px; /* 水平靠右 */
+        transform: translateY(-50%); /* 垂直居中 */
+        width: 18px;
+        height: 18px;
+        line-height: 18px;
+        text-align: center;
+        border: none;
+        background: none;
+        color: #909399;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    #clearSearch:hover {
+        color: #f56c6c;
+    }
+
+    /* 高亮样式 */
+    .highlight {
+        background: #ffeeba;
+        color: #d75050;
+        padding: 0 2px;
+        border-radius: 2px;
+    }
+
     /* ---------- 左侧评测列表组件 ---------- */
     .case-list {
         flex: 1;
         overflow-y: auto;
-        height: 95%;
+        height: 92%;
     }
 
     .case-item {

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" xmlns="http://www.w3.org/1999/html">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -18,11 +18,22 @@
 <div class="sidebar">
     <div class="scroll-wrapper">
         <div class="filter">
-            <button class="filter-btn" onclick="renderOverview()">总览</button>
-            <button class="filter-btn" onclick="renderAttribute()">归因</button>
-            <button class="filter-btn active" onclick="filterCases('all')">全部</button>
-            <button class="filter-btn" onclick="filterCases('pass')">通过</button>
-            <button class="filter-btn" onclick="filterCases('fail')">未通过</button>
+            <div class="filter-btn-group">
+                <button class="filter-btn" onclick="renderOverview()">总览</button>
+                <button class="filter-btn" onclick="renderAttribute()">归因</button>
+                <button class="filter-btn active" onclick="filterCases('all')">全部</button>
+                <button class="filter-btn" onclick="filterCases('pass')">通过</button>
+                <button class="filter-btn" onclick="filterCases('fail')">未通过</button>
+            </div>
+            <div class="filter-search">
+                <div class="search-box">
+                    <input id="caseSearch"
+                           type="text"
+                           placeholder="搜索用例（#序号/输入/理由）"
+                           autocomplete="off"/>
+                    <button id="clearSearch" title="清空">✕</button>
+                </div>
+            </div>
         </div>
         <div class="case-list" id="caseList"></div>
     </div>
@@ -89,7 +100,85 @@
         }, 50);
     }
 
-    /* ---------- URL 快速定位 ---------- */
+    /* ---------- 搜索相关 ---------- */
+    const searchInput = document.getElementById('caseSearch');
+    const clearBtn = document.getElementById('clearSearch');
+    let keyword = '';
+
+    /* 监听输入 + 清空 */
+    searchInput.addEventListener('input', e => {
+        keyword = e.target.value.trim();
+        renderCaseList();
+    });
+    clearBtn.addEventListener('click', () => {
+        keyword = '';
+        searchInput.value = '';
+        renderCaseList();
+    });
+
+    /* 重写原来的 renderCaseList（只改列表生成部分） */
+    function renderCaseList() {
+        const listBox = document.getElementById('caseList');
+        /* 1. 先按原过滤器筛一遍 */
+        let data = currentFilter === 'all'
+            ? evaluationData
+            : evaluationData.filter(d => d.evalResult && d.evalResult.pass === (currentFilter === 'pass'));
+
+        /* 2. 再按关键词二次筛选 */
+        if (keyword) {
+            data = data.filter(item => {
+                const input = JSON.stringify(item.inputData.inputItem);
+                const reason = item.evalResult?.reason || '';
+                return (`#${item.inputData.dataIndex} ${input} ${reason}`).toLowerCase()
+                    .includes(keyword.toLowerCase());
+            });
+        }
+        if (!data.length) {
+            listBox.innerHTML = '<div style="padding:12px;font-size:13px;color:#909399">无匹配用例</div>';
+            return;
+        }
+
+        /* 3. 生成 DOM，支持高亮 */
+        listBox.innerHTML = data.map(item => {
+            const evalResult = item.evalResult || {};
+            const pass = evalResult.pass;
+            const success = evalResult.success;
+            const score = typeof evalResult.score === 'number' ? evalResult.score.toFixed(toFixedNumber) : '-';
+
+            let statusClass, statusText, metricClass;
+            if (pass === true) {
+                statusClass = 'pass';
+                statusText = '通过';
+                metricClass = 'good';
+            } else if (success === true) {
+                statusClass = 'fail';
+                statusText = '未通过';
+                metricClass = 'bad';
+            } else {
+                statusClass = 'evalerror';
+                statusText = '评测出错';
+                metricClass = 'evalerror';
+            }
+
+            /* 高亮函数 */
+            const hl = txt => keyword
+                ? txt.replace(new RegExp(`(${keyword})`, 'gi'), '<span class="highlight">$1</span>')
+                : txt;
+
+            return `
+          <div class="case-item ${selectedCase?.dataIndex === item.dataIndex ? 'active' : ''}"
+               onclick="selectCase(${item.dataIndex})">
+            <div class="case-title">${hl('#' + item.inputData.dataIndex)}</div>
+            <div class="case-status">
+              <span class="status-dot ${statusClass}"></span>
+              <span>${statusText}</span>
+              <span class="metric-value ${metricClass}">${score}</span>
+            </div>
+          </div>`;
+        }).join('');
+    }
+
+    /* ---------- URL dataIndex参数快速定位 ---------- */
     function jumpByUrlParam() {
         const params = new URLSearchParams(location.search);
         const idx = params.get('dataIndex');
@@ -252,52 +341,6 @@
         if (tpChart) tpChart.destroy();
         tpChart = new Chart(document.getElementById('tpChart'), tpCfg);
     }
-
-    /* ---------- 列表 ---------- */
-    function renderCaseList() {
-        const list = document.getElementById('caseList');
-        // 过滤时保证 evalResult 存在且 pass 字段有意义
-        const data = currentFilter === 'all'
-            ? evaluationData
-            : evaluationData.filter(d =>
-                d.evalResult && d.evalResult.pass === (currentFilter === 'pass')
-            );
-        list.innerHTML = data.map(item => {
-            const evalResult = item.evalResult || {};
-            const pass = evalResult.pass;
-            const success = evalResult.success;
-            // score 为空时显示 '-'，避免 toFixed 报错
-            const score = typeof evalResult.score === 'number'
-                ? evalResult.score.toFixed(toFixedNumber)
-                : '-';
-            // 状态判断
-            let statusClass, statusText, metricClass;
-            if (pass === true) {
-                statusClass = 'pass';
-                statusText = '通过';
-                metricClass = 'good';
-            } else if (success === true) {
-                statusClass = 'fail';
-                statusText = '未通过';
-                metricClass = 'bad';
-            } else {
-                statusClass = 'evalerror';
-                statusText = '评测出错';
-                metricClass = 'evalerror';
-            }
-            return `
-          <div class="case-item ${selectedCase?.dataIndex === item.dataIndex ? 'active' : ''}"
-               onclick="selectCase(${item.dataIndex})">
-            <div class="case-title">#${item.inputData.dataIndex}</div>
-            <div class="case-status">
-              <span class="status-dot ${statusClass}"></span>
-              <span>${statusText}</span>
-              <span class="metric-value ${metricClass}">${score}</span>
-            </div>
-          </div>`;
-        }).join('');
-    }
-
 
     function filterCases(f) {
         currentFilter = f;
