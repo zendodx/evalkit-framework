@@ -74,7 +74,7 @@ public class EvalCaseDataGenerator extends DataGenerator {
             // round
             roundData.put(roundFieldKey, i);
             // Query
-            String query = prepareQuery();
+            String query = prepareQuery(contextDependency.toString());
             roundData.put(queryFieldKey, query);
             // 标准答案
             String groundTruth = prepareGroundTruth();
@@ -98,7 +98,7 @@ public class EvalCaseDataGenerator extends DataGenerator {
         return UuidUtils.generateUuid();
     }
 
-    protected String prepareQuery() {
+    protected String prepareQuery(String contextDependency) {
         QueryGenerator queryGenerator = config.getQueryGenerator();
         return queryGenerator.generate().stream().findFirst().orElse(null);
     }
