@@ -5,13 +5,16 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 
+/**
+ * DeepSeek大模型服务配置
+ */
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 @Data
 public class DeepseekLLMServiceConfig extends LLMServiceConfig {
-    // deepseek接口访问密钥
+    // DeepSeek接口访问密钥
     protected String apiToken;
-    // 默认使用的deepseek模型名称
+    // DeepSeek大模型名称, 默认deepseek-chat
     @Builder.Default
     protected String model = "deepseek-chat";
 }

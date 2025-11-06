@@ -1,5 +1,23 @@
 # ChangeLog
 
+## [0.5.0] - 2025-11-06
+
+### Added
+
+- 增加类型转换工具类
+- 增加Query生成器接口,评测用例数据生成器,基于mock的Query生成器
+- 增加大模型服务配置参数, 支持大模型调用失败重试
+- html报告页报告增加搜索栏
+- html报告页支持url的dataIndex参数快速定位case
+
+### Fixed
+
+- mocker抽取成独立包,优化MockerEngine
+- html报告页数组保留后2位
+- html报告页修复归因页面展示bug
+
+### Changed
+
 ## [0.4.4] - 2025-11-04
 
 ### Added

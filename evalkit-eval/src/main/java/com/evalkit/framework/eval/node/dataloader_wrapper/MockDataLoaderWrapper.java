@@ -1,18 +1,17 @@
 package com.evalkit.framework.eval.node.dataloader_wrapper;
 
+import com.evalkit.framework.eval.mock.engine.MockRuleEngine;
+import com.evalkit.framework.eval.mock.engine.SpelMockRuleEngine;
+import com.evalkit.framework.eval.mock.mocker.Mocker;
 import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.model.InputData;
 import com.evalkit.framework.eval.node.dataloader_wrapper.config.MockDataLoaderWrapperConfig;
-import com.evalkit.framework.eval.node.dataloader_wrapper.mock.MockRuleEngine;
-import com.evalkit.framework.eval.node.dataloader_wrapper.mock.SpelMockRuleEngine;
-import com.evalkit.framework.eval.node.dataloader_wrapper.mock.mocker.Mocker;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -20,12 +19,10 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 public abstract class MockDataLoaderWrapper extends DataLoaderWrapper {
-    /* 匹配规则 {{rule}} */
-    protected static final Pattern RULE_PATTERN = Pattern.compile("\\{\\{([^{}]*)}}");
     /* mock规则引擎 */
     protected final MockRuleEngine engine;
+    /* mock配置 */
     protected MockDataLoaderWrapperConfig config;
-
 
     public MockDataLoaderWrapper() {
         super();
@@ -88,7 +85,7 @@ public abstract class MockDataLoaderWrapper extends DataLoaderWrapper {
             if (StringUtils.isEmpty(fieldValue)) {
                 continue;
             }
-            List<String> rules = matchRules(fieldValue);
+            List<String> rules = engine.matchRules(fieldValue);
             for (String rule : rules) {
                 if (StringUtils.isNotEmpty(rule)) {
                     if (!ruleFieldMap.containsKey(rule)) {
@@ -112,21 +109,6 @@ public abstract class MockDataLoaderWrapper extends DataLoaderWrapper {
     }
 
     /**
-     * 获取文本中的标记值
-     */
-    protected List<String> matchRules(String text) {
-        if (StringUtils.isEmpty(text)) {
-            return null;
-        }
-        List<String> rules = new ArrayList<>();
-        Matcher matcher = RULE_PATTERN.matcher(text);
-        while (matcher.find()) {
-            rules.add(matcher.group(1).trim());
-        }
-        return rules;
-    }
-
-    /**
      * 各字段相同标记mock随机值
      */
     protected void mockRandomValue(InputData inputData, List<String> fields) {
@@ -144,7 +126,7 @@ public abstract class MockDataLoaderWrapper extends DataLoaderWrapper {
      * 解析文本中的mock规则,生成mock数据,填充mock数据返回
      */
     private String mock(String text) {
-        Matcher matcher = RULE_PATTERN.matcher(text);
+        Matcher matcher = engine.getMatcher(text);
         // 没有找到匹配项返回原文本
         if (!matcher.find()) {
             return text;

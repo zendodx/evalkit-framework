@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" xmlns="http://www.w3.org/1999/html">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -18,42 +18,51 @@
 <div class="sidebar">
     <div class="scroll-wrapper">
         <div class="filter">
-            <button class="filter-btn" onclick="renderOverview()">总览</button>
-            <button class="filter-btn" onclick="renderAttribute()">归因</button>
-            <button class="filter-btn active" onclick="filterCases('all')">全部</button>
-            <button class="filter-btn" onclick="filterCases('pass')">通过</button>
-            <button class="filter-btn" onclick="filterCases('fail')">未通过</button>
+            <div class="filter-btn-group">
+                <button class="filter-btn" onclick="renderOverview()">总览</button>
+                <button class="filter-btn" onclick="renderAttribute()">归因</button>
+                <button class="filter-btn active" onclick="filterCases('all')">全部</button>
+                <button class="filter-btn" onclick="filterCases('pass')">通过</button>
+                <button class="filter-btn" onclick="filterCases('fail')">未通过</button>
+            </div>
+            <div class="filter-search">
+                <div class="search-box">
+                    <input id="caseSearch"
+                           type="text"
+                           placeholder="搜索用例（#序号/输入/理由）"
+                           autocomplete="off"/>
+                    <button id="clearSearch" title="清空">✕</button>
+                </div>
+            </div>
         </div>
         <div class="case-list" id="caseList"></div>
     </div>
 </div>
 
 <div class="main-content">
-    <div class="scroll-wrapper">
-        <!-- 总览 -->
-        <div id="overviewContent" class="overview">
-            <div class="overview-left">
-                <div class="report-name" th:text="${reportName}">评测报告</div>
-                <div class="metric-name">基础指标</div>
-                <div class="metrics-grid" id="basicMetricsGrid"></div>
-                <div class="metric-name">接口调用指标</div>
-                <div class="metrics-grid" id="completionMetricsGrid"></div>
-                <div class="metric-name">评测指标</div>
-                <div class="metrics-grid" id="evalMetricsGrid"></div>
+    <!-- 总览 -->
+    <div id="overviewContent" class="overview">
+        <div class="overview-left">
+            <div class="report-name" th:text="${reportName}">评测报告</div>
+            <div class="metric-name">基础指标</div>
+            <div class="metrics-grid" id="basicMetricsGrid"></div>
+            <div class="metric-name">接口调用指标</div>
+            <div class="metrics-grid" id="completionMetricsGrid"></div>
+            <div class="metric-name">评测指标</div>
+            <div class="metrics-grid" id="evalMetricsGrid"></div>
+        </div>
+        <div class="overview-right">
+            <div class="chart-box">
+                <div class="chart-title">通过率趋势</div>
+                <canvas id="passTrendChart"></canvas>
             </div>
-            <div class="overview-right">
-                <div class="chart-box">
-                    <div class="chart-title">通过率趋势</div>
-                    <canvas id="passTrendChart"></canvas>
-                </div>
-                <div class="chart-box">
-                    <div class="chart-title">指标分布</div>
-                    <canvas id="distChart"></canvas>
-                </div>
-                <div class="chart-box">
-                    <div class="chart-title">接口TP指标</div>
-                    <canvas id="tpChart"></canvas>
-                </div>
+            <div class="chart-box">
+                <div class="chart-title">指标分布</div>
+                <canvas id="distChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <div class="chart-title">接口TP指标</div>
+                <canvas id="tpChart"></canvas>
             </div>
         </div>
     </div>
@@ -77,11 +86,110 @@
     let currentFilter = 'all';
     let selectedCase = null;
     let passChart, distChart, tpChart;
+    // 统一小数点后位数
+    let toFixedNumber = 2;
 
     /* ---------- 初始化 ---------- */
     function init() {
         renderCaseList();
         renderOverview();
+        // 等待50ms后执行,目的是等待json预览框组件渲染完成,不然不展示数据
+        setTimeout(() => {
+            // 处理 URL 跳转
+            jumpByUrlParam();
+        }, 50);
+    }
+
+    /* ---------- 搜索相关 ---------- */
+    const searchInput = document.getElementById('caseSearch');
+    const clearBtn = document.getElementById('clearSearch');
+    let keyword = '';
+
+    /* 监听输入 + 清空 */
+    searchInput.addEventListener('input', e => {
+        keyword = e.target.value.trim();
+        renderCaseList();
+    });
+    clearBtn.addEventListener('click', () => {
+        keyword = '';
+        searchInput.value = '';
+        renderCaseList();
+    });
+
+    /* 重写原来的 renderCaseList（只改列表生成部分） */
+    function renderCaseList() {
+        const listBox = document.getElementById('caseList');
+        /* 1. 先按原过滤器筛一遍 */
+        let data = currentFilter === 'all'
+            ? evaluationData
+            : evaluationData.filter(d => d.evalResult && d.evalResult.pass === (currentFilter === 'pass'));
+
+        /* 2. 再按关键词二次筛选 */
+        if (keyword) {
+            data = data.filter(item => {
+                const input = JSON.stringify(item.inputData.inputItem);
+                const reason = item.evalResult?.reason || '';
+                return (`#${item.inputData.dataIndex} ${input} ${reason}`).toLowerCase()
+                    .includes(keyword.toLowerCase());
+            });
+        }
+        if (!data.length) {
+            listBox.innerHTML = '<div style="padding:12px;font-size:13px;color:#909399">无匹配用例</div>';
+            return;
+        }
+
+        /* 3. 生成 DOM，支持高亮 */
+        listBox.innerHTML = data.map(item => {
+            const evalResult = item.evalResult || {};
+            const pass = evalResult.pass;
+            const success = evalResult.success;
+            const score = typeof evalResult.score === 'number' ? evalResult.score.toFixed(toFixedNumber) : '-';
+
+            let statusClass, statusText, metricClass;
+            if (pass === true) {
+                statusClass = 'pass';
+                statusText = '通过';
+                metricClass = 'good';
+            } else if (success === true) {
+                statusClass = 'fail';
+                statusText = '未通过';
+                metricClass = 'bad';
+            } else {
+                statusClass = 'evalerror';
+                statusText = '评测出错';
+                metricClass = 'evalerror';
+            }
+
+            /* 高亮函数 */
+            const hl = txt => keyword
+                ? txt.replace(new RegExp(`(${keyword})`, 'gi'), '<span class="highlight">$1</span>')
+                : txt;
+
+            return `
+          <div class="case-item ${selectedCase?.dataIndex === item.dataIndex ? 'active' : ''}"
+               onclick="selectCase(${item.dataIndex})">
+            <div class="case-title">${hl('#' + item.inputData.dataIndex)}</div>
+            <div class="case-status">
+              <span class="status-dot ${statusClass}"></span>
+              <span>${statusText}</span>
+              <span class="metric-value ${metricClass}">${score}</span>
+            </div>
+          </div>`;
+        }).join('');
+    }
+
+    /* ---------- URL dataIndex参数快速定位 ---------- */
+    function jumpByUrlParam() {
+        const params = new URLSearchParams(location.search);
+        const idx = params.get('dataIndex');
+        if (idx == null) return;               // 没有参数就跳过
+        const target = evaluationData.find(d => String(d.dataIndex) === idx);
+        if (!target) return;                   // 数据里找不到也跳过
+
+        currentFilter = 'all';                 // 先保证“全部”过滤器
+        selectedCase = target;                 // 设定当前选中
+        renderCaseList();                      // 重刷左侧列表（会标亮）
+        renderDetail();                        // 刷右侧详情
     }
 
     /* ---------- 总览 ---------- */
@@ -92,7 +200,7 @@
         const md = metricsData || {};
 
         function safePercent(val) {
-            return typeof val === 'number' ? (val * 100).toFixed(1) + '%' : '-';
+            return typeof val === 'number' ? (val * 100).toFixed(toFixedNumber) + '%' : '-';
         }
 
         function safeInt(val) {
@@ -100,11 +208,11 @@
         }
 
         function safeFloat(val) {
-            return typeof val === 'number' ? val.toFixed(1) : '-';
+            return typeof val === 'number' ? val.toFixed(toFixedNumber) : '-';
         }
 
         function safeMs(val) {
-            return typeof val === 'number' ? val.toFixed(1) + 'ms' : '-';
+            return typeof val === 'number' ? val.toFixed(toFixedNumber) + 'ms' : '-';
         }
 
         /* 指标卡片 */
@@ -174,7 +282,7 @@
             // 过滤时保证 evalResult 存在且 pass 字段有意义
             const pass = slice.filter(d => d.evalResult && d.evalResult.pass === true).length;
             labels.push(`${i + 1}-${Math.min(i + step, evaluationData.length)}`);
-            passRates.push(slice.length ? (pass / slice.length * 100).toFixed(1) : '0.0');
+            passRates.push(slice.length ? (pass / slice.length * 100).toFixed(toFixedNumber) : '0.0');
         }
         const lineCfg = {
             type: 'line',
@@ -233,52 +341,6 @@
         if (tpChart) tpChart.destroy();
         tpChart = new Chart(document.getElementById('tpChart'), tpCfg);
     }
-
-    /* ---------- 列表 ---------- */
-    function renderCaseList() {
-        const list = document.getElementById('caseList');
-        // 过滤时保证 evalResult 存在且 pass 字段有意义
-        const data = currentFilter === 'all'
-            ? evaluationData
-            : evaluationData.filter(d =>
-                d.evalResult && d.evalResult.pass === (currentFilter === 'pass')
-            );
-        list.innerHTML = data.map(item => {
-            const evalResult = item.evalResult || {};
-            const pass = evalResult.pass;
-            const success = evalResult.success;
-            // score 为空时显示 '-'，避免 toFixed 报错
-            const score = typeof evalResult.score === 'number'
-                ? evalResult.score.toFixed(1)
-                : '-';
-            // 状态判断
-            let statusClass, statusText, metricClass;
-            if (pass === true) {
-                statusClass = 'pass';
-                statusText = '通过';
-                metricClass = 'good';
-            } else if (success === true) {
-                statusClass = 'fail';
-                statusText = '未通过';
-                metricClass = 'bad';
-            } else {
-                statusClass = 'evalerror';
-                statusText = '评测出错';
-                metricClass = 'evalerror';
-            }
-            return `
-          <div class="case-item ${selectedCase?.dataIndex === item.dataIndex ? 'active' : ''}"
-               onclick="selectCase(${item.dataIndex})">
-            <div class="case-title">#${item.inputData.dataIndex}</div>
-            <div class="case-status">
-              <span class="status-dot ${statusClass}"></span>
-              <span>${statusText}</span>
-              <span class="metric-value ${metricClass}">${score}</span>
-            </div>
-          </div>`;
-        }).join('');
-    }
-
 
     function filterCases(f) {
         currentFilter = f;
@@ -344,6 +406,10 @@
         selectedCase = evaluationData.find(d => d.dataIndex === idx);
         renderCaseList();
         renderDetail();
+        /* === 新增：自动同步 URL === */
+        const url = new URL(location.href);
+        url.searchParams.set('dataIndex', idx);
+        window.history.replaceState(null, '', url);
     }
 
     function renderDetail() {
@@ -353,7 +419,7 @@
         const evalResult = d.evalResult || {};
         const pass = evalResult.pass;
         const success = evalResult.success;
-        const score = typeof evalResult.score === 'number' ? evalResult.score.toFixed(1) : '-';
+        const score = typeof evalResult.score === 'number' ? evalResult.score.toFixed(toFixedNumber) : '-';
         const scoreStrategyName = evalResult.scoreStrategyName || '-';
 
         let statusClass, statusText, metricClass;
@@ -433,7 +499,7 @@
         }
         // 安全处理各字段
         const pass = r.pass === true;
-        const score = typeof r.score === 'number' ? r.score.toFixed(1) : '-';
+        const score = typeof r.score === 'number' ? r.score.toFixed(toFixedNumber) : '-';
         const reason = r.reason || '-';
         const scoreStrategyName = r.scoreStrategyName || '-';
         const threshold = typeof r.threshold === 'number' ? r.threshold : '-';
@@ -469,7 +535,7 @@
                             <span>${s.metric}${s.star ? '<span style="color:#ff4757;margin-left:4px">必过</span>' : ''}</span>
                             <span>${s.success ? '' : '<span style="color:#ff4757;margin-left:4px">评测出错</span>'}</span>
                         </div>
-                        <span class="metric-badge ${pass ? 'pass' : 'fail'}">${pass ? '通过' : '未通过'} | 阈值 ${s.threshold} | 得分率 ${s.scoreRate.toFixed(2)} | 得分 ${s.score.toFixed(1)} / ${s.totalScore.toFixed(1)}</span>
+                        <span class="metric-badge ${pass ? 'pass' : 'fail'}">${pass ? '通过' : '未通过'} | 阈值 ${s.threshold} | 得分率 ${s.scoreRate.toFixed(toFixedNumber)} | 得分 ${s.score.toFixed(toFixedNumber)} / ${s.totalScore.toFixed(toFixedNumber)}</span>
                       </div>
                       <div style="font-size:12px;color:#606266;margin:5px 0">${s.reason}</div>
                       ${s.extra ? (() => {
@@ -515,9 +581,9 @@
             // 3. 转换
             const map = {};
             arr.forEach(it => {
-                const weightScore = (it.score * it.weight).toFixed(2);
+                const weightScore = (it.score * it.weight).toFixed(toFixedNumber);
                 map[it.name] = {
-                    '分数 | 权重 | 权重分数': `${it.score.toFixed(2)} | ${it.weight.toFixed(2)} | ${weightScore}`,
+                    '分数 | 权重 | 权重分数': `${it.score.toFixed(toFixedNumber)} | ${it.weight.toFixed(toFixedNumber)} | ${weightScore}`,
                     '默认分数': it.defaultScore,
                     '理由': it.reason,
                     '类型': it.star ? '必过检查' : '普通检查',

@@ -1,4 +1,4 @@
-package com.evalkit.framework.eval.node.dataloader_wrapper.mock.mocker;
+package com.evalkit.framework.eval.mock.mocker;
 
 import com.evalkit.framework.common.utils.address.ScenicUtils;
 import org.apache.commons.collections4.CollectionUtils;
@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * {{scenic 河北省}}  河北省景区
  * {{scenic 河北省 廊坊市}}  河北省廊坊市景区
  */
-public class ChinaPOIMocker implements Mocker {
+public class ChinaPoiMocker implements Mocker {
     private final static Map<String, POIStrategy> STRATEGY_POOL = new ConcurrentHashMap<>();
 
     static {

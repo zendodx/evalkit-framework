@@ -4,5 +4,6 @@ public enum PoolName {
     DATA_WRAPPER,
     API_COMPLETION,
     SCORER,
-    MQ_CONSUME
+    MQ_CONSUME,
+    DATA_GENERATOR
 }
