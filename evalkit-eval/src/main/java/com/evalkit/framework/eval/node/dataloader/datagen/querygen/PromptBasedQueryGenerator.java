@@ -2,6 +2,7 @@ package com.evalkit.framework.eval.node.dataloader.datagen.querygen;
 
 import com.evalkit.framework.eval.node.dataloader.datagen.querygen.config.PromptBasedQueryGeneratorConfig;
 import com.evalkit.framework.infra.service.llm.LLMService;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -12,6 +13,7 @@ import java.util.stream.Collectors;
 /**
  * 基于prompt的Query生成器
  */
+@Getter
 @Slf4j
 public class PromptBasedQueryGenerator implements QueryGenerator {
     protected final PromptBasedQueryGeneratorConfig config;

@@ -3,6 +3,7 @@ package com.evalkit.framework.eval.node.dataloader.datagen.querygen;
 import com.evalkit.framework.eval.mock.engine.MockRuleEngine;
 import com.evalkit.framework.eval.mock.engine.SpelMockRuleEngine;
 import com.evalkit.framework.eval.node.dataloader.datagen.querygen.config.MockerQueryGeneratorConfig;
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -12,6 +13,7 @@ import java.util.regex.Matcher;
 /**
  * Mock Query生成器
  */
+@Getter
 public abstract class MockQueryGenerator implements QueryGenerator {
     /* mock规则引擎 */
     protected final MockRuleEngine engine;

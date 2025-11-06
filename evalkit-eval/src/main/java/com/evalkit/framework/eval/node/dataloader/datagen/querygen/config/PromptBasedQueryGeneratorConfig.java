@@ -3,11 +3,13 @@ package com.evalkit.framework.eval.node.dataloader.datagen.querygen.config;
 import com.evalkit.framework.infra.service.llm.LLMService;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 
 /**
  * 基于prompt的Query生成器配置
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
 @SuperBuilder
 public class PromptBasedQueryGeneratorConfig extends QueryGeneratorConfig {
