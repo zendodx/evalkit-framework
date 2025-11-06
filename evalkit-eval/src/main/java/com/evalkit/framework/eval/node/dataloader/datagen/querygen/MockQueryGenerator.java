@@ -5,6 +5,8 @@ import com.evalkit.framework.eval.mock.engine.SpelMockRuleEngine;
 import com.evalkit.framework.eval.node.dataloader.datagen.querygen.config.MockerQueryGeneratorConfig;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 
 /**
@@ -33,12 +35,17 @@ public abstract class MockQueryGenerator implements QueryGenerator {
     public abstract String prepareTemplateQuery();
 
     @Override
-    public String generate() {
+    public List<String> generate() {
         String templateQuery = prepareTemplateQuery();
         if (StringUtils.isEmpty(templateQuery)) {
             return null;
         }
-        return mock(templateQuery);
+        int genCount = config.getGenCount();
+        List<String> queries = new ArrayList<>(genCount);
+        for (int i = 0; i < genCount; i++) {
+            queries.add(mock(templateQuery));
+        }
+        return queries;
     }
 
     /**

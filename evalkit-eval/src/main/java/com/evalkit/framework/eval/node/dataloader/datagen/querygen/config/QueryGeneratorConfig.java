@@ -6,8 +6,8 @@ import lombok.experimental.SuperBuilder;
 
 @Data
 @SuperBuilder
-public class MockerQueryGeneratorConfig extends QueryGeneratorConfig {
-    /* mock失败时填充空值,默认false */
+public class QueryGeneratorConfig {
+    /* 生成Query数量, 默认 1 */
     @Builder.Default
-    private boolean fillEmptyStringOnMockFail = false;
+    protected int genCount = 1;
 }

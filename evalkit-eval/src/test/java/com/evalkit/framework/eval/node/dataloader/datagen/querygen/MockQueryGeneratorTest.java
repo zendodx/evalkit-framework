@@ -4,6 +4,8 @@ import com.evalkit.framework.eval.node.dataloader.datagen.querygen.config.Mocker
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 @Slf4j
 class MockQueryGeneratorTest {
     @Test
@@ -11,7 +13,9 @@ class MockQueryGeneratorTest {
         String templateQuery = "{{between_chinese_holiday 20250815 20251101}} 去 {{city 河北省}}";
 
         MockQueryGenerator mockQueryGenerator = new MockQueryGenerator(
-                MockerQueryGeneratorConfig.builder().build()
+                MockerQueryGeneratorConfig.builder()
+                        .genCount(5)
+                        .build()
         ) {
             @Override
             public String prepareTemplateQuery() {
@@ -19,7 +23,7 @@ class MockQueryGeneratorTest {
             }
         };
 
-        String generateQuery = mockQueryGenerator.generate();
-        log.info("template query: {}, generate query: {}", templateQuery, generateQuery);
+        List<String> genQueries = mockQueryGenerator.generate();
+        log.info("template: {}, generate queries: {}", templateQuery, genQueries);
     }
 }

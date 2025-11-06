@@ -33,6 +33,17 @@ public abstract class DataGenerator extends DataLoader {
         List<InputData> inputDataList = new ArrayList<>();
         List<Map<String, Object>> dataList = generate();
         for (Map<String, Object> data : dataList) {
+            // 过滤掉空数据
+            if (data == null) {
+                continue;
+            }
+            // 如果字段值是null会报空指针错误,设置为""
+            for (Map.Entry<String, Object> entry : data.entrySet()) {
+                Object value = entry.getValue();
+                if (value == null) {
+                    entry.setValue("");
+                }
+            }
             InputData inputData = new InputData(data);
             inputDataList.add(inputData);
         }
