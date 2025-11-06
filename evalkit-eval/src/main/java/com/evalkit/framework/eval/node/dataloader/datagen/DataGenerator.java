@@ -1,9 +1,9 @@
-package com.evalkit.framework.eval.node.dataloader.datagenerator;
+package com.evalkit.framework.eval.node.dataloader.datagen;
 
 import com.evalkit.framework.eval.model.InputData;
 import com.evalkit.framework.eval.node.dataloader.DataLoader;
-import com.evalkit.framework.eval.node.dataloader.datagenerator.config.DataGeneratorConfig;
-import com.evalkit.framework.eval.node.dataloader.datagenerator.exporter.GenDataExporter;
+import com.evalkit.framework.eval.node.dataloader.datagen.config.DataGeneratorConfig;
+import com.evalkit.framework.eval.node.dataloader.datagen.exporter.GenDataExporter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 

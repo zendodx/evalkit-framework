@@ -2,9 +2,10 @@ package com.evalkit.framework.eval.node.dataloader.datagenerator;
 
 import com.evalkit.framework.common.utils.list.ListUtils;
 import com.evalkit.framework.common.utils.map.MapUtils;
-import com.evalkit.framework.eval.node.dataloader.datagenerator.config.DataGeneratorConfig;
-import com.evalkit.framework.eval.node.dataloader.datagenerator.exporter.ExcelGenDataExporter;
-import com.evalkit.framework.eval.node.dataloader.datagenerator.exporter.JsonFileGenDataExporter;
+import com.evalkit.framework.eval.node.dataloader.datagen.DataGenerator;
+import com.evalkit.framework.eval.node.dataloader.datagen.config.DataGeneratorConfig;
+import com.evalkit.framework.eval.node.dataloader.datagen.exporter.ExcelGenDataExporter;
+import com.evalkit.framework.eval.node.dataloader.datagen.exporter.JsonFileGenDataExporter;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

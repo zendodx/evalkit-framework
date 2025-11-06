@@ -1,9 +1,9 @@
-package com.evalkit.framework.eval.node.dataloader.datagenerator.config;
+package com.evalkit.framework.eval.node.dataloader.datagen.config;
 
 import com.evalkit.framework.common.utils.list.ListUtils;
 import com.evalkit.framework.common.utils.time.DateUtils;
-import com.evalkit.framework.eval.node.dataloader.datagenerator.exporter.ExcelGenDataExporter;
-import com.evalkit.framework.eval.node.dataloader.datagenerator.exporter.GenDataExporter;
+import com.evalkit.framework.eval.node.dataloader.datagen.exporter.ExcelGenDataExporter;
+import com.evalkit.framework.eval.node.dataloader.datagen.exporter.GenDataExporter;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.SuperBuilder;
