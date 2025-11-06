@@ -1,4 +1,4 @@
-package com.evalkit.framework.eval.node.dataloader_wrapper.mock.mocker;
+package com.evalkit.framework.eval.mock.mocker;
 
 import com.evalkit.framework.common.utils.time.DateUtils;
 import com.evalkit.framework.common.utils.time.HolidayUtils;
@@ -39,7 +39,7 @@ import java.util.List;
  * {{between_chinese_holiday 20250815 20250816}} 随机返回一个指定日期之间的农历节假日
  */
 @Slf4j
-public class HolidayMocker implements Mocker {
+public class ChinaHolidayMocker implements Mocker {
 
     @Override
     public boolean support(String rule, List<String> args) {
