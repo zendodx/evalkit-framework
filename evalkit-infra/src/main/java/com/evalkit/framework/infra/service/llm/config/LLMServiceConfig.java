@@ -1,5 +1,6 @@
 package com.evalkit.framework.infra.service.llm.config;
 
+import com.evalkit.framework.infra.service.llm.constants.LLMResponseType;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.SuperBuilder;
@@ -52,4 +53,7 @@ public class LLMServiceConfig {
     /* 最大重试次数, 默认6次 */
     @Builder.Default
     protected int retryTimes = 6;
+    /* 大模型回复类型, 默认文本类型 */
+    @Builder.Default
+    protected LLMResponseType responseType = LLMResponseType.TEXT;
 }
