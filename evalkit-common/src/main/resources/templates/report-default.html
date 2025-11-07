@@ -535,6 +535,21 @@
 
         // 激活 json-viewer
         document.querySelectorAll('pre.json-viewer').forEach(el => new JsonViewer(el));
+
+        // 增加电梯导航（右侧） + 回到顶部按钮（右下角）
+        const navHtml = `
+          <!-- 初始图标 -->
+          <div class="elevator-float" id="elevatorFloat">
+              <div class="elevator-trigger">≡</div>
+              <div class="elevator-links" id="elevatorNav">
+                <a href="#section-input"   class="nav-link">输入数据</a>
+                <a href="#section-api"     class="nav-link">API调用结果</a>
+                <a href="#section-eval"    class="nav-link">评测结果</a>
+                <a href="#section-scorer"  class="nav-link">评分详情</a>
+              </div>
+          </div>`;
+
+        document.getElementById('detailContent').insertAdjacentHTML('afterbegin', navHtml);
     }
 
     /* 分享case链接 */
@@ -547,12 +562,17 @@
         });
     }
 
-
     function section(title, content) {
-        return `<div class="detail-section">
-                  <div class="detail-section-header">${title}</div>
-                  <div class="detail-section-content">${content}</div>
-                </div>`;
+        const id = 'section-' + ({
+            '输入数据': 'input',
+            'API调用结果': 'api',
+            '评测结果': 'eval',
+            '评分详情': 'scorer'
+        }[title] || 'other');
+        return `<div class="detail-section" id="${id}">
+              <div class="detail-section-header">${title}</div>
+              <div class="detail-section-content">${content}</div>
+            </div>`;
     }
 
     function jsonDiv(obj) {
@@ -722,6 +742,31 @@
     }
 
     init();
+
+    /* 平滑滚动 */
+    document.addEventListener('click', e => {
+        if (e.target.classList.contains('nav-link')) {
+            e.preventDefault();
+            const id = e.target.getAttribute('href').slice(1); // 去掉 #
+            document.getElementById(id)?.scrollIntoView({behavior: 'smooth', block: 'start'});
+        }
+    });
+
+    /* 电梯高亮 & 回顶按钮显隐 */
+    const navLinks = [...document.querySelectorAll('.nav-link')];
+    const sections = navLinks.map(link => document.getElementById(link.href.split('#')[1]));
+
+    function updateElevator() {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        // 电梯高亮
+        let idx = sections.findIndex(sec => sec && sec.offsetTop - 100 > scrollTop);
+        if (idx === -1) idx = sections.length - 1; else idx = Math.max(0, idx - 1);
+        navLinks.forEach((a, i) => a.classList.toggle('active', i === idx));
+    }
+
+    window.addEventListener('scroll', updateElevator);
+    // 首次进入也刷新一次
+    updateElevator();
 </script>
 </body>
 </html>
