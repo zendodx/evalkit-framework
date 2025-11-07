@@ -474,6 +474,15 @@ canvas {
     background: #f2f3f5;
 }
 
+.case-link{
+    cursor: pointer;
+    color: #409eff;
+    margin: 4px 0;
+}
+.case-link:hover{
+    text-decoration: underline;
+}
+
 /* 分享case链接弹出气泡 */
 .copy-bubble {
     position: fixed;

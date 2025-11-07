@@ -78,6 +78,9 @@
     </div>
 </div>
 
+<!-- 复制提示气泡 -->
+<div id="copyTip" class="copy-bubble">已复制</div>
+
 <!-- Script -->
 <script th:inline="javascript">
     const evaluationData = /*[[${evaluationData}]]*/ [];
@@ -361,26 +364,33 @@
         // 初始渲染
         function render(list) {
             const total = list.reduce((s, v) => s + v.caseIds.length, 0);
+            // 归因卡片
             const cards = list.map(attr => `
-          <div class="attribution-card">
-            <div class="attribution-card-header" onclick="this.parentNode.classList.toggle('expanded')">
-              <span>${attr.issueName}</span>
-              <span class="badge">${attr.caseIds.length}</span>
-            </div>
-            <div class="attribution-card-body">
-              <ul class="attribute-case-list">${attr.caseIds.map(id => `<li>${id}</li>`).join('')}</ul>
-              <button class="attribute-copy-btn" onclick="copyCases('${attr.issueName}',${JSON.stringify(attr.caseIds)})">复制全部 CaseId</button>
-            </div>
-          </div>`).join('');
+              <div class="attribution-card">
+                <div class="attribution-card-header" onclick="this.parentNode.classList.toggle('expanded')">
+                  <span>${attr.issueName}</span>
+                  <span class="badge">${attr.caseIds.length}</span>
+                </div>
+                <div class="attribution-card-body">
+                  <ul class="attribute-case-list">
+                    ${attr.caseIds.map(id => `
+                      <li class="case-link" onclick="jumpToCase(${id})" title="查看详情">
+                        #${id}
+                      </li>`).join('')}
+                  </ul>
+                  <button class="attribute-copy-btn" onclick="copyCases('${attr.issueName}',${JSON.stringify(attr.caseIds)})">复制全部</button>
+                </div>
+              </div>`).join('');
 
+            // 归因主体结构
             box.innerHTML = `
-          <div class="attribution-header">
-            <h3>问题归因</h3>
-            <div>
-              <span class="attribution-stat">共 ${total} 个 Case</span>
-            </div>
-          </div>
-          <div class="attribution-cards">${cards}</div>`;
+              <div class="attribution-header">
+                <h3>问题归因</h3>
+                <div>
+                  <span class="attribution-stat">共 ${total} 个 Case</span>
+                </div>
+              </div>
+              <div class="attribution-cards">${cards}</div>`;
         }
 
         // 过滤
@@ -394,11 +404,25 @@
 
         // 复制
         window.copyCases = (name, arr) => {
-            const t = arr.join('\n');
-            navigator.clipboard.writeText(t).then(() => alert(`已复制 ${arr.length} 条 CaseId`));
+            const t = arr.join(',');
+            navigator.clipboard.writeText(t).then(() => {
+                const tip = document.getElementById('copyTip');
+                tip.classList.add('show');
+                setTimeout(() => tip.classList.remove('show'), 1500);
+            });
         };
 
         render(attributeCountResult.overallAttribution);
+    }
+
+    /* ---------- 跳转到case详情页 ---------- */
+    function jumpToCase(dataIndex) {
+        currentFilter = 'all';      // 保证节点不被过滤
+        renderCaseList();           // 重刷左侧列表
+        selectedCase = evaluationData.find(c => c.dataIndex === dataIndex);
+        renderDetail();             // 右侧详情
+        showPanel('detail');
+        renderCaseList();           // 再次高亮当前行
     }
 
     /* ---------- 详情 ---------- */
