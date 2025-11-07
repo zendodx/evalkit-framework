@@ -46,6 +46,8 @@
         <fastjson2.version>2.0.51</fastjson2.version>
         <junit-jupiter.version>5.9.3</junit-jupiter.version>
         <mockito-inline.version>3.12.4</mockito-inline.version>
+        <mockito-core.version>3.12.4</mockito-core.version>
+        <mockito-junit-jupiter.version>3.12.4</mockito-junit-jupiter.version>
         <lombok.version>1.18.38</lombok.version>
         <slf4j-api.version>1.7.36</slf4j-api.version>
         <log4j.version>2.23.1</log4j.version>
@@ -144,6 +146,16 @@
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-inline</artifactId>
                 <version>${mockito-inline.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito-core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-junit-jupiter</artifactId>
+                <version>${mockito-junit-jupiter.version}</version>
             </dependency>
             <!-- lombok -->
             <dependency>
@@ -277,6 +289,21 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-inline</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
