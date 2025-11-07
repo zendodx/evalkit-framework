@@ -382,13 +382,14 @@
         font-size: 12px
     }
 
-    /* ---------- 归因卡片 ---------- */
+    /* ---------- 归因页 ---------- */
     .attribute-content {
         flex: 1;
         padding: 3px 3px;
         overflow-y: auto;
     }
 
+    /* 归因标题 */
     .attribution-header {
         display: flex;
         align-items: center;
@@ -396,12 +397,14 @@
         flex: 1;
     }
 
+    /* 头部统计信息 */
     .attribution-stat {
         font-size: 13px;
         color: #666;
         margin-left: 10px;
     }
 
+    /* 归因卡片列表 */
     .attribution-cards {
         display: flex;
         flex-wrap: wrap;
@@ -473,5 +476,168 @@
 
     .attribute-copy-btn:hover {
         background: #f2f3f5;
+    }
+
+    .case-link {
+        cursor: pointer;
+        color: #409eff;
+        margin: 4px 0;
+    }
+
+    .case-link:hover {
+        text-decoration: underline;
+    }
+
+    /* 归因图标 */
+    .attribution-chart {
+        margin: 3px 3px;
+    }
+
+    /* 分享case链接弹出气泡 */
+    .copy-bubble {
+        position: fixed;
+        top: 5%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 8px 16px;
+        background: rgba(0, 0, 0, 0.75);
+        color: #fff;
+        font-size: 13px;
+        border-radius: 3px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .3s;
+        z-index: 9999;
+    }
+
+    .copy-bubble.show {
+        opacity: 1;
+    }
+
+    .share-btn {
+        margin-left: 5px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        opacity: .8;
+        transition: opacity .2s;
+    }
+
+    .share-btn:hover {
+        opacity: 1;
+    }
+
+    .share-icon {
+        width: 18px;
+        height: 18px;
+        fill: #606266;
+    }
+
+    .share-btn:hover .share-icon {
+        fill: #409eff;
+    }
+
+    /* ===== 电梯导航 ===== */
+    .elevator-nav {
+        position: sticky;
+        top: 80px; /* 距离视口顶部 80px 固定 */
+        float: right; /* 靠右悬浮 */
+        width: 120px;
+        margin-left: 20px;
+        background: #fff;
+        border: 1px solid #e4e7ed;
+        border-radius: 4px;
+        padding: 8px 0;
+        font-size: 13px;
+        z-index: 10;
+    }
+
+    .elevator-nav .nav-link {
+        display: block;
+        padding: 6px 10px;
+        color: #606266;
+        text-decoration: none;
+        transition: color .2s, background .2s;
+    }
+
+    .elevator-nav .nav-link:hover {
+        color: #409eff;
+        background: #f4f4f5;
+    }
+
+    .elevator-nav .nav-link.active {
+        color: #409eff;
+        font-weight: 600;
+        border-right: 2px solid #409eff;
+    }
+
+    /* 整体：右侧纵向居中，初始只显示触发图标 */
+    .elevator-float {
+        position: fixed;
+        right: 0; /* 贴右边 */
+        top: 50%;
+        transform: translateY(-50%); /* 纵向居中 */
+        z-index: 9999;
+        display: flex;
+        flex-direction: column; /* 竖向排列 */
+        align-items: center;
+        gap: 6px;
+        background: #fff;
+        border: 1px solid #e4e7ed;
+        border-top-left-radius: 5px;
+        border-bottom-left-radius: 5px;
+        /*padding: 8px 0px;*/
+        box-shadow: 0 4px 12px rgba(0, 0, 0, .15);
+        transition: all .3s ease;
+    }
+
+    /* 触发图标 */
+    .elevator-trigger {
+        font-size: 20px;
+        color: #409eff;
+        cursor: pointer;
+        user-select: none;
+        width: 32px;
+        height: 32px;
+        line-height: 32px;
+        text-align: center;
+    }
+
+    /* 链接组：默认隐藏（竖向） */
+    .elevator-links {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition: max-height .3s ease, opacity .3s ease;
+    }
+
+    /* 悬停时竖向展开 */
+    .elevator-float:hover .elevator-links {
+        max-height: 200px; /* 足够高即可 */
+        opacity: 1;
+    }
+
+    /* 单个链接样式 */
+    .elevator-links .nav-link {
+        white-space: nowrap;
+        font-size: 12px;
+        color: #606266;
+        text-decoration: none;
+        padding: 8px 10px;
+        border-radius: 4px;
+        transition: color .2s, background .2s;
+    }
+
+    .elevator-links .nav-link:hover {
+        color: #409eff;
+        background: #f4f4f5;
+    }
+
+    .elevator-links .nav-link.active {
+        color: #409eff;
+        font-weight: 600;
     }
 </style>

@@ -1,7 +1,10 @@
 package com.evalkit.framework.infra.service.llm;
 
+import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.infra.service.llm.config.LLMServiceConfig;
+import com.evalkit.framework.infra.service.llm.constants.LLMResponseType;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.concurrent.TimeUnit;
 
@@ -10,10 +13,31 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 public abstract class AbstractLLMService implements LLMService {
-    protected final LLMServiceConfig config;
+    protected LLMServiceConfig config;
 
     public AbstractLLMService(LLMServiceConfig config) {
+        validConfig(config);
         this.config = config;
+    }
+
+    public LLMServiceConfig getConfig() {
+        return config;
+    }
+
+    public void setConfig(LLMServiceConfig config) {
+        this.config = config;
+    }
+
+    /**
+     * 校验配置
+     *
+     * @param config 配置信息
+     */
+    protected void validConfig(LLMServiceConfig config) {
+        // model不能为空
+        if (StringUtils.isEmpty(config.getModel())) {
+            throw new IllegalArgumentException("LLM service model cannot be empty");
+        }
     }
 
     /**
@@ -34,6 +58,7 @@ public abstract class AbstractLLMService implements LLMService {
         for (int i = 0; i < retryTimes; i++) {
             try {
                 result = doChat(prompt);
+                validResponse(result);
                 break;
             } catch (Exception e) {
                 // 没有开启重试,直接抛异常结束
@@ -57,6 +82,27 @@ public abstract class AbstractLLMService implements LLMService {
             }
         }
         return result;
+    }
+
+    /**
+     * 校验大模型回复
+     *
+     * @param response 大模型回复
+     */
+    protected void validResponse(String response) {
+        LLMResponseType responseType = config.getResponseType();
+        // 如果是大模型回复是JSON类型要检查是否正确
+        if (responseType == LLMResponseType.JSON) {
+            // 替换掉可能存在的json标识符
+            String replace = StringUtils.replaceChars(response, "```json", "");
+            replace = StringUtils.replaceChars(replace, "```", "");
+            try {
+                JsonUtils.fromJson(replace, Object.class);
+            } catch (Exception e) {
+                log.error("LLM service response is not json, response: {}", response, e);
+                throw e;
+            }
+        }
     }
 
     @Override
