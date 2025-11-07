@@ -618,6 +618,7 @@
                   <button class="attribute-copy-btn" onclick="copyCases('${attr.issueName}',${JSON.stringify(attr.caseIds)})">复制全部</button>
                 </div>
               </div>`).join('');
+
             // 归因主体结构
             box.innerHTML = `
               <div class="attribution-header">
@@ -626,7 +627,15 @@
                   <span class="attribution-stat">共 ${total} 个 Case</span>
                 </div>
               </div>
+              <!-- 归因图表 -->
+              <div class="attribution-chart">
+                <canvas id="attributionChart" height="240"></canvas>
+              </div>
+              <!-- 归因卡片 -->
               <div class="attribution-cards">${cards}</div>`;
+
+            // 渲染图表
+            renderAttributionChart(list);
         }
 
         // 过滤
@@ -649,6 +658,49 @@
         };
 
         render(attributeCountResult.overallAttribution);
+    }
+
+    /* ---------- 渲染归因图标 --------------- */
+    let attributionChart = null;
+
+    function renderAttributionChart(list) {
+        /* 0. 确保 canvas 已经存在于 DOM */
+        const canvas = document.getElementById('attributionChart');
+        if (!canvas) return;               // 保险：不存在就退出
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;                  // 保险：取不到 2d 上下文也退出
+
+        /* 1. 数据准备 */
+        const issueNames = list.map(l => l.issueName);
+        const issueCounts = list.map(l => l.caseIds.length);
+
+        /* 2. 如果之前实例化过，先销毁 */
+        if (attributionChart) {
+            attributionChart.destroy();
+            attributionChart = null;
+        }
+
+        /* 3. 创建新图 */
+        attributionChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: issueNames,
+                datasets: [{
+                    data: issueCounts,
+                    backgroundColor: [
+                        '#67c23a', '#f56c6c', '#909399', '#409eff',
+                        '#e6a23c', '#7232d6', '#ff6032'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {legend: {position: 'bottom'}}
+            }
+        });
     }
 
     /* ---------- 跳转到case详情页 ---------- */
