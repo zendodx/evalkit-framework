@@ -473,3 +473,47 @@ canvas {
 .attribute-copy-btn:hover {
     background: #f2f3f5;
 }
+
+/* 分享case链接弹出气泡 */
+.copy-bubble {
+    position: fixed;
+    top: 5%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 8px 16px;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    font-size: 13px;
+    border-radius: 3px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .3s;
+    z-index: 9999;
+}
+
+.copy-bubble.show {
+    opacity: 1;
+}
+
+.share-btn {
+    margin-left: 5px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    opacity: .8;
+    transition: opacity .2s;
+}
+
+.share-btn:hover {
+    opacity: 1;
+}
+
+.share-icon {
+    width: 18px;
+    height: 18px;
+    fill: #606266;
+}
+
+.share-btn:hover .share-icon {
+    fill: #409eff;
+}
