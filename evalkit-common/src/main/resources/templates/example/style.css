@@ -188,25 +188,56 @@ body {
     flex-direction: column;
     background: #fff;
     overflow: auto;
-    padding-bottom: 24px;
     height: 100vh;
 }
 
-.detail-header {
-    padding: 8px 12px;
-    border-bottom: 1px solid #e4e7f1;
-    background: #fafbfc;
-    font-size: 13px;
-    font-weight: 600;
+/* 整个详情面板：占满屏幕高度 */
+.detail-panel {
     display: flex;
-    align-items: center;
-    gap: 8px
+    flex-direction: column;
+    height: 100vh; /* 关键：视口高度 */
 }
 
-.detail-content {
-    flex: 1;
-    padding: 3px 3px;
-    overflow-y: auto;
+/* 头部：固定高度，不压缩 */
+.detail-header {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    padding: 3px 12px;
+    border-bottom: 1px solid #e4e7ed;
+    background: #fafafa;
+    font-size: 13px;
+    font-weight: 600;
+    gap: 8px;
+}
+
+.header-jumps {
+    display: flex;
+    gap: 8px;
+    margin-left: auto; /* 推到最右边 */
+}
+
+.jump-btn {
+    font-size: 12px;
+    padding: 2px 8px;
+    border: 1px solid #d9ecff;
+    background: #ecf5ff;
+    color: #409eff;
+    border-radius: 3px;
+    text-decoration: none;
+    transition: all .2s;
+}
+
+.jump-btn:hover {
+    background: #409eff;
+    color: #fff;
+}
+
+/* 内容区：剩余空间自动滚动 */
+.detail-content-scroll {
+    flex: 1 1 auto; /* 占满剩余高度 */
+    overflow-y: auto; /* 超出滚动 */
+    padding: 3px;
 }
 
 .detail-section {
