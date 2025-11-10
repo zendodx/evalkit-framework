@@ -203,12 +203,20 @@ body {
     flex: 0 0 auto;
     display: flex;
     align-items: center;
-    padding: 3px 12px;
+    padding: 4px 12px;
     border-bottom: 1px solid #e4e7ed;
     background: #fafafa;
     font-size: 13px;
-    font-weight: 600;
     gap: 8px;
+}
+
+.datail-dataindex {
+    font-weight: 600;
+}
+
+.detail-strategy {
+    font-size: 11px;
+    color: #909399;
 }
 
 .header-jumps {
@@ -300,10 +308,6 @@ body {
     color: #ff8010
 }
 
-
-/* 单行展示 */
-/*pre.json-viewer{max-height:300px;overflow:auto;margin:0;padding:4px;font-size:11px}*/
-
 /* 换行展示 */
 pre.json-viewer {
     max-height: 300px;
@@ -312,6 +316,51 @@ pre.json-viewer {
     padding: 4px;
     font-size: 11px;
     white-space: pre-wrap;
+}
+
+/* 分享case链接弹出气泡 */
+.copy-bubble {
+    position: fixed;
+    top: 5%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 8px 16px;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    font-size: 13px;
+    border-radius: 3px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .3s;
+    z-index: 9999;
+}
+
+.copy-bubble.show {
+    opacity: 1;
+}
+
+.share-btn {
+    margin-left: auto;
+    /*margin-left: 5px;*/
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    opacity: .8;
+    transition: opacity .2s;
+}
+
+.share-btn:hover {
+    opacity: 1;
+}
+
+.share-icon {
+    width: 18px;
+    height: 18px;
+    fill: #606266;
+}
+
+.share-btn:hover .share-icon {
+    fill: #409eff;
 }
 
 /* ---------- 总览 ---------- */
@@ -521,50 +570,6 @@ canvas {
 /* 归因图标 */
 .attribution-chart {
     margin: 3px 3px;
-}
-
-/* 分享case链接弹出气泡 */
-.copy-bubble {
-    position: fixed;
-    top: 5%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    padding: 8px 16px;
-    background: rgba(0, 0, 0, 0.75);
-    color: #fff;
-    font-size: 13px;
-    border-radius: 3px;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity .3s;
-    z-index: 9999;
-}
-
-.copy-bubble.show {
-    opacity: 1;
-}
-
-.share-btn {
-    margin-left: 5px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    opacity: .8;
-    transition: opacity .2s;
-}
-
-.share-btn:hover {
-    opacity: 1;
-}
-
-.share-icon {
-    width: 18px;
-    height: 18px;
-    fill: #606266;
-}
-
-.share-btn:hover .share-icon {
-    fill: #409eff;
 }
 
 /* ===== 电梯导航 ===== */

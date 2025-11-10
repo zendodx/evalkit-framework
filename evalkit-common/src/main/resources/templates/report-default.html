@@ -516,15 +516,11 @@
       <div class="detail-panel">
           <!-- 详情头部 -->
           <div class="detail-header">
-            <span>#${d.inputData.dataIndex}</span>
+            <span class="datail-dataindex">#${d.inputData.dataIndex}</span>
             <span class="metric-badge ${statusClass}">${statusText}</span>
             <span class="metric-value ${metricClass}">${score}</span>
-            <!-- 增加分享按钮 -->
-           <span class="share-btn" onclick="shareCase()" title="复制链接">
-              <svg class="share-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3s3-1.34 3-3-1.34-3-3-3z"/>
-              </svg>
-           </span>
+            <!-- 打分策略名称 -->
+            <span class="detail-strategy">${scoreStrategyName}</span>
            <!-- 四个快速跳转按钮 -->
            <div class="header-jumps">
              <a href="#section-input"   class="jump-btn">输入数据</a>
@@ -532,13 +528,17 @@
              <a href="#section-eval"    class="jump-btn">评测结果</a>
              <a href="#section-scorer"  class="jump-btn">评测详情</a>
            </div>
-           <!-- 打分策略名称 -->
-            <span style="margin-left:auto;font-size:11px;color:#909399">${scoreStrategyName}</span>
+            <!-- 增加分享按钮 -->
+           <span class="share-btn" onclick="shareCase()" title="分享链接">
+              <svg class="share-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3s3-1.34 3-3-1.34-3-3-3z"/>
+              </svg>
+           </span>
           </div>
           <!-- 详情主体 -->
           <div class="detail-content-scroll">
             ${section('输入数据', jsonDiv(d.inputData.inputItem))}
-            ${section('API 调用结果', apiDiv(d.apiCompletionResult))}
+            ${section('API调用结果', apiDiv(d.apiCompletionResult))}
             ${section('评测结果', evalDiv(d.evalResult))}
             ${section('评测详情', scorerDiv(evalResult.scorerResults))}
           </div>
@@ -576,11 +576,7 @@
         if (!obj) {
             return `<span>没有输入数据</span>`
         }
-        // 2中展示方式任选
-        // 字符串展示
-        // return `<pre class="json-viewer">${escapeHtml(JSON.stringify(obj, null, 2))}</pre>`;
-        // json预览框展示
-        return `<div style="max-height: 400px; overflow-y: auto;">
+        return `<div>
                     <andypf-json-viewer
                             show-toolbar="true"
                             show-data-types="false"
@@ -593,7 +589,7 @@
 
     function apiDiv(r) {
         if (!r) {
-            return `<span>没有接口调用结果</span>`
+            return `<span>没有API调用结果</span>`
         }
         return `
           <div class="detail-row"><div class="detail-label">耗时</div><div class="detail-value">${r.timeCost}ms</div></div>
@@ -722,12 +718,6 @@
     function pad(n) {
         return n < 10 ? '0' + n : n;
     }
-
-    // function escapeHtml(str) {
-    //     const div = document.createElement('div');
-    //     div.textContent = str;
-    //     return div.innerHTML;
-    // }
 
     function escapeHtml(str) {
         return str
