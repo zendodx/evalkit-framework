@@ -60,7 +60,7 @@ public abstract class AbstractLLMService implements LLMService {
                 result = doChat(prompt);
                 validResponse(result);
                 break;
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 // 没有开启重试,直接抛异常结束
                 if (!openRetry) {
                     log.error("LLM service chat failed without retry, error: {}", e.getMessage(), e);
