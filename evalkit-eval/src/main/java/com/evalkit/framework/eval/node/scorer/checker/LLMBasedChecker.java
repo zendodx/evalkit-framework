@@ -1,12 +1,14 @@
 package com.evalkit.framework.eval.node.scorer.checker;
 
+import com.evalkit.framework.common.utils.convert.TypeConvertUtils;
+import com.evalkit.framework.common.utils.json.JsonUtils;
+import com.evalkit.framework.common.utils.string.RegexUtils;
 import com.evalkit.framework.eval.exception.EvalException;
 import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.node.scorer.checker.config.LLMBasedCheckerConfig;
 import com.evalkit.framework.eval.node.scorer.checker.constants.CheckMethod;
 import com.evalkit.framework.eval.node.scorer.checker.model.CheckItem;
-import com.evalkit.framework.common.utils.json.JsonUtils;
-import com.evalkit.framework.common.utils.string.RegexUtils;
+import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -64,7 +66,7 @@ public abstract class LLMBasedChecker extends AbstractChecker {
         String userPrompt = prepareUserPrompt(dataItem, round);
         String prompt = generateLLMCheckPrompt(checkMap, userPrompt);
         Map<String, Map<String, Object>> checkResultMap = llmCheck(prompt);
-        updateCheckItems(config.getCheckItems(), checkResultMap, round);
+        updateCheckItems(config.getCheckItems(), checkResultMap);
     }
 
     /**
@@ -124,21 +126,22 @@ public abstract class LLMBasedChecker extends AbstractChecker {
         if (StringUtils.isEmpty(chatResultJson)) {
             throw new EvalException("Can not parse LLM chat result: " + chatResult);
         }
-        return JsonUtils.fromJson(chatResultJson, Map.class);
+        return JsonUtils.fromJson(chatResultJson, new TypeReference<Map<String, Map<String, Object>>>() {
+        });
     }
 
     /**
      * 更新checkItem
      */
-    public void updateCheckItems(List<CheckItem> checkItems, Map<String, Map<String, Object>> checkResultMap, int round) {
+    public void updateCheckItems(List<CheckItem> checkItems, Map<String, Map<String, Object>> checkResultMap) {
         for (CheckItem checkItem : checkItems) {
             // 如果检查项不支持检查则跳过
             if (!checkItem.isSupport()) continue;
             String checkItemName = checkItem.getName();
             Map<String, Object> checkItemResult = checkResultMap.getOrDefault(checkItemName, null);
             if (checkItemResult != null) {
-                double score = Double.parseDouble(String.valueOf(checkItemResult.getOrDefault("score", 0.0)));
-                String reason = String.format("round%d:%s", round, checkItemResult.getOrDefault("reason", ""));
+                double score = TypeConvertUtils.toDouble(checkItemResult.getOrDefault("score", 0.0));
+                String reason = TypeConvertUtils.toString(checkItemResult.getOrDefault("reason", ""));
                 if (!checkItem.isExecuted()) {
                     checkItem.setScore(score);
                     checkItem.setReason(reason);
