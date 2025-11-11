@@ -46,7 +46,7 @@
 
     <properties>
         <!-- 项目版本 -->
-        <revision>0.5.3</revision>
+        <revision>0.5.4</revision>
         <!-- 统一编码 -->
         <encoding>UTF-8</encoding>
         <!-- jdk版本 -->
