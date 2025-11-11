@@ -25,7 +25,7 @@ EvalKit Framework is an automated evaluation framework developed in Java, offeri
 <dependency>
     <groupId>io.github.zendodx</groupId>
     <artifactId>evalkit-eval</artifactId>
-    <version>0.5.2</version>
+    <version>0.5.4</version>
 </dependency>
 ```
 
