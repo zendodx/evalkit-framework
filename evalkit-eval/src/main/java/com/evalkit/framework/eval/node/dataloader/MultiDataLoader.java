@@ -2,6 +2,7 @@ package com.evalkit.framework.eval.node.dataloader;
 
 import com.evalkit.framework.eval.model.InputData;
 import com.evalkit.framework.eval.node.dataloader.config.DataLoaderConfig;
+import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +34,9 @@ public class MultiDataLoader extends DataLoader {
         List<InputData> inputDataList = new ArrayList<>();
         for (DataLoader dataLoader : dataLoaders) {
             List<InputData> inputData = dataLoader.loadWrapper();
+            if (CollectionUtils.isEmpty(inputData)) {
+                continue;
+            }
             inputDataList.addAll(inputData);
         }
         updateIndex(inputDataList);
