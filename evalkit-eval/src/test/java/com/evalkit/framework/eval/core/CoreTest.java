@@ -11,7 +11,6 @@ import com.evalkit.framework.eval.node.begin.Begin;
 import com.evalkit.framework.eval.node.begin.config.BeginConfig;
 import com.evalkit.framework.eval.node.counter.AttributeCounter;
 import com.evalkit.framework.eval.node.counter.BasicCounter;
-import com.evalkit.framework.eval.node.counter.Counter;
 import com.evalkit.framework.eval.node.dataloader.DataLoader;
 import com.evalkit.framework.eval.node.dataloader.config.DataLoaderConfig;
 import com.evalkit.framework.eval.node.dataloader_wrapper.DataLoaderWrapper;
@@ -28,6 +27,7 @@ import com.evalkit.framework.eval.node.scorer.config.ScorerConfig;
 import com.evalkit.framework.eval.node.scorer.strategy.MaxScoreRateStrategy;
 import com.evalkit.framework.infra.service.llm.LLMService;
 import com.evalkit.framework.infra.service.llm.LLMServiceFactory;
+import com.evalkit.framework.infra.service.llm.LLMTokenMetrics;
 import com.evalkit.framework.infra.service.llm.config.DeepseekLLMServiceConfig;
 import com.evalkit.framework.infra.service.llm.constants.LLMServiceEnum;
 import com.evalkit.framework.workflow.WorkflowBuilder;
@@ -70,7 +70,11 @@ public class CoreTest {
     @BeforeEach
     public void init() {
         String deepSeekToken = RuntimeEnvUtils.getPropertyFromResource("secret.properties", "deepseek-token");
-        DeepseekLLMServiceConfig config = DeepseekLLMServiceConfig.builder().apiToken(deepSeekToken).build();
+        DeepseekLLMServiceConfig config = DeepseekLLMServiceConfig.builder()
+                .apiToken(deepSeekToken)
+                .inPrice(4)
+                .outPrice(3)
+                .build();
         LLMService llmService = LLMServiceFactory.createLLMService(LLMServiceEnum.DEEPSEEK.name(), config);
 
         begin = new Begin(
@@ -195,7 +199,8 @@ public class CoreTest {
             public void process(WorkflowContext ctx) {
                 List<File> attaches = FileUtils.listFiles(parentDir);
                 List<String> fileNames = attaches.stream().map(File::getName).collect(Collectors.toList());
-                log.info("attaches: {}", fileNames);
+                String llmCountReport = LLMTokenMetrics.report();
+                log.info("llmCountReport: {}, attaches: {}", llmCountReport, fileNames);
             }
         };
     }
@@ -203,12 +208,13 @@ public class CoreTest {
     @Test
     public void test() {
         List<Scorer> scorers = ListUtils.of(scorer1, scorer2, scorer3);
-        List<Counter> counters = ListUtils.of(basicCounter, attributeCounter);
         List<Reporter> reporters = ListUtils.of(reporter, htmlReporter, csvReporter, excelReporter, jsonReporter);
         new WorkflowBuilder()
                 .link(begin, dataLoader, dataLoaderWrapper, apiCompletion)
                 .link(apiCompletion, scorers)
-                .link(scorers, counters, reporters)
+                .link(scorers, attributeCounter)
+                .link(attributeCounter, basicCounter)
+                .link(basicCounter, reporters)
                 .link(reporters, end)
                 .build()
                 .execute();

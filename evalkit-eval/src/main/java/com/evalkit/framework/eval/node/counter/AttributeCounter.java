@@ -64,8 +64,8 @@ public class AttributeCounter extends Counter {
         List<CaseInput> caseInputs = new ArrayList<>();
         for (DataItem dataItem : dataItems) {
             EvalResult evalResult = dataItem.getEvalResult();
-            // 仅筛选有不通过原因的用例
-            if (evalResult != null && evalResult.isSuccess() && StringUtils.isNotEmpty(evalResult.getReason())) {
+            // 仅筛选有评测原因的用例
+            if (evalResult != null && StringUtils.isNotEmpty(evalResult.getReason())) {
                 CaseInput caseInput = new CaseInput(dataItem.getDataIndex(), dataItem.getEvalResult().getReason());
                 caseInputs.add(caseInput);
             }

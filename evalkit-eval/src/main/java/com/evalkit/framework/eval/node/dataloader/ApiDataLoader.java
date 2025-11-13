@@ -22,6 +22,7 @@ public abstract class ApiDataLoader extends JsonDataLoader {
     protected ApiDataLoaderConfig config;
 
     public ApiDataLoader(ApiDataLoaderConfig config) {
+        super(config);
         this.config = config;
         this.client = new HttpApiClient(config.getTimeout(), TimeUnit.SECONDS, config.getHost(), config.getApi(), config.getMethod());
     }

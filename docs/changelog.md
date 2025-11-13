@@ -1,5 +1,31 @@
 # ChangeLog
 
+## [0.6.0] - 2025-11-13
+
+### Added
+
+- 增加大模型资源统计功能
+- html报告支持多条件搜索
+- html报告用例详情头部增加通过阈值
+- html报告用例列表页增加筛选量展示
+- html报告增加api结果搜索
+
+### Fixed
+
+- 修复MultiDataLoader加载null抛异常bug
+- 修复ApiDataLoader配置失效bug
+- LLMBasedChecker修改检查项理由
+- 归因统计仅筛选有评测原因的用例
+
+## [0.5.4] - 2025-11-11
+
+### Added
+
+### Fixed
+
+- 归因统计仅筛选有评测原因的用例
+- 修改LLMBasedChecker检查项理由
+
 ## [0.5.3] - 2025-11-10
 
 ### Added

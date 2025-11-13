@@ -1,8 +1,10 @@
 package com.evalkit.framework.eval.node.counter;
 
 import com.evalkit.framework.eval.model.*;
+import com.evalkit.framework.infra.service.llm.LLMTokenMetrics;
 import org.apache.commons.collections4.CollectionUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -156,5 +158,25 @@ public class BasicCounter extends Counter {
         result.setTp60Score(tp(scores, 60));
         result.setTp50Score(tp(scores, 50));
         result.setScoreStdDev(standardDeviation(scores));
+        // 统计大模型token相关资源
+        List<BasicCountResult.LLMTokenCount> llmTokenCounts = new ArrayList<>();
+        for (String model : LLMTokenMetrics.MODELS) {
+            long inToken = LLMTokenMetrics.TOTAL_INPUT_TOKENS.get(model).get();
+            long outToken = LLMTokenMetrics.TOTAL_OUTPUT_TOKENS.get(model).get();
+            long totalToken = inToken + outToken;
+            double inPrice = LLMTokenMetrics.TOTAL_IN_PRICE.get(model).sum();
+            double outPrice = LLMTokenMetrics.TOTAL_OUT_PRICE.get(model).sum();
+            double totalPrice = inPrice + outPrice;
+            BasicCountResult.LLMTokenCount llmTokenCount = new BasicCountResult.LLMTokenCount();
+            llmTokenCount.setModel(model);
+            llmTokenCount.setInToken(inToken);
+            llmTokenCount.setOutToken(outToken);
+            llmTokenCount.setTotalToken(totalToken);
+            llmTokenCount.setInTokenPrice(inPrice);
+            llmTokenCount.setOutTokenPrice(outPrice);
+            llmTokenCount.setTotalTokenPrice(totalPrice);
+            llmTokenCounts.add(llmTokenCount);
+        }
+        result.setLlmTokenCounts(llmTokenCounts);
     }
 }
