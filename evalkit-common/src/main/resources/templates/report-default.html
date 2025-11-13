@@ -505,6 +505,7 @@
         const success = evalResult.success;
         const score = typeof evalResult.score === 'number' ? evalResult.score.toFixed(toFixedNumber) : '-';
         const scoreStrategyName = evalResult.scoreStrategyName || '-';
+        const threshold = evalResult.threshold || '-';
 
         let statusClass, statusText, metricClass;
         if (pass === true) {
@@ -529,7 +530,7 @@
             <span class="metric-badge ${statusClass}">${statusText}</span>
             <span class="metric-value ${metricClass}">${score}</span>
             <!-- 打分策略名称 -->
-            <span class="detail-strategy">${scoreStrategyName}</span>
+            <span class="detail-strategy">${scoreStrategyName}, 阈值: ${threshold}</span>
            <!-- 四个快速跳转按钮 -->
            <div class="header-jumps">
              <a href="#section-input"   class="jump-btn">输入数据</a>
