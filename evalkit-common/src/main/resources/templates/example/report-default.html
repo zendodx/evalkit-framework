@@ -34,6 +34,10 @@
             </div>
         </div>
         <div class="case-list" id="caseList"></div>
+        <!-- 用例列表状态栏 -->
+        <div class="case-status-bar" id="caseStatusBar">
+            当前 <span id="caseCount">0</span> 条用例
+        </div>
     </div>
 </div>
 
@@ -328,6 +332,10 @@
                     .includes(keyword.toLowerCase());
             });
         }
+
+        // 统计筛选后用例数量
+        document.getElementById('caseCount').textContent = data?.length || 0;
+
         if (!data.length) {
             listBox.innerHTML = '<div style="padding:12px;font-size:13px;color:#909399">无匹配用例</div>';
             return;
