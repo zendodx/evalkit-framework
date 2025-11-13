@@ -24,6 +24,7 @@
                 <button class="filter-btn" onclick="filterCases('fail')">未通过</button>
             </div>
             <div class="filter-search">
+                <!-- 搜索框 -->
                 <div class="search-box">
                     <input id="caseSearch"
                            type="text"
@@ -37,6 +38,22 @@
         <!-- 用例列表状态栏 -->
         <div class="case-status-bar" id="caseStatusBar">
             当前 <span id="caseCount">0</span> 条用例
+            <!-- 搜索提示按钮 -->
+            <button class="search-tip-btn" id="searchTipBtn" title="搜索语法">?</button>
+        </div>
+        <!-- 浮层（仅一次） -->
+        <div class="search-tip-pop" id="searchTipPop">
+            <div class="tip-header">
+                搜索语法
+                <span class="tip-close" id="tipClose">✕</span>
+            </div>
+            <div class="tip-body">
+                <p><code>#99</code> 序号含 99</p>
+                <p><code>超时 & 错误</code> 同时出现“超时”和“错误”</p>
+                <p><code>超时 | 错误</code> 出现“超时”或“错误”</p>
+                <p><code>!通过</code> 不含“通过”</p>
+                <p><code>(超时 | 错误) & #123</code> 括号组合</p>
+            </div>
         </div>
     </div>
 </div>
@@ -314,6 +331,87 @@
         renderCaseList();
     });
 
+    /* ===== 多条件过滤（& | ! ）===== */
+    function matchKeyword(item, kw) {
+        if (!kw) return true;                       // 空关键词 = 全过
+        const str = [
+            '#' + item.inputData.dataIndex,
+            JSON.stringify(item.inputData?.inputItem || ''),
+            JSON.stringify(item.apiCompletionResult?.resultItem || ''),
+            item.evalResult?.reason || ''
+        ].join(' ').toLowerCase();
+
+        /* 1. 词法 */
+        const tokens = kw
+            .replace(/\(/g, ' ( ')
+            .replace(/\)/g, ' ) ')
+            .split(/\s+/)
+            .filter(Boolean)
+            .map(t => t.toLowerCase());
+
+        /* 2. 递归下降解析 */
+        let idx = 0;
+        const parse = () => {
+            const peek = () => tokens[idx];
+            const consume = () => tokens[idx++];
+
+            const parseExpr = () => {
+                let left = parseTerm();
+                while (peek() === '|') {
+                    consume();
+                    left = {op: '|', left, right: parseTerm()};
+                }
+                return left;
+            };
+            const parseTerm = () => {
+                let left = parseFactor();
+                while (peek() === '&') {
+                    consume();
+                    left = {op: '&', left, right: parseFactor()};
+                }
+                return left;
+            };
+            const parseFactor = () => {
+                if (peek() === '!') {
+                    consume();
+                    return {op: '!', right: parseFactor()};
+                }
+                if (peek() === '(') {
+                    consume();
+                    const e = parseExpr();
+                    consume();
+                    return e;
+                }
+                return {op: 'term', val: consume()};
+            };
+            return parseExpr();
+        };
+
+        /* 3. 求值 */
+        const evalAST = (node) => {
+            switch (node.op) {
+                case 'term':
+                    return str.includes(node.val);
+                case '&':
+                    return evalAST(node.left) && evalAST(node.right);
+                case '|':
+                    return evalAST(node.left) || evalAST(node.right);
+                case '!':
+                    return !evalAST(node.right);
+                default:
+                    return false;
+            }
+        };
+
+        try {
+            const ast = parse();
+            return evalAST(ast);
+        } catch (e) {
+            /* 语法错误时退回到普通包含匹配 */
+            return str.includes(kw.toLowerCase());
+        }
+    }
+
     /* 重写原来的 renderCaseList（只改列表生成部分） */
     function renderCaseList() {
         const listBox = document.getElementById('caseList');
@@ -323,14 +421,20 @@
             : evaluationData.filter(d => d.evalResult && d.evalResult.pass === (currentFilter === 'pass'));
 
         /* 2. 再按关键词二次筛选 */
+        // 简单搜索
+        // if (keyword) {
+        //     data = data.filter(item => {
+        //         const input = JSON.stringify(item.inputData?.inputItem || '');
+        //         const apiResult = JSON.stringify(item.apiCompletionResult?.resultItem || '');
+        //         const reason = item.evalResult?.reason || '';
+        //         return (`#${item.inputData.dataIndex} ${input} ${apiResult} ${reason}`).toLowerCase()
+        //             .includes(keyword.toLowerCase());
+        //     });
+        // }
+
+        // 多条件搜索
         if (keyword) {
-            data = data.filter(item => {
-                const input = JSON.stringify(item.inputData?.inputItem || '');
-                const apiResult = JSON.stringify(item.apiCompletionResult?.resultItem || '');
-                const reason = item.evalResult?.reason || '';
-                return (`#${item.inputData.dataIndex} ${input} ${apiResult} ${reason}`).toLowerCase()
-                    .includes(keyword.toLowerCase());
-            });
+            data = data.filter(item => matchKeyword(item, keyword));
         }
 
         // 统计筛选后用例数量
@@ -1012,6 +1116,20 @@
     window.addEventListener('scroll', updateElevator);
     // 首次进入也刷新一次
     updateElevator();
+
+    const tipBtn = document.getElementById('searchTipBtn');
+    const tipPop = document.getElementById('searchTipPop');
+    const tipClose = document.getElementById('tipClose');
+
+    tipBtn.onclick = () => tipPop.classList.toggle('show');
+    tipClose.onclick = () => tipPop.classList.remove('show');
+
+    /* 点击页面其他地方也关闭 */
+    document.addEventListener('click', e => {
+        if (!tipPop.contains(e.target) && e.target !== tipBtn) {
+            tipPop.classList.remove('show');
+        }
+    });
 </script>
 </body>
 </html>
