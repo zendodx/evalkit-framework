@@ -1,6 +1,7 @@
 package com.evalkit.framework.infra.service.llm;
 
 import com.evalkit.framework.common.utils.json.JsonUtils;
+import com.evalkit.framework.common.utils.llm.LLMTokenUtils;
 import com.evalkit.framework.infra.service.llm.config.LLMServiceConfig;
 import com.evalkit.framework.infra.service.llm.constants.LLMResponseType;
 import lombok.extern.slf4j.Slf4j;
@@ -59,6 +60,28 @@ public abstract class AbstractLLMService implements LLMService {
             try {
                 result = doChat(prompt);
                 validResponse(result);
+                // 计算耗费
+                long allToken = 0;
+                long inToken = 0;
+                long outToken = 0;
+                double inPrice = 0.0;
+                double outPrice = 0.0;
+                double totalPrice = 0.0;
+                String model = config.getModel();
+                try {
+                    inToken = LLMTokenUtils.tokenCount(prompt);
+                    outToken = LLMTokenUtils.tokenCount(result);
+                    allToken = inToken + outToken;
+                    inPrice = LLMTokenUtils.calTokenPrice(prompt, config.getInPrice());
+                    outPrice = LLMTokenUtils.calTokenPrice(prompt, config.getOutPrice());
+                    totalPrice = inPrice + outPrice;
+                    // 全局打点上报
+                    LLMTokenMetrics.record(model, inToken, outToken, inPrice, outPrice);
+                } catch (Exception ignored) {
+                    log.error("LLM service count token and price failed, error: {}", ignored.getMessage(), ignored);
+                }
+                log.info("LLM service chat success, prompt:{}, response:{}, model:{}, in token: {}, out token:{}, all token: {}, in price:{}, out price: {}, totalPrice: {}",
+                        prompt, result, model, inToken, outToken, allToken, inPrice, outPrice, totalPrice);
                 break;
             } catch (Throwable e) {
                 // 没有开启重试,直接抛异常结束

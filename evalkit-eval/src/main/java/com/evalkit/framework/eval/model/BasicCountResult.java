@@ -2,7 +2,12 @@ package com.evalkit.framework.eval.model;
 
 import com.evalkit.framework.eval.context.WorkflowContextOps;
 import com.evalkit.framework.workflow.model.WorkflowContext;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * 基础统计结果
@@ -55,6 +60,24 @@ public class BasicCountResult implements CountResult {
     private double tp50Score;
     /* 分数标准差 */
     private double scoreStdDev;
+    /* 大模型资源统计 */
+    private List<LLMTokenCount> llmTokenCounts = Collections.emptyList();
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class LLMTokenCount {
+        /* 评测模型 */
+        private String model;
+        /* 评测消耗token */
+        private long inToken;
+        private long outToken;
+        private long totalToken;
+        /* token消耗价格 */
+        private double inTokenPrice;
+        private double outTokenPrice;
+        private double totalTokenPrice;
+    }
 
     @Override
     public void writeToCtx(WorkflowContext ctx) {

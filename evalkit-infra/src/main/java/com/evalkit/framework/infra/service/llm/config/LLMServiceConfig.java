@@ -56,4 +56,10 @@ public class LLMServiceConfig {
     /* 大模型回复类型, 默认文本类型 */
     @Builder.Default
     protected LLMResponseType responseType = LLMResponseType.TEXT;
+    /* 每百万token输入价格 */
+    @Builder.Default
+    protected double inPrice = 0.0;
+    /* 每百万token输出价格 */
+    @Builder.Default
+    protected double outPrice = 0.0;
 }

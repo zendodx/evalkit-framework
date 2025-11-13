@@ -70,6 +70,8 @@
             <div class="metrics-grid" id="completionMetricsGrid"></div>
             <div class="metric-name">评测指标</div>
             <div class="metrics-grid" id="evalMetricsGrid"></div>
+            <div class="metric-name">大模型资源指标</div>
+            <div class="metrics-grid" id="LLMMetricsGrid"></div>
         </div>
         <div class="overview-right">
             <div class="chart-box">
@@ -111,6 +113,7 @@
     let passChart, distChart, tpChart;
     // 统一小数点后位数
     let toFixedNumber = 2;
+    let toPriceFixedNumber = 6;
 
     /* ---------- 初始化 ---------- */
     function init() {
@@ -326,6 +329,11 @@
             return typeof val === 'number' ? val.toFixed(toFixedNumber) : '-';
         }
 
+        function safePriceFloat(val) {
+            return typeof val === 'number' ? val.toFixed(toPriceFixedNumber) : '-';
+        }
+
+
         function safeMs(val) {
             return typeof val === 'number' ? val.toFixed(toFixedNumber) + 'ms' : '-';
         }
@@ -374,7 +382,21 @@
             {label: 'TP60', v: safeFloat(md.tp60Score), c: 'default'},
             {label: 'TP50', v: safeFloat(md.tp50Score), c: 'default'}
         ];
+
         renderGrid('evalMetricsGrid', ev);
+
+        const llm = [];
+        md?.llmTokenCounts.map(m => {
+            const model = m.model
+            llm.push({label: model + "输入token", v: safeInt(m.inToken), c: 'default'});
+            llm.push({label: model + "输出token", v: safeInt(m.outToken), c: 'default'});
+            llm.push({label: model + "总token", v: safeInt(m.totalToken), c: 'default'});
+            llm.push({label: model + "输入token费用", v: safePriceFloat(m.inTokenPrice), c: 'default'});
+            llm.push({label: model + "输出token费用", v: safePriceFloat(m.outTokenPrice), c: 'default'});
+            llm.push({label: model + "总token费用", v: safePriceFloat(m.totalTokenPrice), c: 'default'});
+        })
+
+        renderGrid('LLMMetricsGrid', llm);
 
         /* 图表 */
         renderCharts();
