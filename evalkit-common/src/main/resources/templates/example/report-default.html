@@ -27,7 +27,7 @@
                 <div class="search-box">
                     <input id="caseSearch"
                            type="text"
-                           placeholder="搜索用例（#序号/输入/理由）"
+                           placeholder="搜索用例（#序号/输入/结果/理由）"
                            autocomplete="off"/>
                     <button id="clearSearch" title="清空">✕</button>
                 </div>
@@ -321,9 +321,10 @@
         /* 2. 再按关键词二次筛选 */
         if (keyword) {
             data = data.filter(item => {
-                const input = JSON.stringify(item.inputData.inputItem);
+                const input = JSON.stringify(item.inputData?.inputItem || '');
+                const apiResult = JSON.stringify(item.apiCompletionResult?.resultItem || '');
                 const reason = item.evalResult?.reason || '';
-                return (`#${item.inputData.dataIndex} ${input} ${reason}`).toLowerCase()
+                return (`#${item.inputData.dataIndex} ${input} ${apiResult} ${reason}`).toLowerCase()
                     .includes(keyword.toLowerCase());
             });
         }
