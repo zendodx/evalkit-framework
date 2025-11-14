@@ -44,7 +44,20 @@ public abstract class DataLoader extends WorkflowNode {
 
     public DataLoader(DataLoaderConfig config) {
         super(WorkflowUtils.generateNodeId(NodeNamePrefix.DATA_LOADER));
+        validConfig(config);
         this.config = config;
+    }
+
+    protected void validConfig(DataLoaderConfig config) {
+        if (config == null) {
+            throw new IllegalArgumentException("Config is null");
+        }
+        if (config.getOffset() < 0) {
+            throw new IllegalArgumentException("offset must be more than or equals 0");
+        }
+        if (config.getLimit() < -1) {
+            throw new IllegalArgumentException("limit must be more than or equals -1");
+        }
     }
 
     /**

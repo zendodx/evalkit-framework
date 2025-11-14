@@ -1,11 +1,12 @@
 package com.evalkit.framework.eval.node.dataloader;
 
+import com.evalkit.framework.common.utils.file.ExcelUtils;
 import com.evalkit.framework.eval.model.InputData;
 import com.evalkit.framework.eval.node.dataloader.config.ExcelDataLoaderConfig;
-import com.evalkit.framework.common.utils.file.ExcelUtils;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -33,7 +34,17 @@ public class ExcelDataLoader extends DataLoader {
 
     public ExcelDataLoader(ExcelDataLoaderConfig config) {
         super(config);
+        validConfig(config);
         this.config = config;
+    }
+
+    protected void validConfig(ExcelDataLoaderConfig config) {
+        if (StringUtils.isEmpty(config.getFilePath())) {
+            throw new IllegalArgumentException("filePath is empty");
+        }
+        if (config.getSheetIndex() < 0) {
+            throw new IllegalArgumentException("sheetIndex must be more than or equals 0");
+        }
     }
 
     @Override

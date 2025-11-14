@@ -13,15 +13,12 @@ import java.util.Map;
 
 public abstract class JsonDataLoader extends DataLoader {
 
-    protected DataLoaderConfig config;
-
     public JsonDataLoader() {
         super();
     }
 
     public JsonDataLoader(DataLoaderConfig config) {
         super(config);
-        this.config = config;
     }
 
     /**

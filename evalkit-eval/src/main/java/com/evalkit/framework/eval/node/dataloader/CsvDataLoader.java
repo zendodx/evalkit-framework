@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -34,7 +35,17 @@ public class CsvDataLoader extends DataLoader {
 
     public CsvDataLoader(CsvDataLoaderConfig config) {
         super(config);
+        validConfig(config);
         this.config = config;
+    }
+
+    protected void validConfig(CsvDataLoaderConfig config) {
+        if (StringUtils.isEmpty(config.getFilePath())) {
+            throw new IllegalArgumentException("filePath is empty");
+        }
+        if (StringUtils.isEmpty(config.getDelimiter())) {
+            throw new IllegalArgumentException("delimiter is empty");
+        }
     }
 
     @Override

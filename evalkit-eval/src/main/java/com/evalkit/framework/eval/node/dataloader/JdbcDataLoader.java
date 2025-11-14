@@ -5,6 +5,7 @@ import com.evalkit.framework.eval.node.dataloader.config.JdbcDataLoaderConfig;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -25,6 +26,7 @@ public abstract class JdbcDataLoader extends DataLoader {
 
     public JdbcDataLoader(JdbcDataLoaderConfig config) {
         super(config);
+        validConfig(config);
         HikariConfig cfg = new HikariConfig();
         cfg.setDriverClassName(config.getDriver());
         cfg.setJdbcUrl(config.getUrl());
@@ -34,6 +36,18 @@ public abstract class JdbcDataLoader extends DataLoader {
         cfg.setMinimumIdle(config.getMinimumIdle());
         cfg.setConnectionTimeout(config.getConnectionTimeout());
         this.ds = new HikariDataSource(cfg);
+    }
+
+    protected void validConfig(JdbcDataLoaderConfig config) {
+        if (StringUtils.isEmpty(config.getDriver())) {
+            throw new IllegalArgumentException("driver is empty");
+        }
+        if (StringUtils.isEmpty(config.getUrl())) {
+            throw new IllegalArgumentException("url is empty");
+        }
+        if (StringUtils.isEmpty(config.getUser())) {
+            throw new IllegalArgumentException("username is null");
+        }
     }
 
     /**

@@ -6,6 +6,7 @@ import com.evalkit.framework.eval.exception.EvalException;
 import com.evalkit.framework.eval.model.InputData;
 import com.evalkit.framework.eval.node.dataloader.config.JsonFileDataLoaderConfig;
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.InputStream;
 import java.util.List;
@@ -19,7 +20,17 @@ public class JsonFileDataLoader extends JsonDataLoader {
 
     public JsonFileDataLoader(JsonFileDataLoaderConfig config) {
         super(config);
+        validConfig(config);
         this.config = config;
+    }
+
+    protected void validConfig(JsonFileDataLoaderConfig config) {
+        if (StringUtils.isEmpty(config.getFilePath())) {
+            throw new IllegalArgumentException("filePath is empty");
+        }
+        if (StringUtils.isEmpty(config.getJsonPath())) {
+            throw new IllegalArgumentException("jsonpath is empty");
+        }
     }
 
     @Override
