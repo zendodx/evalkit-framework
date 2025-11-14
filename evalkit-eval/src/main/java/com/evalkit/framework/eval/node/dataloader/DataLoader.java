@@ -136,8 +136,8 @@ public abstract class DataLoader extends WorkflowNode {
         if (config.isShuffle()) {
             shuffle(inputDatas);
         }
-        inputDatas = slice(inputDatas);
         filter(inputDatas);
+        inputDatas = slice(inputDatas);
         // 必须给每个数据项加索引
         addDataIndex(inputDatas);
         return inputDatas;

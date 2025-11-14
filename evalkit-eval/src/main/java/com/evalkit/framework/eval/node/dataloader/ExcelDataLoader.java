@@ -39,20 +39,12 @@ public class ExcelDataLoader extends DataLoader {
     @Override
     public List<InputData> prepareDataList() throws IOException {
         AtomicLong dataIndex = new AtomicLong(0L);
-        List<Map<String, String>> items = ExcelUtils.readExcelAsListMapWithDefaultHeaders(config.getFilePath(), config.getSheetIndex(),
-                config.getOffset(), config.getLimit());
+        List<Map<String, String>> items = ExcelUtils.readExcelAsListMapWithDefaultHeaders(config.getFilePath(), config.getSheetIndex());
         return items.stream().map(item -> {
             Map<String, Object> t = new HashMap<>(item.size());
             t.putAll(item);
             return new InputData(dataIndex.getAndIncrement(), t);
         }).collect(Collectors.toList());
-    }
-
-    /**
-     * 加载时就已经截断,此时只需要返回评测数据即可
-     */
-    protected List<InputData> slice(List<InputData> inputDataList) {
-        return inputDataList;
     }
 
     @Override
