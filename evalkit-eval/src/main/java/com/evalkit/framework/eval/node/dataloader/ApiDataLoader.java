@@ -6,6 +6,7 @@ import com.evalkit.framework.common.client.http.model.HttpApiResponse;
 import com.evalkit.framework.eval.model.InputData;
 import com.evalkit.framework.eval.node.dataloader.config.ApiDataLoaderConfig;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -23,8 +24,24 @@ public abstract class ApiDataLoader extends JsonDataLoader {
 
     public ApiDataLoader(ApiDataLoaderConfig config) {
         super(config);
+        validConfig(config);
         this.config = config;
         this.client = new HttpApiClient(config.getTimeout(), TimeUnit.SECONDS, config.getHost(), config.getApi(), config.getMethod());
+    }
+
+    protected void validConfig(ApiDataLoaderConfig config) {
+        if (StringUtils.isEmpty(config.getHost())) {
+            throw new IllegalArgumentException("host is empty");
+        }
+        if (StringUtils.isEmpty(config.getApi())) {
+            throw new IllegalArgumentException("api is empty");
+        }
+        if (StringUtils.isEmpty(config.getMethod())) {
+            throw new IllegalArgumentException("method is null");
+        }
+        if (config.getTimeout() <= 0) {
+            throw new IllegalArgumentException("timeout must be more than 0");
+        }
     }
 
     /**
