@@ -93,15 +93,15 @@ public abstract class Scorer extends WorkflowNode {
         long start = System.currentTimeMillis();
         ScorerResult tmp = Objects.requireNonNull(eval(item), "eval() returned null");
         long end = System.currentTimeMillis();
-
-        double scoreRate = calcScoreRate(tmp.getScore(), tmp.getTotalScore());
+        // 如果是动态总分数需要从评测结果中取,否则从配置中取
+        double totalScore = config.isDynamicTotalScore() ? tmp.getTotalScore() : config.getTotalScore();
+        double scoreRate = calcScoreRate(tmp.getScore(), totalScore);
         boolean pass = decidePass(tmp.getScore(), scoreRate);
-
         return ScorerResult.builder()
                 .dataIndex(item.getDataIndex())
                 .metric(tmp.getMetric())
                 .score(tmp.getScore())
-                .totalScore(config.isDynamicTotalScore() ? tmp.getTotalScore() : config.getTotalScore())
+                .totalScore(totalScore)
                 .reason(tmp.getReason())
                 .extra(tmp.getExtra())
                 .threshold(config.getThreshold())
