@@ -21,7 +21,7 @@ public abstract class SemanticConsistencyScorer extends PromptBasedScorer {
     public String prepareSysPrompt() {
         return "你是“语义一致性裁判”，判断A、B两句话的语义是否完全一致（即在任何语境下可互相替换而不改变事实、立场、情感、时间、主客体）。" +
                 "请按照要求检查文本，输出结果严格限制为如下json：" +
-                "{\t\"score\":\"# 检查要求 检查文本是否符合一致性规则 # 打分要求 - 0分：不符合 - 1分：符合\",\"reason\":\"推理过程及解释\"} " +
+                "{\t\"score\":\"# 输出格式 一个整数 0或者1 # 检查要求 检查文本是否符合一致性规则 # 打分要求 - 0分：不符合 - 1分：符合\",\"reason\":\"推理过程及解释\"} " +
                 "执行完成后你需要对返回结果进行自检查，如果不符合json格式要求，请重新生成。";
     }
 
