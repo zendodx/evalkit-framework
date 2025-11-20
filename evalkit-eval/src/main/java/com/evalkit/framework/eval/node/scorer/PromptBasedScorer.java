@@ -4,7 +4,7 @@ import com.evalkit.framework.eval.model.ApiCompletionResult;
 import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.model.InputData;
 import com.evalkit.framework.eval.model.ScorerResult;
-import com.evalkit.framework.eval.node.scorer.config.ScorerConfig;
+import com.evalkit.framework.eval.node.scorer.config.PromptBasedScorerConfig;
 import com.evalkit.framework.infra.service.llm.LLMService;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -18,11 +18,21 @@ import java.util.Map;
 @Slf4j
 public abstract class PromptBasedScorer extends Scorer {
     /* 大模型服务 */
-    protected final LLMService llmService;
+    protected final PromptBasedScorerConfig config;
 
-    public PromptBasedScorer(ScorerConfig config, LLMService llmService) {
+    public PromptBasedScorer(PromptBasedScorerConfig config) {
         super(config);
-        this.llmService = llmService;
+        validConfig(config);
+        this.config = config;
+    }
+
+    protected void validConfig(PromptBasedScorerConfig config) {
+        if (config == null) {
+            throw new IllegalArgumentException("Config is null");
+        }
+        if (config.getLlmService() == null) {
+            throw new IllegalArgumentException("LLMService is null");
+        }
     }
 
     /**
@@ -50,6 +60,7 @@ public abstract class PromptBasedScorer extends Scorer {
         String prompt = sysPrompt + "\n----------以下是输入数据----------\n" + userPrompt;
         String llmReply;
         try {
+            LLMService llmService = config.getLlmService();
             llmReply = llmService.chat(prompt);
             log.info("LLM service chat success, prompt: {}, llm reply: {}", prompt, llmReply);
             LLMResult checkResult = parseLLMReply(llmReply);

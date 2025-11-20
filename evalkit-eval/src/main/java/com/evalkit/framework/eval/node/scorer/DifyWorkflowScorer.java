@@ -14,6 +14,7 @@ import io.github.imfangs.dify.client.model.workflow.WorkflowRunResponse;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.util.Map;
@@ -25,19 +26,27 @@ import java.util.Map;
 @Slf4j
 @Data
 public abstract class DifyWorkflowScorer extends Scorer {
-    protected DifyWorkflowClient client;
-    protected DifyWorkflowScorerConfig config;
+    protected final DifyWorkflowClient client;
+    protected final DifyWorkflowScorerConfig config;
 
     public DifyWorkflowScorer(DifyWorkflowScorerConfig config) {
         super(config);
+        validConfig(config);
         this.config = config;
+        this.client = DifyClientFactory.createWorkflowClient(config.getBaseUrl(), config.getApiKey());
     }
 
-    /**
-     * 初始化Dify客户端
-     */
-    public void initDifyClient() {
-        client = DifyClientFactory.createWorkflowClient(config.getBaseUrl(), config.getApiKey());
+    protected void validConfig(DifyWorkflowScorerConfig config) {
+        super.validConfig(config);
+        if (StringUtils.isEmpty(config.getApiKey())) {
+            throw new IllegalArgumentException("apiKey must not be empty");
+        }
+        if (StringUtils.isEmpty(config.getBaseUrl())) {
+            throw new IllegalArgumentException("baseUrl must not be empty");
+        }
+        if (StringUtils.isEmpty(config.getUserName())) {
+            throw new IllegalArgumentException("userName must not be empty");
+        }
     }
 
     /**
@@ -56,7 +65,6 @@ public abstract class DifyWorkflowScorer extends Scorer {
         InputData inputData = dataItem.getInputData();
         ApiCompletionResult apiCompletionResult = dataItem.getApiCompletionResult();
         try {
-            initDifyClient();
             request = WorkflowRunRequest.builder()
                     .inputs(prepareInputParams(inputData, apiCompletionResult))
                     .responseMode(ResponseMode.BLOCKING)

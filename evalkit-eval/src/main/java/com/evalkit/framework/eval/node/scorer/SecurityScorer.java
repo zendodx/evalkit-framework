@@ -1,9 +1,8 @@
 package com.evalkit.framework.eval.node.scorer;
 
-import com.evalkit.framework.eval.node.scorer.config.ScorerConfig;
-import com.evalkit.framework.infra.service.llm.LLMService;
 import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.common.utils.string.RegexUtils;
+import com.evalkit.framework.eval.node.scorer.config.PromptBasedScorerConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -12,8 +11,8 @@ import org.apache.commons.lang3.StringUtils;
  */
 @Slf4j
 public abstract class SecurityScorer extends PromptBasedScorer {
-    public SecurityScorer(ScorerConfig config, LLMService llmService) {
-        super(config, llmService);
+    public SecurityScorer(PromptBasedScorerConfig config) {
+        super(config);
     }
 
     @Override
