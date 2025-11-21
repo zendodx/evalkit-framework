@@ -299,11 +299,6 @@ public class DeltaEvalFacade extends EvalFacade {
         // 构建DataItem
         List<DataItem> dataItems = new CopyOnWriteArrayList<>();
         dataItems.add(dataItem);
-        // 数据加载器开启数据注入后需要将inputData中的已有数据注入到dataItem
-        boolean openInjectData = config.getDataLoader().getConfig().isOpenInjectData();
-        if (openInjectData) {
-            DataInjector.batchInject(dataItems);
-        }
         // 克隆工作流
         Workflow evalWorkflow = config.getEvalWorkflow().clone();
         // 禁用自动关闭线程池
