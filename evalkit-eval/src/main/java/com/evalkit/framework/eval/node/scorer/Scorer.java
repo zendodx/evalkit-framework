@@ -18,6 +18,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 import java.util.Objects;
@@ -37,7 +38,26 @@ public abstract class Scorer extends WorkflowNode {
 
     public Scorer(ScorerConfig config) {
         super(WorkflowUtils.generateNodeId(NodeNamePrefix.SCORER));
+        validConfig(config);
         this.config = config;
+    }
+
+    protected void validConfig(ScorerConfig config) {
+        if (config == null) {
+            throw new IllegalArgumentException("Config is null");
+        }
+        if (StringUtils.isEmpty(config.getMetricName())) {
+            throw new IllegalArgumentException("metricName must not be empty");
+        }
+        if (config.getThreshold() < 0) {
+            throw new IllegalArgumentException("limit must be more than or equals 0");
+        }
+        if (config.getThreadNum() < 1) {
+            throw new IllegalArgumentException("threadNum must be more than or equals 1");
+        }
+        if (config.getTotalScore() < 0) {
+            throw new IllegalArgumentException("totalScore must be more than or equals 0");
+        }
     }
 
     /**
@@ -93,15 +113,15 @@ public abstract class Scorer extends WorkflowNode {
         long start = System.currentTimeMillis();
         ScorerResult tmp = Objects.requireNonNull(eval(item), "eval() returned null");
         long end = System.currentTimeMillis();
-
-        double scoreRate = calcScoreRate(tmp.getScore(), tmp.getTotalScore());
+        // 如果是动态总分数需要从评测结果中取,否则从配置中取
+        double totalScore = config.isDynamicTotalScore() ? tmp.getTotalScore() : config.getTotalScore();
+        double scoreRate = calcScoreRate(tmp.getScore(), totalScore);
         boolean pass = decidePass(tmp.getScore(), scoreRate);
-
         return ScorerResult.builder()
                 .dataIndex(item.getDataIndex())
                 .metric(tmp.getMetric())
                 .score(tmp.getScore())
-                .totalScore(config.isDynamicTotalScore() ? tmp.getTotalScore() : config.getTotalScore())
+                .totalScore(totalScore)
                 .reason(tmp.getReason())
                 .extra(tmp.getExtra())
                 .threshold(config.getThreshold())

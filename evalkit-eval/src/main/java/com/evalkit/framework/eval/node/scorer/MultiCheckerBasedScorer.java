@@ -6,8 +6,7 @@ import com.evalkit.framework.eval.model.ScorerResult;
 import com.evalkit.framework.eval.node.scorer.checker.Checker;
 import com.evalkit.framework.eval.node.scorer.checker.model.CheckItem;
 import com.evalkit.framework.eval.node.scorer.checker.strategy.checker.MergeCheckerScoreStrategy;
-import com.evalkit.framework.eval.node.scorer.checker.strategy.checker.SumMergeCheckerScoreStrategy;
-import com.evalkit.framework.eval.node.scorer.config.ScorerConfig;
+import com.evalkit.framework.eval.node.scorer.config.MultiCheckerBasedScorerConfig;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -25,20 +24,23 @@ import java.util.concurrent.atomic.AtomicReference;
 @Slf4j
 @Data
 public abstract class MultiCheckerBasedScorer extends Scorer {
-    /* 合并各检查器结果的策略,默认 求和策略 */
-    protected MergeCheckerScoreStrategy strategy;
+    protected final MultiCheckerBasedScorerConfig config;
 
-    public MultiCheckerBasedScorer(MergeCheckerScoreStrategy strategy) {
-        this(ScorerConfig.builder().build(), strategy);
+    public MultiCheckerBasedScorer() {
+        this(MultiCheckerBasedScorerConfig.builder().build());
     }
 
-    public MultiCheckerBasedScorer(ScorerConfig config) {
-        this(config, new SumMergeCheckerScoreStrategy());
-    }
-
-    public MultiCheckerBasedScorer(ScorerConfig config, MergeCheckerScoreStrategy strategy) {
+    public MultiCheckerBasedScorer(MultiCheckerBasedScorerConfig config) {
         super(config);
-        this.strategy = strategy;
+        validConfig(config);
+        this.config = config;
+    }
+
+    protected void validConfig(MultiCheckerBasedScorerConfig config) {
+        super.validConfig(config);
+        if (config.getStrategy() == null) {
+            throw new IllegalArgumentException("MergeCheckerScoreStrategy is null");
+        }
     }
 
     /**
@@ -76,6 +78,7 @@ public abstract class MultiCheckerBasedScorer extends Scorer {
      * 汇总各checker分数,汇总策略有:最小分数,平均分数
      */
     private double mergeCheckerScore(List<Checker> checkers) {
+        MergeCheckerScoreStrategy strategy = config.getStrategy();
         return strategy.mergeScore(checkers);
     }
 

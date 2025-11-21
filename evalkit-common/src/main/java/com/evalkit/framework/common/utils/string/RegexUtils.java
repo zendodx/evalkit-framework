@@ -17,10 +17,14 @@ public class RegexUtils {
 
     public static String extractMarkdownJsonBlock(String text) {
         if (StringUtils.isEmpty(text)) {
-            return null;
+            return text;
         }
         String regex = "```json\\s*([\\s\\S]*?)\\s*```";
-        return RegexUtils.extractFirst(text, regex, 1, true);
+        String res = RegexUtils.extractFirst(text, regex, 1, true);
+        if (StringUtils.isNotEmpty(res)) {
+            return res;
+        }
+        return text;
     }
 
     public static String extractFirst(String text, String regex, int groupIndex, boolean dotAll) {

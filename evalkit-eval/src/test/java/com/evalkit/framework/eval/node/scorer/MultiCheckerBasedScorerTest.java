@@ -14,8 +14,6 @@ import com.evalkit.framework.eval.node.scorer.checker.Checker;
 import com.evalkit.framework.eval.node.scorer.checker.config.CheckerConfig;
 import com.evalkit.framework.eval.node.scorer.checker.constants.CheckMethod;
 import com.evalkit.framework.eval.node.scorer.checker.model.CheckItem;
-import com.evalkit.framework.eval.node.scorer.checker.strategy.checker.MergeCheckerScoreStrategy;
-import com.evalkit.framework.eval.node.scorer.config.ScorerConfig;
 import com.evalkit.framework.eval.node.scorer.strategy.AvgScoreRateStrategy;
 import com.evalkit.framework.workflow.WorkflowBuilder;
 import org.junit.jupiter.api.Test;
@@ -130,19 +128,6 @@ class MultiCheckerBasedScorerTest {
      * 自定义评估器
      */
     class CustomScorer extends MultiCheckerBasedScorer {
-
-        public CustomScorer(MergeCheckerScoreStrategy strategy) {
-            super(strategy);
-        }
-
-        public CustomScorer(ScorerConfig config) {
-            super(config);
-        }
-
-        public CustomScorer(ScorerConfig config, MergeCheckerScoreStrategy strategy) {
-            super(config, strategy);
-        }
-
         @Override
         public List<Checker> prepareCheckers(DataItem dataItem) {
             return ListUtils.of(
@@ -174,12 +159,7 @@ class MultiCheckerBasedScorerTest {
             }
         };
 
-        CustomScorer customScorer = new CustomScorer(
-                ScorerConfig.builder()
-                        .metricName("customScorer")
-                        .threshold(0.5)
-                        .build()
-        );
+        CustomScorer customScorer = new CustomScorer();
 
         String fileName = "MultiCheckerBasedScorerTest_" + DateUtils.nowToString("yyyyMMdd_HHmmss");
         HtmlReporter htmlReporter = new HtmlReporter(fileName, fileName);

@@ -25,7 +25,7 @@ EvalKit Framework是基于Java语言开发的自动化评测框架, 具有以下
 <dependency>
     <groupId>io.github.zendodx</groupId>
     <artifactId>evalkit-eval</artifactId>
-    <version>0.6.1</version>
+    <version>0.7.0</version>
 </dependency>
 ```
 

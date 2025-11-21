@@ -24,6 +24,7 @@ import com.evalkit.framework.eval.node.reporter.html.HtmlReporter;
 import com.evalkit.framework.eval.node.scorer.Scorer;
 import com.evalkit.framework.eval.node.scorer.VectorSimilarityScorer;
 import com.evalkit.framework.eval.node.scorer.config.ScorerConfig;
+import com.evalkit.framework.eval.node.scorer.config.VectorSimilarityScorerConfig;
 import com.evalkit.framework.eval.node.scorer.strategy.MaxScoreRateStrategy;
 import com.evalkit.framework.infra.service.llm.LLMService;
 import com.evalkit.framework.infra.service.llm.LLMServiceFactory;
@@ -143,12 +144,12 @@ public class CoreTest {
         };
 
         scorer2 = new VectorSimilarityScorer(
-                ScorerConfig.builder()
+                VectorSimilarityScorerConfig.builder()
                         .metricName("相似度检查level1")
                         .threshold(0)
                         .totalScore(1)
-                        .build(),
-                0) {
+                        .similarityThreshold(0.5)
+                        .build()) {
             @Override
             public Pair<String, String> prepareFieldPair(DataItem dataItem) {
                 return new ImmutablePair<>("query", "response");

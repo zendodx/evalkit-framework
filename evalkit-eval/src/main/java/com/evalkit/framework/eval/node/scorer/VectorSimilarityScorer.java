@@ -1,9 +1,9 @@
 package com.evalkit.framework.eval.node.scorer;
 
+import com.evalkit.framework.common.utils.nlp.NLPUtils;
 import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.model.ScorerResult;
-import com.evalkit.framework.eval.node.scorer.config.ScorerConfig;
-import com.evalkit.framework.common.utils.nlp.NLPUtils;
+import com.evalkit.framework.eval.node.scorer.config.VectorSimilarityScorerConfig;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.tuple.Pair;
@@ -17,12 +17,22 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public abstract class VectorSimilarityScorer extends Scorer {
-    /* 向量相似度阈值 */
-    protected double similarityThreshold;
+    protected VectorSimilarityScorerConfig config;
 
-    public VectorSimilarityScorer(ScorerConfig config, double similarityThreshold) {
+    public VectorSimilarityScorer() {
+        this(VectorSimilarityScorerConfig.builder().build());
+    }
+
+    public VectorSimilarityScorer(VectorSimilarityScorerConfig config) {
         super(config);
-        this.similarityThreshold = similarityThreshold;
+        this.config = config;
+    }
+
+    protected void validConfig(VectorSimilarityScorerConfig config) {
+        super.validConfig(config);
+        if (config.getSimilarityThreshold() < 0 || config.getSimilarityThreshold() > 1) {
+            throw new IllegalArgumentException("similarityThreshold must be in [0, 1]");
+        }
     }
 
     /**
@@ -38,6 +48,7 @@ public abstract class VectorSimilarityScorer extends Scorer {
         double similarity = NLPUtils.cosineSimilarity(left, right);
         double score;
         String reason;
+        double similarityThreshold = config.getSimilarityThreshold();
         if (similarity > similarityThreshold) {
             score = 1;
             reason = String.format("相似度为%.4f，大于阈值%.4f", similarity, similarityThreshold);
