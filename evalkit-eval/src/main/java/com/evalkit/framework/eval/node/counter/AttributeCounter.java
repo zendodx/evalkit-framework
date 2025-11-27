@@ -2,6 +2,8 @@ package com.evalkit.framework.eval.node.counter;
 
 import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.eval.model.*;
+import com.evalkit.framework.eval.model.attribute.v1.Attribute;
+import com.evalkit.framework.eval.model.attribute.v1.AttributeCountResult;
 import com.evalkit.framework.infra.service.llm.LLMService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.AllArgsConstructor;
