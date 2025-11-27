@@ -761,4 +761,144 @@
         color: #409eff;
         font-weight: 600;
     }
+
+    /* ========== V2 样式（与旧版共存，加 attr- 前缀防冲突） ========== */
+    #attributeV2Panel {
+        padding: 12px;
+        background: #fafafa;
+    }
+    .attr-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+    .attr-header h3 {
+        margin: 0;
+        font-size: 18px;
+    }
+    .attr-stat {
+        color: #666;
+        font-size: 14px;
+    }
+    .attr-toolbar {
+        margin-bottom: 12px;
+    }
+    .attr-search {
+        width: 100%;
+        max-width: 300px;
+        padding: 6px 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    .attr-chart {
+        margin-bottom: 16px;
+    }
+    .attr-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .attr-card {
+        border: 1px solid #e4e4e4;
+        border-radius: 6px;
+        background: #fff;
+        overflow: hidden;
+        transition: all 0.3s;
+    }
+    .attr-card-head {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        cursor: pointer;
+        user-select: none;
+    }
+    .attr-card-head:hover {
+        background: #f0f0f0;
+    }
+    .attr-issue {
+        flex: 1;
+        font-weight: 500;
+    }
+    .attr-cate {
+        margin: 0 8px;
+        padding: 2px 6px;
+        font-size: 12px;
+        color: #2db7f7;
+        border: 1px solid #2db7f7;
+        border-radius: 3px;
+    }
+    .attr-badge {
+        background: #ff4d4f;
+        color: #fff;
+        padding: 2px 6px;
+        border-radius: 10px;
+        font-size: 12px;
+    }
+    .attr-card-body {
+        max-height: 0;
+        overflow: hidden;
+        padding: 0 12px;
+        transition: max-height 0.3s;
+    }
+    .attr-card.expanded .attr-card-body {
+        max-height: 500px;
+        padding: 8px 12px;
+    }
+    .attr-desc {
+        color: #666;
+        font-size: 13px;
+        margin-bottom: 8px;
+    }
+    .attr-case-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 0;
+        margin: 0 0 8px 0;
+        list-style: none;
+    }
+    .case-link {
+        padding: 2px 6px;
+        background: #f0f0f0;
+        border-radius: 3px;
+        font-size: 12px;
+        cursor: pointer;
+    }
+    .case-link:hover {
+        background: #d6d6d6;
+    }
+    .attr-copy-btn {
+        padding: 4px 8px;
+        font-size: 12px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        background: #fff;
+        cursor: pointer;
+    }
+    .attr-copy-btn:hover {
+        border-color: #2db7f7;
+        color: #2db7f7;
+    }
+    .copy-tip {
+        position: fixed;
+        top: 20%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 6px 12px;
+        background: rgba(0, 0, 0, 0.75);
+        color: #fff;
+        border-radius: 4px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s;
+    }
+    .copy-tip.show {
+        opacity: 1;
+    }
+    .no-data {
+        text-align: center;
+        color: #999;
+        padding: 40px 0;
+    }
 </style>

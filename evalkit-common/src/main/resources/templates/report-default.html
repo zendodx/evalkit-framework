@@ -21,6 +21,7 @@
             <div class="filter-btn-group">
                 <button class="filter-btn" onclick="renderOverview()">总览</button>
                 <button class="filter-btn" onclick="renderAttribute()">归因</button>
+                <button class="filter-btn" onclick="renderAttributeV2()">归因V2</button>
                 <button class="filter-btn active" onclick="filterCases('all')">全部</button>
                 <button class="filter-btn" onclick="filterCases('pass')">通过</button>
                 <button class="filter-btn" onclick="filterCases('fail')">未通过</button>
@@ -98,6 +99,11 @@
     <div id="attributeContent" class="attribute-content">
         <div class="empty-state">选择归因查看详情</div>
     </div>
+
+    <!-- V2 归因面板容器 -->
+    <div id="attributeV2Panel" style="display:none;">
+        <div id="attributeV2Content"></div>
+    </div>
 </div>
 
 <!-- 复制提示气泡 -->
@@ -108,6 +114,7 @@
     const evaluationData = /*[[${evaluationData}]]*/ [];
     const metricsData = /*[[${metricsData}]]*/ {};
     const attributeCountResult = /*[[${attributeCountResult}]]*/ {};
+    const attributeCountResultV2 = /*[[${attributeCountResultV2}]]*/ {};
     let currentFilter = 'all';
     let selectedCase = null;
     let passChart, distChart, tpChart;
@@ -484,6 +491,104 @@
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         event.target.classList.add('active');
         renderCaseList();
+    }
+
+    /* ----- 归因V2 ----- */
+    function renderAttributeV2() {
+        showPanel('attributeV2Panel');               // 你自己封装的面板切换
+        const box = document.getElementById('attributeV2Content');
+        const data = window.attributeCountResultV2;    // 后端注入的全局变量
+
+        if (!data || (!data.categories?.length)) {
+            box.innerHTML = '<div class="no-data">暂无归因数据</div>';
+            return;
+        }
+
+        /* ---- 1. 数据结构兼容处理 ---- */
+        const {categories, overallAttribution} = data;
+        const isV2 = Array.isArray(categories) && categories.length > 0;
+        const list = isV2
+            ? flattenCategories(categories)          // 双层拍平
+            : overallAttribution;                    // 单层旧格式
+
+        const total = list.reduce((s, v) => s + v.caseIds.length, 0);
+
+        /* ---- 2. 渲染主体 ---- */
+        box.innerHTML = `
+    <div class="attr-header">
+      <h3>问题归因</h3>
+      <span class="attr-stat">共 ${total} 个 Case</span>
+    </div>
+    <div class="attr-toolbar">
+      <input id="attrSearchV2" class="attr-search" placeholder="搜索 issue / 类别"
+             oninput="filterAttrV2()" />
+    </div>
+    <!-- 图表 -->
+    <div class="attr-chart"><canvas id="attrChartV2" height="240"></canvas></div>
+    <!-- 卡片列表 -->
+    <div id="attrCardsV2" class="attr-cards"></div>
+    <div id="copyTipV2" class="copy-tip">已复制</div>`;
+
+        renderCards(list);
+        renderAttributionChart(list);   // 复用旧版图表函数即可（label 取 issueName）
+
+        /* ---- 3. 工具函数挂载 ---- */
+        window.filterAttrV2 = () => {
+            const kw = document.getElementById('attrSearchV2').value.trim().toLowerCase();
+            const filtered = list.filter(item =>
+                item.issueName.toLowerCase().includes(kw) ||
+                (item.categoryName && item.categoryName.toLowerCase().includes(kw))
+            );
+            renderCards(filtered);
+        };
+
+        window.copyCasesV2 = (name, arr) => {
+            navigator.clipboard.writeText(arr.join(',')).then(() => {
+                const tip = document.getElementById('copyTipV2');
+                tip.classList.add('show');
+                setTimeout(() => tip.classList.remove('show'), 1500);
+            });
+        };
+    }
+
+    /* -------------------- 工具函数 -------------------- */
+    /* 双层结构 -> 单层扁平（前端只认 issue） */
+    function flattenCategories(categories) {
+        return categories.flatMap(cat =>
+            cat.issues.map(iss => ({
+                categoryName: cat.categoryName,
+                issueName   : iss.issueName,
+                caseIds     : iss.caseIds,
+                confidence  : iss.confidence,
+                sentiment   : iss.sentiment,
+                representative: iss.representative
+            }))
+        );
+    }
+
+    /* 渲染卡片（支持分类折叠） */
+    function renderCards(list) {
+        const cards = list.map((item, idx) => `
+    <div class="attr-card">
+      <div class="attr-card-head" onclick="this.parentNode.classList.toggle('expanded')">
+        <span class="attr-issue">${item.issueName}</span>
+        ${item.categoryName ? `<span class="attr-cate">${item.categoryName}</span>` : ''}
+        <span class="attr-badge">${item.caseIds.length}</span>
+      </div>
+      <div class="attr-card-body">
+        ${item.representative ? `<div class="attr-desc">${item.representative}</div>` : ''}
+        <ul class="attr-case-list">
+          ${item.caseIds.map(id => `
+            <li class="case-link" onclick="jumpToCase(${id})" title="查看详情">#${id}</li>
+          `).join('')}
+        </ul>
+        <button class="attr-copy-btn" onclick="copyCasesV2('${item.issueName}',${JSON.stringify(item.caseIds)})">
+          复制全部
+        </button>
+      </div>
+    </div>`).join('');
+
+        document.getElementById('attrCardsV2').innerHTML = cards;
     }
 
     /* ----------归因 ----------- */
