@@ -1,7 +1,9 @@
 package com.evalkit.framework.eval.node.counter;
 
 import com.evalkit.framework.common.utils.json.JsonUtils;
-import com.evalkit.framework.eval.model.*;
+import com.evalkit.framework.eval.model.CountResult;
+import com.evalkit.framework.eval.model.DataItem;
+import com.evalkit.framework.eval.model.EvalResult;
 import com.evalkit.framework.eval.model.attribute.v1.Attribute;
 import com.evalkit.framework.eval.model.attribute.v1.AttributeCountResult;
 import com.evalkit.framework.infra.service.llm.LLMService;
@@ -24,33 +26,17 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 public class AttributeCounter extends Counter {
-    /* 归因大模型 */
-    protected LLMService llmService;
-    /* 线程池：调模型 IO 密集型，可配大点 */
+    private static final double TOKEN_PER_CN_CHAR = 0.75;
+    // 8k 模型留余量
+    private static final int MAX_TOKENS_PER_CHUNK = 6000;
+
+    protected final LLMService llmService;
     private final ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 4);
 
     public AttributeCounter(LLMService llmService) {
         this.llmService = llmService;
     }
 
-    /**
-     * caseId 问题描述 定义
-     */
-    @Data
-    @AllArgsConstructor
-    public static class CaseInput {
-        private Long caseId;
-        private String description;
-    }
-
-    /**
-     * 根据每个DataItem(即case)的evalResult的reason进行问题归因,归因口径是问题类型,将每个Case关联到对应的问题口径下
-     * 1.dataItem抽取caseInput
-     * 2.调用大模型依次处理每条Case,自发总结出问题,如果单Case包含多个问题用#分隔
-     * 3.解析单Case问题,合并所有Case的问题
-     * 4.上述步骤处理完成后,可能存在问题描述相似的情况,需要做二次合并,大模型将相似的问题合并成一个
-     * 5.返回最终的归因结果
-     */
     @Override
     protected CountResult count(List<DataItem> dataItems) {
         List<CaseInput> caseInputs = buildCaseInputs(dataItems);
@@ -60,47 +46,25 @@ public class AttributeCounter extends Counter {
     }
 
     /**
-     * 构建归因项
-     */
-    private List<CaseInput> buildCaseInputs(List<DataItem> dataItems) {
-        List<CaseInput> caseInputs = new ArrayList<>();
-        for (DataItem dataItem : dataItems) {
-            EvalResult evalResult = dataItem.getEvalResult();
-            // 仅筛选有评测原因的用例
-            if (evalResult != null && StringUtils.isNotEmpty(evalResult.getReason())) {
-                CaseInput caseInput = new CaseInput(dataItem.getDataIndex(), dataItem.getEvalResult().getReason());
-                caseInputs.add(caseInput);
-            }
-        }
-        return caseInputs;
-    }
-
-    /**
-     * 归因
+     * 主流程
+     *
+     * @param cases 输入用例
+     * @return 输出结果
      */
     public AttributeCountResult attribute(List<CaseInput> cases) {
         if (cases == null || cases.isEmpty()) {
             return new AttributeCountResult();
         }
-        // 异步提取所有 (caseId , 问题类型) 对
-        List<CompletableFuture<List<Pair<Long, String>>>> futures =
-                cases.stream()
-                        .map(c -> CompletableFuture.supplyAsync(() -> extract(c), pool))
-                        .collect(Collectors.toList());
-        // 并发归集到 Map<issueName, Set<caseId>>
+        // 分片 + 流式提取（支持大数据量）
+        List<Pair<Long, String>> pairs = extractBatch(cases);
+        // 聚合到 Map<issue, Set<caseId>>
         Map<String, Set<Long>> index = new ConcurrentHashMap<>();
-        futures.forEach(f -> {
-            try {
-                f.get().forEach(p -> index
-                        .computeIfAbsent(p.getValue(), k -> ConcurrentHashMap.newKeySet())
-                        .add(p.getKey()));
-            } catch (Exception e) {
-                log.error("Attribute extract error", e);
-            }
-        });
-        // 同义词合并归一（二次聚合）
+        pairs.forEach(p -> index
+                .computeIfAbsent(p.getValue(), k -> ConcurrentHashMap.newKeySet())
+                .add(p.getKey()));
+        // 同义词合并（保持原逻辑）
         Map<String, Set<Long>> merged = normalize(index);
-        // 组装最终结果
+        // 组装 & 排序
         AttributeCountResult result = new AttributeCountResult();
         merged.forEach((issue, caseSet) -> {
             Attribute attr = new Attribute();
@@ -108,38 +72,120 @@ public class AttributeCounter extends Counter {
             attr.setCaseIds(new ArrayList<>(caseSet));
             result.addAttribute(attr);
         });
-        // 按 case 数量倒序, 频率高的问题排在前面
-        result.getOverallAttribution().sort((a, b) -> Integer.compare(b.getCaseIds().size(), a.getCaseIds().size()));
+        result.getOverallAttribution()
+                .sort((a, b) -> Integer.compare(b.getCaseIds().size(), a.getCaseIds().size()));
         return result;
     }
 
     /**
-     * 单条 Case 可能返回多个类型，逗号分隔
+     * 分片 + 流式聚合
+     *
+     * @param cases 输入用例
+     * @return 输出结果
      */
-    private List<Pair<Long, String>> extract(CaseInput c) {
-        String prompt = "你是一名客服工单分析师，请用不超过20个字的短语精确概括下列用户问题；\n" + "如存在多种不同现象，请用中文'#'分隔，相同现象必须返回完全一致的关键词。\n" + "用户问题：" + c.getDescription() + "\n问题类型：";
-        String reply = llmService.chat(prompt);
-        if (StringUtils.isEmpty(reply)) {
-            List<Pair<Long, String>> r = new ArrayList<>();
-            r.add(Pair.of(c.getCaseId(), "未知问题"));
-            return r;
+    private List<Pair<Long, String>> extractBatch(List<CaseInput> cases) {
+        // 按 token 分片
+        List<List<CaseInput>> chunks = chunkByToken(cases);
+        log.info("Large input split into {} chunks", chunks.size());
+
+        // 片内并行，片间顺序聚合（避免 QPS 打满）
+        List<Pair<Long, String>> all = new ArrayList<>();
+        for (List<CaseInput> chunk : chunks) {
+            List<Pair<Long, String>> one = CompletableFuture
+                    .supplyAsync(() -> extractChunk(chunk), pool)
+                    .join();
+            all.addAll(one);
         }
-        /* 按中文逗号切分，去空、去重、截断 */
-        return Arrays.stream(reply.split("#"))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .distinct()
-                .map(s -> Pair.of(c.getCaseId(), s))
-                .collect(Collectors.toList());
+        return all;
     }
 
     /**
-     * 同义词合并：把第一次聚合的 Map<issueName, caseIdSet> 喂给大模型做归一化，
-     * 返回 Map<标准词, caseIdSet>（已合并同类项）
+     * 单片内单次 LLM 调用
+     *
+     * @param chunk 输入用例
+     * @return 输出结果
+     */
+    private List<Pair<Long, String>> extractChunk(List<CaseInput> chunk) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("你是一名客服工单分析师，请逐条给出【问题类型】，每条不超过20字；\n")
+                .append("如存在多种现象，用中文'#'分隔；相同现象返回完全一致的关键词。\n")
+                .append("输出格式：编号|问题类型\n");
+        for (int i = 0; i < chunk.size(); i++) {
+            sb.append(i).append("|").append(chunk.get(i).getDescription()).append("\n");
+        }
+
+        String reply = llmService.chat(sb.toString());
+        if (StringUtils.isEmpty(reply)) {
+            return chunk.stream()
+                    .map(c -> Pair.of(c.getCaseId(), "未知问题"))
+                    .collect(Collectors.toList());
+        }
+
+        /* 解析：每行 -> 编号|问题类型[#类型2] */
+        List<Pair<Long, String>> res = new ArrayList<>();
+        for (String line : reply.split("\n")) {
+            String[] arr = line.split("\\|", 2);
+            if (arr.length < 2) continue;
+            int idx = Integer.parseInt(arr[0].trim());
+            CaseInput in = chunk.get(idx);
+            for (String issue : arr[1].split("#")) {
+                issue = issue.trim();
+                if (!issue.isEmpty()) {
+                    res.add(Pair.of(in.getCaseId(), issue));
+                }
+            }
+        }
+        return res;
+    }
+
+    /**
+     * 按 token 贪心分片
+     *
+     * @param list 输入用例
+     * @return 输出结果
+     */
+    private List<List<CaseInput>> chunkByToken(List<CaseInput> list) {
+        List<List<CaseInput>> chunks = new ArrayList<>();
+        List<CaseInput> current = new ArrayList<>();
+        int currentTokens = estimateTokens("固定 prompt 头部");
+        for (CaseInput in : list) {
+            int lineTokens = estimateTokens(in.getDescription()) + 10;
+            if (currentTokens + lineTokens > MAX_TOKENS_PER_CHUNK && !current.isEmpty()) {
+                chunks.add(current);
+                current = new ArrayList<>();
+                currentTokens = estimateTokens("固定 prompt 头部");
+            }
+            current.add(in);
+            currentTokens += lineTokens;
+        }
+        if (!current.isEmpty()) chunks.add(current);
+        return chunks;
+    }
+
+    private int estimateTokens(String text) {
+        return (int) (text.length() * TOKEN_PER_CN_CHAR) + text.split("\n").length;
+    }
+
+    /* -------------------- 原逻辑保持不动 -------------------- */
+    private List<CaseInput> buildCaseInputs(List<DataItem> dataItems) {
+        List<CaseInput> list = new ArrayList<>();
+        for (DataItem item : dataItems) {
+            EvalResult er = item.getEvalResult();
+            if (er != null && StringUtils.isNotEmpty(er.getReason())) {
+                list.add(new CaseInput(item.getDataIndex(), er.getReason()));
+            }
+        }
+        return list;
+    }
+
+    /**
+     * 同义词合并
+     *
+     * @param raw 原始结果
+     * @return 合并后结果
      */
     private Map<String, Set<Long>> normalize(Map<String, Set<Long>> raw) {
         if (raw.isEmpty()) return raw;
-        // 构造 prompt：只发一次模型请求
         String prompt = "以下是一份问题类型列表，请把含义相同或非常相近的短语合并成一个标准词，并返回纯 JSON，不要任何解释。\n" +
                 "格式：{ \"标准词1\": [\"同义词A\",\"同义词B\"], \"标准词2\": [...] }\n" +
                 "列表：" + String.join(",", raw.keySet());
@@ -147,25 +193,26 @@ public class AttributeCounter extends Counter {
         if (StringUtils.isEmpty(reply)) {
             return raw;
         }
-        // 去掉可能的 ```json 包裹
-        reply = reply.replaceAll("```json\\s*", "")
-                .replaceAll("```\\s*", "").trim();
-
-        // 解析归一映射
-        Map<String, List<String>> normMap;
+        reply = reply.replaceAll("```json\\s*", "").replaceAll("```\\s*", "").trim();
         try {
-            normMap = JsonUtils.fromJson(reply, new TypeReference<Map<String, List<String>>>() {
+            Map<String, List<String>> normMap = JsonUtils.fromJson(reply, new TypeReference<Map<String, List<String>>>() {
             });
+            Map<String, Set<Long>> merged = new LinkedHashMap<>();
+            normMap.forEach((std, synList) -> {
+                Set<Long> bucket = merged.computeIfAbsent(std, k -> new LinkedHashSet<>());
+                synList.forEach(s -> bucket.addAll(raw.getOrDefault(s, new LinkedHashSet<>())));
+            });
+            return merged;
         } catch (Exception e) {
             log.warn("Normalize json parse fail, return raw map", e);
             return raw;
         }
-        // 按标准词二次合并
-        Map<String, Set<Long>> merged = new LinkedHashMap<>();
-        normMap.forEach((std, synList) -> {
-            Set<Long> bucket = merged.computeIfAbsent(std, k -> new LinkedHashSet<>());
-            synList.forEach(s -> bucket.addAll(raw.getOrDefault(s, new LinkedHashSet<>())));
-        });
-        return merged;
+    }
+
+    @Data
+    @AllArgsConstructor
+    public static class CaseInput {
+        private Long caseId;
+        private String description;
     }
 }
