@@ -2,6 +2,7 @@ package com.evalkit.framework.common.utils.json;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONPath;
+import com.evalkit.framework.common.utils.file.FileUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -120,6 +121,33 @@ public class JsonUtils {
             throw new RuntimeException("Read file to obj error:" + e.getMessage(), e);
         }
     }
+
+    /**
+     * 读json文件
+     *
+     * @param filePath      类路径,远程文件,绝对路径
+     * @param typeReference 目标类型
+     * @param <T>           目标类型
+     * @return 目标类型对象
+     */
+    public static <T> T readJsonFile(String filePath, TypeReference<T> typeReference) {
+        try {
+            InputStream inputStream = FileUtils.getInputStream(filePath);
+            return objectMapper.readValue(inputStream, typeReference);
+        } catch (IOException e) {
+            throw new RuntimeException("Read file to obj error:" + e.getMessage(), e);
+        }
+    }
+
+    public static <T> T readJsonFile(String filePath, Class<T> clazz) {
+        try {
+            InputStream inputStream = FileUtils.getInputStream(filePath);
+            return objectMapper.readValue(inputStream, clazz);
+        } catch (IOException e) {
+            throw new RuntimeException("Read file to obj error:" + e.getMessage(), e);
+        }
+    }
+
 
     /**
      * 输入流转对象
