@@ -19,6 +19,19 @@ public class SQLiteEmbeddedServer {
     private String dbUrl;
     private String dbFilePath;
 
+    // 解决找不到sqlite驱动的问题
+    static {
+        try {
+            // 让容器加载器先装载类
+            Class<?> driverClass = Class.forName("org.sqlite.JDBC");
+            // 手动注册到 DriverManager
+            java.sql.Driver driver = (java.sql.Driver) driverClass.newInstance();
+            java.sql.DriverManager.registerDriver(driver);
+        } catch (Exception e) {
+            throw new RuntimeException("SQLite driver register failed", e);
+        }
+    }
+
     private static class InstanceHolder {
         static final SQLiteEmbeddedServer instance = new SQLiteEmbeddedServer();
     }
@@ -35,6 +48,17 @@ public class SQLiteEmbeddedServer {
         this.dbUrl = "jdbc:sqlite:" + dbFilePath;
         // 启动时创建db文件然后关闭
         getConnection().close();
+    }
+
+    /**
+     * 关闭连接
+     */
+    public void stop() {
+        try {
+            getConnection().close();
+        } catch (Exception e) {
+            log.error("Stop SQLite connection failed, error: {}", e.getMessage(), e);
+        }
     }
 
     /**

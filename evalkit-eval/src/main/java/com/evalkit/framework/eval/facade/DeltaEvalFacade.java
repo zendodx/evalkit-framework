@@ -110,6 +110,13 @@ public class DeltaEvalFacade extends EvalFacade {
             evalTaskMapper = new EvalTaskMapper(sqLiteEmbeddedServer);
             log.info("Initialize workflow success, middleware file save path: {}", parentPath + taskName);
         } catch (Exception e) {
+            // 初始化出错时要关闭MQ和DB连接
+            if (activeMQEmbeddedServer != null) {
+                activeMQEmbeddedServer.stop();
+            }
+            if (sqLiteEmbeddedServer != null) {
+                sqLiteEmbeddedServer.stop();
+            }
             throw new WorkflowException("Initialize workflow error: " + e.getMessage(), e);
         }
     }

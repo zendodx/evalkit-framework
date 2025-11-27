@@ -80,21 +80,25 @@ public class ActiveMQEmbeddedServer {
     /**
      * 停止嵌入式MQ
      */
-    public synchronized void stop() throws Exception {
-        // 先关所有连接
-        for (Connection c : activeConnections) {
-            try {
-                c.close();
-            } catch (Exception ignore) {
+    public synchronized void stop() {
+        try {
+            // 先关所有连接
+            for (Connection c : activeConnections) {
+                try {
+                    c.close();
+                } catch (Exception ignore) {
+                }
             }
-        }
-        activeConnections.clear();
-        // 最后停止broker
-        if (broker != null) {
-            broker.stop();
-            broker.waitUntilStopped();
-            broker = null;
-            log.info("ActiveMQ embedded broker stopped");
+            activeConnections.clear();
+            // 最后停止broker
+            if (broker != null) {
+                broker.stop();
+                broker.waitUntilStopped();
+                broker = null;
+                log.info("ActiveMQ embedded broker stopped");
+            }
+        } catch (Exception e) {
+            log.error("Stop ActiveMQ embedded broker error: {}", e.getMessage(), e);
         }
     }
 
