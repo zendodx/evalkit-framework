@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
 @Data
 public class DeltaEvalFacade extends EvalFacade {
     /* 缓存文件存储位置 */
-    protected final static String CACHE_FILE_PATH = "cache_data/";
+    protected final static String CACHE_FILE_PATH = "eval_cache_data/";
     /* 增量评测配置 */
     protected DeltaEvalConfig config;
     /* 评测结果上报 */
