@@ -193,6 +193,8 @@ public class AttributeCounterV2 extends Counter {
                     "NEG".equals(arr[4]) ? Sentiment.NEG : Sentiment.NEUTRAL,
                     in.getCaseId()));
         }
+        // res只保留负面情绪的问题
+        res = res.stream().filter(e -> e.sentiment == Sentiment.NEG).collect(Collectors.toList());
         return res;
     }
 
