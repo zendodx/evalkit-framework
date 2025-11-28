@@ -25,10 +25,10 @@
                     <button class="filter-btn" id="attrTrigger" onclick="toggleAttrMenu()">展开▼</button>
                     <div class="attr-menu" id="attrMenu">
                         <div class="attr-item" onclick="chooseAttr('old')">归因</div>
-                        <div class="attr-item" onclick="chooseAttr('v2')">归因 V2</div>
+                        <div class="attr-item" onclick="chooseAttr('v2')">归因V2</div>
                     </div>
                 </div>
-                <button class="filter-btn" onclick="renderOverview()">总览</button>
+                <button class="filter-btn" id="overviewBtn" onclick="renderOverview()">总览</button>
                 <button class="filter-btn active" onclick="filterCases('all')">全部</button>
                 <button class="filter-btn" onclick="filterCases('pass')">通过</button>
                 <button class="filter-btn" onclick="filterCases('fail')">未通过</button>

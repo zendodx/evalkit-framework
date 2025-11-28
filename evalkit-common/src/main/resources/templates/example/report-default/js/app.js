@@ -979,6 +979,7 @@ function jumpByUrlParam() {
 
 /* ---------- 总览 ---------- */
 function renderOverview() {
+    setActiveBtn('overviewBtn');
     showPanel('overview');
 
     // 安全获取 metricsData 字段，避免 null/undefined 报错
@@ -1155,11 +1156,10 @@ function filterCases(f) {
 
 /* ----- 归因V2 ----- */
 function renderAttributeV2() {
+    setActiveBtn('attrTrigger');
     showPanel('attributeV2Panel');
     const box = document.getElementById('attributeV2Content');
     const data = attributeCountResultV2;
-
-    console.log(data)
 
     if (!data || (!data.categories?.length)) {
         box.innerHTML = '<div class="no-data">暂无归因数据</div>';
@@ -1169,21 +1169,16 @@ function renderAttributeV2() {
     /* ---- 1. 数据结构兼容处理 ---- */
     const {categories} = data;
     const list = flattenCategories(categories)
-
-    console.log(list)
-
     const total = list.reduce((s, v) => s + v.caseIds.length, 0);
-
-    console.log(total)
 
     /* ---- 2. 渲染主体 ---- */
     box.innerHTML = `
-            <div class="attr-header">
+            <div class="attribution-header">
               <h3>问题归因</h3>
-              <span class="attr-stat">共 ${total} 个 Case</span>
+              <span class="attribution-stat">共 ${total} 个 Case</span>
             </div>
             <div class="attr-toolbar">
-              <input id="attrSearchV2" class="attr-search" placeholder="搜索 issue / 类别"
+              <input id="attrSearchV2" class="attr-search" placeholder="搜索issue/类别"
                      oninput="filterAttrV2()" />
             </div>
             <!-- 图表 -->
@@ -1296,6 +1291,7 @@ function renderCards(list) {
 
 /* ----------归因 ----------- */
 function renderAttribute() {
+    setActiveBtn('attrTrigger');
     showPanel('attribute');
     const box = document.getElementById('attributeContent');
     if (!attributeCountResult || !attributeCountResult.overallAttribution?.length) {
@@ -1746,3 +1742,10 @@ document.addEventListener('click', e => {
         menu.classList.remove('show');
     }
 });
+
+/* 统一设置高亮 */
+function setActiveBtn(btnId) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(btnId)?.classList.add('active');
+}
+
