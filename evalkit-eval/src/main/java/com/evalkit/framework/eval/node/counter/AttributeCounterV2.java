@@ -191,8 +191,6 @@ public class AttributeCounterV2 extends Counter {
                 res.add(extracted);
             }
         }
-        // res只保留负面情绪的问题
-        res = res.stream().filter(e -> e.sentiment == Sentiment.NEG).collect(Collectors.toList());
         return res;
     }
 
