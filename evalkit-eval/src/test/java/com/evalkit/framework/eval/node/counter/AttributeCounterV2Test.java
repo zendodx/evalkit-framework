@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 @Slf4j
-class AttributeCounterTest {
+class AttributeCounterV2Test {
     @Test
     @Disabled
     public void test() {
@@ -21,7 +21,7 @@ class AttributeCounterTest {
         List<DataItem> dataItems = JsonUtils.readJsonFile("classpath:dataItems.json", new TypeReference<List<DataItem>>() {
         });
         dataItems = dataItems.subList(0, 2);
-        AttributeCounter counter = new AttributeCounter(llmService);
+        AttributeCounterV2 counter = new AttributeCounterV2(llmService);
         CountResult countResult = counter.count(dataItems);
         log.info("countResult: {}", JsonUtils.toJson(countResult));
     }

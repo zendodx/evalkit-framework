@@ -1,6 +1,7 @@
-package com.evalkit.framework.eval.model;
+package com.evalkit.framework.eval.model.attribute.v1;
 
 import com.evalkit.framework.eval.context.WorkflowContextOps;
+import com.evalkit.framework.eval.model.CountResult;
 import com.evalkit.framework.workflow.model.WorkflowContext;
 import lombok.Data;
 

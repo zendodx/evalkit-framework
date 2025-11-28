@@ -1,0 +1,1304 @@
+// Global state management
+const AppState = {
+    currentFilter: 'all',
+    selectedCase: null,
+    charts: {
+        passChart: null,
+        distChart: null,
+        tpChart: null,
+        attributionChart: null
+    },
+    // Configuration
+    config: {
+        decimalPlaces: 2,
+        priceDecimalPlaces: 6,
+        chartColors: [
+            '#67c23a', '#f56c6c', '#909399', '#409eff',
+            '#e6a23c', '#7232d6', '#ff6032'
+        ]
+    },
+    // Cached DOM elements
+    elements: {},
+    // Search functionality
+    search: {
+        input: null,
+        clearBtn: null,
+        keyword: '',
+        debounceTimer: null
+    }
+};
+
+/* ---------- Initialization ---------- */
+function initializeApp() {
+    // Cache DOM elements
+    cacheDOMElements();
+
+    // Initialize event listeners
+    setupEventListeners();
+
+    // Initial render
+    renderCaseList();
+    renderOverview();
+
+    // Handle URL parameters after a short delay to ensure JSON viewer is ready
+    setTimeout(() => {
+        handleUrlNavigation();
+    }, 50);
+}
+
+function cacheDOMElements() {
+    AppState.elements = {
+        caseSearch: document.getElementById('caseSearch'),
+        clearSearch: document.getElementById('clearSearch'),
+        caseList: document.getElementById('caseList'),
+        caseCount: document.getElementById('caseCount'),
+        overviewContent: document.getElementById('overviewContent'),
+        detailContent: document.getElementById('detailContent'),
+        attributeContent: document.getElementById('attributeContent'),
+        attributeV2Panel: document.getElementById('attributeV2Panel'),
+        copyTip: document.getElementById('copyTip')
+    };
+
+    // Search elements
+    AppState.search.input = AppState.elements.caseSearch;
+    AppState.search.clearBtn = AppState.elements.clearSearch;
+}
+
+function setupEventListeners() {
+    // Search input with debouncing
+    AppState.search.input.addEventListener('input', debounce((e) => {
+        AppState.search.keyword = e.target.value.trim();
+        renderCaseList();
+    }, 300));
+
+    AppState.search.clearBtn.addEventListener('click', clearSearch);
+
+    // Search tip functionality
+    const tipBtn = document.getElementById('searchTipBtn');
+    const tipPop = document.getElementById('searchTipPop');
+    const tipClose = document.getElementById('tipClose');
+
+    if (tipBtn && tipPop && tipClose) {
+        tipBtn.onclick = () => tipPop.classList.toggle('show');
+        tipClose.onclick = () => tipPop.classList.remove('show');
+
+        document.addEventListener('click', (e) => {
+            if (!tipPop.contains(e.target) && e.target !== tipBtn) {
+                tipPop.classList.remove('show');
+            }
+        });
+    }
+
+    // Attribute menu functionality
+    setupAttributeMenu();
+}
+
+function setupAttributeMenu() {
+    const attrTrigger = document.getElementById('attrTrigger');
+    const attrMenu = document.getElementById('attrMenu');
+
+    if (attrTrigger && attrMenu) {
+        attrTrigger.onclick = function () {
+            attrMenu.style.display = attrMenu.style.display === 'block' ? 'none' : 'block';
+        };
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function (e) {
+            if (!attrTrigger.contains(e.target) && !attrMenu.contains(e.target)) {
+                attrMenu.style.display = 'none';
+            }
+        });
+    }
+}
+
+/* ---------- Utility Functions ---------- */
+function debounce(func, wait) {
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(AppState.search.debounceTimer);
+            func(...args);
+        };
+        clearTimeout(AppState.search.debounceTimer);
+        AppState.search.debounceTimer = setTimeout(later, wait);
+    };
+}
+
+function clearSearch() {
+    AppState.search.keyword = '';
+    AppState.search.input.value = '';
+    renderCaseList();
+}
+
+function formatNumber(value, decimals = AppState.config.decimalPlaces) {
+    return typeof value === 'number' ? value.toFixed(decimals) : '-';
+}
+
+function formatPrice(value) {
+    return formatNumber(value, AppState.config.priceDecimalPlaces);
+}
+
+function formatTime(ms) {
+    return typeof ms === 'number' ? `${formatNumber(ms)}ms` : '-';
+}
+
+function formatPercentage(value) {
+    return typeof value === 'number' ? `${formatNumber(value * 100)}%` : '-';
+}
+
+/* ---------- Search and Filter Functions ---------- */
+function createSearchMatcher(keyword) {
+    if (!keyword) return () => true;
+
+    const searchString = keyword.toLowerCase();
+
+    // For complex search expressions with &, |, ! operators
+    if (searchString.includes('&') || searchString.includes('|') || searchString.includes('!') || searchString.includes('(')) {
+        return createComplexMatcher(keyword);
+    }
+
+    // Simple keyword matching
+    return (item) => {
+        const searchContent = [
+            `#${item.inputData.dataIndex}`,
+            JSON.stringify(item.inputData?.inputItem || ''),
+            JSON.stringify(item.apiCompletionResult?.resultItem || ''),
+            item.evalResult?.reason || ''
+        ].join(' ').toLowerCase();
+
+        return searchContent.includes(searchString);
+    };
+}
+
+function createComplexMatcher(keyword) {
+    try {
+        const tokens = tokenizeSearchExpression(keyword);
+        const ast = parseSearchExpression(tokens);
+        return (item) => evaluateSearchAST(ast, item);
+    } catch (e) {
+        // Fallback to simple matching on syntax error
+        const simpleKeyword = keyword.toLowerCase();
+        return (item) => {
+            const searchContent = [
+                `#${item.inputData.dataIndex}`,
+                JSON.stringify(item.inputData?.inputItem || ''),
+                JSON.stringify(item.apiCompletionResult?.resultItem || ''),
+                item.evalResult?.reason || ''
+            ].join(' ').toLowerCase();
+
+            return searchContent.includes(simpleKeyword);
+        };
+    }
+}
+
+function tokenizeSearchExpression(expression) {
+    return expression
+        .replace(/\(/g, ' ( ')
+        .replace(/\)/g, ' ) ')
+        .split(/\s+/)
+        .filter(Boolean)
+        .map(token => token.toLowerCase());
+}
+
+function parseSearchExpression(tokens) {
+    let index = 0;
+
+    const peek = () => tokens[index];
+    const consume = () => tokens[index++];
+
+    const parseExpression = () => {
+        let left = parseTerm();
+        while (peek() === '|') {
+            consume();
+            left = {type: 'OR', left, right: parseTerm()};
+        }
+        return left;
+    };
+
+    const parseTerm = () => {
+        let left = parseFactor();
+        while (peek() === '&') {
+            consume();
+            left = {type: 'AND', left, right: parseFactor()};
+        }
+        return left;
+    };
+
+    const parseFactor = () => {
+        if (peek() === '!') {
+            consume();
+            return {type: 'NOT', operand: parseFactor()};
+        }
+        if (peek() === '(') {
+            consume();
+            const expr = parseExpression();
+            consume(); // consume ')'
+            return expr;
+        }
+        return {type: 'TERM', value: consume()};
+    };
+
+    return parseExpression();
+}
+
+function evaluateSearchAST(node, item) {
+    const searchContent = [
+        `#${item.inputData.dataIndex}`,
+        JSON.stringify(item.inputData?.inputItem || ''),
+        JSON.stringify(item.apiCompletionResult?.resultItem || ''),
+        item.evalResult?.reason || ''
+    ].join(' ').toLowerCase();
+
+    switch (node.type) {
+        case 'TERM':
+            return searchContent.includes(node.value);
+        case 'AND':
+            return evaluateSearchAST(node.left, item) && evaluateSearchAST(node.right, item);
+        case 'OR':
+            return evaluateSearchAST(node.left, item) || evaluateSearchAST(node.right, item);
+        case 'NOT':
+            return !evaluateSearchAST(node.operand, item);
+        default:
+            return false;
+    }
+}
+
+/* ---------- Case List Rendering ---------- */
+function renderCaseList() {
+    const {caseList, caseCount} = AppState.elements;
+
+    // Filter data based on current filter and search
+    const filteredData = filterCaseData();
+
+    // Update case count
+    caseCount.textContent = filteredData.length || 0;
+
+    if (filteredData.length === 0) {
+        caseList.innerHTML = '<div style="padding:12px;font-size:13px;color:#909399">无匹配用例</div>';
+        return;
+    }
+
+    // Generate and render case list
+    caseList.innerHTML = generateCaseListHTML(filteredData);
+}
+
+function filterCaseData() {
+    // Apply status filter
+    let filteredData = AppState.currentFilter === 'all'
+        ? evaluationData
+        : evaluationData.filter(item =>
+            item.evalResult && item.evalResult.pass === (AppState.currentFilter === 'pass')
+        );
+
+    // Apply search filter
+    if (AppState.search.keyword) {
+        const searchMatcher = createSearchMatcher(AppState.search.keyword);
+        filteredData = filteredData.filter(searchMatcher);
+    }
+
+    return filteredData;
+}
+
+function generateCaseListHTML(data) {
+    const {keyword} = AppState.search;
+    const {selectedCase} = AppState;
+
+    return data.map(item => {
+        const evalResult = item.evalResult || {};
+        const statusInfo = getStatusInfo(evalResult);
+        const score = formatNumber(evalResult.score);
+
+        const isSelected = selectedCase?.dataIndex === item.dataIndex;
+        const highlightedIndex = highlightText(`#${item.inputData.dataIndex}`, keyword);
+
+        return `
+          <div class="case-item ${isSelected ? 'active' : ''}"
+               onclick="selectCase(${item.dataIndex})">
+            <div class="case-title">${highlightedIndex}</div>
+            <div class="case-status">
+              <span class="status-dot ${statusInfo.class}"></span>
+              <span>${statusInfo.text}</span>
+              <span class="metric-value ${statusInfo.metricClass}">${score}</span>
+            </div>
+          </div>`;
+    }).join('');
+}
+
+function getStatusInfo(evalResult) {
+    if (evalResult.pass === true) {
+        return {class: 'pass', text: '通过', metricClass: 'good'};
+    } else if (evalResult.success === true) {
+        return {class: 'fail', text: '未通过', metricClass: 'bad'};
+    } else {
+        return {class: 'evalerror', text: '评测出错', metricClass: 'evalerror'};
+    }
+}
+
+function highlightText(text, keyword) {
+    if (!keyword) return text;
+    return text.replace(new RegExp(`(${keyword})`, 'gi'), '<span class="highlight">$1</span>');
+}
+
+/* ---------- URL Navigation ---------- */
+function handleUrlNavigation() {
+    const params = new URLSearchParams(location.search);
+    const dataIndex = params.get('dataIndex');
+
+    if (dataIndex == null) return;
+
+    const targetCase = evaluationData.find(d => String(d.dataIndex) === dataIndex);
+    if (!targetCase) return;
+
+    navigateToCase(targetCase);
+}
+
+function navigateToCase(targetCase) {
+    AppState.currentFilter = 'all';
+    AppState.selectedCase = targetCase;
+    renderCaseList();
+    renderDetail();
+}
+
+function updateUrlWithCurrentCase() {
+    if (!AppState.selectedCase) return;
+
+    const url = new URL(location.href);
+    url.searchParams.set('dataIndex', AppState.selectedCase.inputData.dataIndex);
+    window.history.replaceState(null, '', url);
+}
+
+/* ---------- Overview Rendering ---------- */
+function renderOverview() {
+    setActiveButton('overviewBtn');
+    showPanel('overview');
+
+    const metrics = metricsData || {};
+
+    // Render metric grids
+    renderBasicMetrics(metrics);
+    renderCompletionMetrics(metrics);
+    renderEvaluationMetrics(metrics);
+    renderLLMMetrics(metrics);
+
+    // Render charts
+    renderOverviewCharts();
+}
+
+function renderBasicMetrics(metrics) {
+    const basicMetrics = [
+        {label: '通过率', value: formatPercentage(metrics.passRate), class: 'good'},
+        {label: '未通过率', value: formatPercentage(metrics.unPassRate), class: 'bad'},
+        {label: '通过数', value: metrics.passCount, class: 'good'},
+        {label: '未通过数', value: metrics.unPassCount, class: 'bad'},
+        {label: '总数', value: metrics.totalCount, class: 'default'}
+    ];
+
+    renderMetricGrid('basicMetricsGrid', basicMetrics);
+}
+
+function renderCompletionMetrics(metrics) {
+    const completionMetrics = [
+        {label: '成功率', value: formatPercentage(metrics.completionSuccessRate), class: 'good'},
+        {label: '错误率', value: formatPercentage(metrics.completionErrorRate), class: 'bad'},
+        {label: '平均耗时', value: formatTime(metrics.completionAvgTimeCost), class: 'default'},
+        {label: '最小耗时', value: formatTime(metrics.completionMinTimeCost), class: 'default'},
+        {label: '最大耗时', value: formatTime(metrics.completionMaxTimeCost), class: 'default'},
+        {label: 'TP99', value: formatTime(metrics.completionTP99TimeCost), class: 'default'},
+        {label: 'TP95', value: formatTime(metrics.completionTP95TimeCost), class: 'default'},
+        {label: 'TP90', value: formatTime(metrics.completionTP90TimeCost), class: 'default'},
+        {label: 'TP80', value: formatTime(metrics.completionTP80TimeCost), class: 'default'},
+        {label: 'TP70', value: formatTime(metrics.completionTP70TimeCost), class: 'default'},
+        {label: 'TP60', value: formatTime(metrics.completionTP60TimeCost), class: 'default'},
+        {label: 'TP50', value: formatTime(metrics.completionTP50TimeCost), class: 'default'}
+    ];
+
+    renderMetricGrid('completionMetricsGrid', completionMetrics);
+}
+
+function renderEvaluationMetrics(metrics) {
+    const evaluationMetrics = [
+        {label: '成功率', value: formatPercentage(metrics.evalSuccessRate), class: 'good'},
+        {label: '错误率', value: formatPercentage(metrics.evalErrorRate), class: 'bad'},
+        {label: '平均耗时', value: formatTime(metrics.evalAvgTimeCost), class: 'default'},
+        {label: '最小耗时', value: formatTime(metrics.evalMinTimeCost), class: 'default'},
+        {label: '最大耗时', value: formatTime(metrics.evalMaxTimeCost), class: 'default'},
+        {label: '最小分数', value: formatNumber(metrics.minScore), class: 'default'},
+        {label: '最大分数', value: formatNumber(metrics.maxScore), class: 'default'},
+        {label: '平均分数', value: formatNumber(metrics.avgScore), class: 'default'},
+        {label: '分数标准差', value: formatNumber(metrics.scoreStdDev), class: 'default'},
+        {label: 'TP99', value: formatNumber(metrics.tp99Score), class: 'default'},
+        {label: 'TP95', value: formatNumber(metrics.tp95Score), class: 'default'},
+        {label: 'TP90', value: formatNumber(metrics.tp90Score), class: 'default'},
+        {label: 'TP80', value: formatNumber(metrics.tp80Score), class: 'default'},
+        {label: 'TP70', value: formatNumber(metrics.tp70Score), class: 'default'},
+        {label: 'TP60', value: formatNumber(metrics.tp60Score), class: 'default'},
+        {label: 'TP50', value: formatNumber(metrics.tp50Score), class: 'default'}
+    ];
+
+    renderMetricGrid('evalMetricsGrid', evaluationMetrics);
+}
+
+function renderLLMMetrics(metrics) {
+    const llmMetrics = [];
+
+    metrics?.llmTokenCounts?.forEach(model => {
+        llmMetrics.push(
+            {label: `${model.model}输入token`, value: model.inToken, class: 'default'},
+            {label: `${model.model}输出token`, value: model.outToken, class: 'default'},
+            {label: `${model.model}总token`, value: model.totalToken, class: 'default'},
+            {label: `${model.model}输入token费用`, value: formatPrice(model.inTokenPrice), class: 'default'},
+            {label: `${model.model}输出token费用`, value: formatPrice(model.outTokenPrice), class: 'default'},
+            {label: `${model.model}总token费用`, value: formatPrice(model.totalTokenPrice), class: 'default'}
+        );
+    });
+
+    renderMetricGrid('LLMMetricsGrid', llmMetrics);
+}
+
+function renderMetricGrid(elementId, metrics) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+
+    element.innerHTML = metrics.map(metric => `
+      <div class="metric-card">
+        <div class="metric-label">${metric.label}</div>
+        <div class="metric-value ${metric.class}">${metric.value}</div>
+      </div>`).join('');
+}
+
+function renderOverviewCharts() {
+    renderPassRateTrendChart();
+    renderDistributionChart();
+    renderTPMetricsChart();
+}
+
+function renderPassRateTrendChart() {
+    const step = Math.ceil(evaluationData.length / 10);
+    const labels = [];
+    const passRates = [];
+
+    for (let i = 0; i < evaluationData.length; i += step) {
+        const slice = evaluationData.slice(i, i + step);
+        const passCount = slice.filter(d => d.evalResult && d.evalResult.pass === true).length;
+        const passRate = slice.length ? (passCount / slice.length * 100) : 0;
+
+        labels.push(`${i + 1}-${Math.min(i + step, evaluationData.length)}`);
+        passRates.push(formatNumber(passRate));
+    }
+
+    const config = {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: '通过率%',
+                data: passRates,
+                borderColor: '#67c23a',
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {legend: {display: false}}
+        }
+    };
+
+    destroyChart('passChart');
+    AppState.charts.passChart = new Chart(document.getElementById('passTrendChart'), config);
+}
+
+function renderDistributionChart() {
+    const metrics = metricsData || {};
+    const config = {
+        type: 'pie',
+        data: {
+            labels: ['通过', '未通过'],
+            datasets: [{
+                data: [
+                    typeof metrics.passCount === 'number' ? metrics.passCount : 0,
+                    typeof metrics.unPassCount === 'number' ? metrics.unPassCount : 0
+                ],
+                backgroundColor: ['#67c23a', '#f56c6c']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {legend: {position: 'bottom'}}
+        }
+    };
+
+    destroyChart('distChart');
+    AppState.charts.distChart = new Chart(document.getElementById('distChart'), config);
+}
+
+function renderTPMetricsChart() {
+    const metrics = metricsData || {};
+    const tpLabels = ['TP50', 'TP60', 'TP70', 'TP80', 'TP90', 'TP95', 'TP99'];
+    const tpValues = [
+        metrics.completionTP50TimeCost || 0,
+        metrics.completionTP60TimeCost || 0,
+        metrics.completionTP70TimeCost || 0,
+        metrics.completionTP80TimeCost || 0,
+        metrics.completionTP90TimeCost || 0,
+        metrics.completionTP95TimeCost || 0,
+        metrics.completionTP99TimeCost || 0
+    ];
+
+    const config = {
+        type: 'line',
+        data: {
+            labels: tpLabels,
+            datasets: [{
+                label: '耗时(ms)',
+                data: tpValues,
+                borderColor: '#67c23a',
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {legend: {display: false}}
+        }
+    };
+
+    destroyChart('tpChart');
+    AppState.charts.tpChart = new Chart(document.getElementById('tpChart'), config);
+}
+
+function destroyChart(chartName) {
+    if (AppState.charts[chartName]) {
+        AppState.charts[chartName].destroy();
+        AppState.charts[chartName] = null;
+    }
+}
+
+function filterCases(filterType) {
+    AppState.currentFilter = filterType;
+    setActiveButton(filterType);
+    renderCaseList();
+}
+
+function setActiveButton(buttonId) {
+    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+
+    let targetButton;
+    switch (buttonId) {
+        case 'all':
+        case 'pass':
+        case 'fail':
+            targetButton = document.querySelector(`[onclick="filterCases('${buttonId}')"]`);
+            break;
+        case 'overviewBtn':
+            targetButton = document.getElementById('overviewBtn');
+            break;
+        case 'attrTrigger':
+            targetButton = document.getElementById('attrTrigger');
+            break;
+        default:
+            return;
+    }
+
+    if (targetButton) {
+        targetButton.classList.add('active');
+    }
+}
+
+/* ----- 归因V2 ----- */
+function renderAttributeV2() {
+    setActiveButton('attrTrigger');
+    showPanel('attributeV2Panel');
+    const box = document.getElementById('attributeV2Content');
+    const data = attributeCountResultV2;
+
+    if (!data || (!data.categories?.length)) {
+        box.innerHTML = '<div class="no-data">暂无归因数据</div>';
+        return;
+    }
+
+    /* ---- 1. 数据结构兼容处理 ---- */
+    const {categories} = data;
+    const list = flattenCategories(categories)
+    const total = list.reduce((s, v) => s + v.caseIds.length, 0);
+
+    /* ---- 2. 渲染主体 ---- */
+    box.innerHTML = `
+            <div class="attribution-header">
+              <h3>问题归因</h3>
+              <span class="attribution-stat">共 ${total} 个 Case</span>
+            </div>
+            <div class="attr-table-chart">
+                 <!-- 表格, 统计异常分类和问题 -->
+                <div class="attr-table">
+                  <table class="stat-table">
+                    <thead>
+                      <tr><th>异常类别</th><th>问题描述</th><th>问题数</th><th>占比</th></tr>
+                    </thead>
+                    <tbody id="statTableBody"></tbody>
+                  </table>
+                </div>
+                <!-- 图表, 异常分类和issue占比-->
+                <div class="attr-chart-group">
+                    <div class="attr-chart">
+                        <canvas id="attrChartV2Category" height="240"></canvas>
+                    </div>
+                    <div class="attr-chart">
+                        <canvas id="attrChartV2Issue" height="240"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="attr-toolbar">
+              <input id="attrSearchV2" class="attr-search" placeholder="搜索issue/类别"
+                     oninput="filterAttrV2()" />
+            </div>
+            <!-- 卡片列表 -->
+            <div id="attrCardsV2" class="attr-cards"></div>
+            <div id="copyTipV2" class="copy-tip">已复制</div>`;
+
+    renderCards(list);
+    renderAttributionChartV2Category(list);
+    renderAttributionChartV2Issue(list);
+
+    /* ---- 工具函数挂载 ---- */
+    window.filterAttrV2 = () => {
+        const kw = document.getElementById('attrSearchV2').value.trim().toLowerCase();
+        const filtered = list.filter(item =>
+            item.issueName.toLowerCase().includes(kw) ||
+            (item.categoryName && item.categoryName.toLowerCase().includes(kw))
+        );
+        renderCards(filtered);
+    };
+
+    window.copyCasesV2 = (name, arr) => {
+        navigator.clipboard.writeText(arr.join(',')).then(() => {
+            const tip = document.getElementById('copyTipV2');
+            tip.classList.add('show');
+            setTimeout(() => tip.classList.remove('show'), 1500);
+        });
+    };
+
+    const flatRows = categories.flatMap(c =>
+        c.issues.map((i, idx) => ({
+            category: idx === 0 ? c.categoryName : '', // 只有首行写类别
+            issue: i.issueName,
+            count: i.caseIds.length,
+            percent: (i.caseIds.length / total * 100).toFixed(1)
+        }))
+    );
+
+    // 一次性插 DOM
+    document.querySelector('#statTableBody').innerHTML = flatRows.map(r => `
+      <tr>
+        <td>${r.category}</td>
+        <td>${r.issue}</td>
+        <td>${r.count}</td>
+        <td>${r.percent}%</td>
+      </tr>`).join('');
+}
+
+let attributionChartV2Issue = null;
+let attributionChartV2Category = null;
+
+/* 归因V2渲染一级分类占比图表 */
+function renderAttributionChartV2Category(list) {
+    const canvas = document.getElementById('attrChartV2Category');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const categoryMap = list.reduce((m, {categoryName, caseIds}) => {
+        m.set(categoryName, (m.get(categoryName) || 0) + caseIds.length);
+        return m;
+    }, new Map());
+
+    const [categoryNames, categoryCounts] = [Array.from(categoryMap.keys()), Array.from(categoryMap.values())];
+
+    /* 如果之前实例化过，先销毁 */
+    if (attributionChartV2Category) {
+        attributionChartV2Category.destroy();
+        attributionChartV2Category = null;
+    }
+
+    /* 3. 创建新图 */
+    attributionChartV2Category = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: categoryNames,
+            datasets: [{
+                data: categoryCounts,
+                backgroundColor: [
+                    '#67c23a', '#f56c6c', '#909399', '#409eff',
+                    '#e6a23c', '#7232d6', '#ff6032'
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {position: 'bottom'},
+                title: {
+                    display: true,
+                    text: '异常类别占比',
+                    font: {size: 13},
+                    padding: {bottom: 10}
+                }
+            }
+        }
+    });
+}
+
+/* 归因V2渲染Issue占比图表 */
+function renderAttributionChartV2Issue(list) {
+    /* 0. 确保 canvas 已经存在于 DOM */
+    const canvas = document.getElementById('attrChartV2Issue');
+    if (!canvas) return;               // 保险：不存在就退出
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;                  // 保险：取不到 2d 上下文也退出
+
+    /* 1. 数据准备 */
+    const issueNames = list.map(l => l.issueName);
+    const issueCounts = list.map(l => l.caseIds.length);
+
+    /* 2. 如果之前实例化过，先销毁 */
+    if (attributionChartV2Issue) {
+        attributionChartV2Issue.destroy();
+        attributionChartV2Issue = null;
+    }
+
+    /* 3. 创建新图 */
+    attributionChartV2Issue = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: issueNames,
+            datasets: [{
+                data: issueCounts,
+                backgroundColor: [
+                    '#67c23a', '#f56c6c', '#909399', '#409eff',
+                    '#e6a23c', '#7232d6', '#ff6032'
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {position: 'bottom'},
+                title: {
+                    display: true,
+                    text: '问题数量占比',
+                    font: {size: 13},
+                    padding: {bottom: 10}
+                }
+            }
+        }
+    });
+}
+
+/* -------------------- 工具函数 -------------------- */
+
+/* 双层结构 -> 单层扁平（前端只认 issue） */
+function flattenCategories(categories) {
+    return categories.flatMap(cat =>
+        cat.issues.map(iss => ({
+            categoryName: cat.categoryName,
+            issueName: iss.issueName,
+            caseIds: iss.caseIds,
+            confidence: iss.confidence,
+            sentiment: iss.sentiment,
+            representative: iss.representative
+        }))
+    );
+}
+
+/* 渲染卡片（支持分类折叠） */
+function renderCards(list) {
+    const cards = list.map((item, idx) => `
+        <div class="attr-card">
+          <div class="attr-card-head" onclick="this.parentNode.classList.toggle('expanded')">
+            <span class="attr-issue">${item.issueName}</span>
+            ${item.categoryName ? `<span class="attr-cate">${item.categoryName}</span>` : ''}
+            <span class="attr-badge">${item.caseIds.length}</span>
+          </div>
+          <div class="attr-card-body">
+            ${item.representative ? `<div class="attr-desc">${item.representative}</div>` : ''}
+            <ul class="attr-case-list">
+              ${item.caseIds.map(id => `
+                <li class="case-link" onclick="jumpToCase(${id})" title="查看详情">#${id}</li>
+              `).join('')}
+            </ul>
+            <button class="attr-copy-btn" onclick="copyCasesV2('${item.issueName}',${JSON.stringify(item.caseIds)})">
+              复制全部
+            </button>
+          </div>
+        </div>`).join('');
+    document.getElementById('attrCardsV2').innerHTML = cards;
+}
+
+/* ----------归因 ----------- */
+function renderAttribute() {
+    setActiveButton('attrTrigger');
+    showPanel('attribute');
+    const box = document.getElementById('attributeContent');
+    if (!attributeCountResult || !attributeCountResult.overallAttribution?.length) {
+        box.innerHTML = '<div>暂无归因数据</div>';
+        return;
+    }
+
+    // 初始渲染
+    function render(list) {
+        const total = list.reduce((s, v) => s + v.caseIds.length, 0);
+        // 归因卡片
+        const cards = list.map(attr => `
+              <div class="attribution-card">
+                <div class="attribution-card-header" onclick="this.parentNode.classList.toggle('expanded')">
+                  <span>${attr.issueName}</span>
+                  <span class="badge">${attr.caseIds.length}</span>
+                </div>
+                <div class="attribution-card-body">
+                  <ul class="attribute-case-list">
+                    ${attr.caseIds.map(id => `
+                      <li class="case-link" onclick="jumpToCase(${id})" title="查看详情">
+                        #${id}
+                      </li>`).join('')}
+                  </ul>
+                  <button class="attribute-copy-btn" onclick="copyCases('${attr.issueName}',${JSON.stringify(attr.caseIds)})">复制全部</button>
+                </div>
+              </div>`).join('');
+
+        // 归因主体结构
+        box.innerHTML = `
+              <div class="attribution-header">
+                <h3>问题归因</h3>
+                <div>
+                  <span class="attribution-stat">共 ${total} 个 Case</span>
+                </div>
+              </div>
+               <!-- 归因图表 -->
+              <div class="attribution-chart">
+                <canvas id="attributionChart" height="240"></canvas>
+              </div>
+              <!-- 归因卡片 -->
+              <div class="attribution-cards">${cards}</div>`;
+
+        // 渲染图表
+        renderAttributionChart(list);
+    }
+
+    // 过滤
+    window.filterAttr = () => {
+        const kw = document.getElementById('attrSearch').value.trim().toLowerCase();
+        const filtered = attributeCountResult.overallAttribution.filter(
+            v => v.issueName.toLowerCase().includes(kw)
+        );
+        render(filtered);
+    };
+
+    // 复制
+    window.copyCases = (name, arr) => {
+        const t = arr.join(',');
+        navigator.clipboard.writeText(t).then(() => {
+            const tip = document.getElementById('copyTip');
+            tip.classList.add('show');
+            setTimeout(() => tip.classList.remove('show'), 1500);
+        });
+    };
+
+    render(attributeCountResult.overallAttribution);
+}
+
+/* ---------- 渲染归因图表 --------------- */
+let attributionChart = null;
+
+function renderAttributionChart(list) {
+    /* 0. 确保 canvas 已经存在于 DOM */
+    const canvas = document.getElementById('attributionChart');
+    if (!canvas) return;               // 保险：不存在就退出
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;                  // 保险：取不到 2d 上下文也退出
+
+    /* 1. 数据准备 */
+    const issueNames = list.map(l => l.issueName);
+    const issueCounts = list.map(l => l.caseIds.length);
+
+    /* 2. 如果之前实例化过，先销毁 */
+    if (attributionChart) {
+        attributionChart.destroy();
+        attributionChart = null;
+    }
+
+    /* 3. 创建新图 */
+    attributionChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: issueNames,
+            datasets: [{
+                data: issueCounts,
+                backgroundColor: [
+                    '#67c23a', '#f56c6c', '#909399', '#409eff',
+                    '#e6a23c', '#7232d6', '#ff6032'
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {position: 'bottom'},
+                title: {
+                    display: true,
+                    text: '问题数量占比',
+                    font: {size: 13},
+                    padding: {bottom: 10}
+                }
+            }
+        }
+    });
+}
+
+/* ---------- 跳转到case详情页 ---------- */
+function jumpToCase(dataIndex) {
+    AppState.currentFilter = 'all';      // 保证节点不被过滤
+    renderCaseList();                   // 重刷左侧列表
+    AppState.selectedCase = evaluationData.find(c => c.dataIndex === dataIndex);
+    renderDetail();                     // 右侧详情
+    showPanel('detail');
+    renderCaseList();                   // 再次高亮当前行
+    // 把当前已选用例重新写回 URL（保持与 selectCase 一致）
+    if (AppState.selectedCase) {
+        const url = new URL(location.href);
+        url.searchParams.set('dataIndex', AppState.selectedCase.inputData.dataIndex);
+        window.history.replaceState(null, '', url);
+    }
+}
+
+/* ---------- 详情 ---------- */
+function selectCase(idx) {
+    AppState.selectedCase = evaluationData.find(d => d.dataIndex === idx);
+    renderCaseList();
+    renderDetail();
+    /* === 新增：自动同步 URL === */
+    const url = new URL(location.href);
+    url.searchParams.set('dataIndex', idx);
+    window.history.replaceState(null, '', url);
+}
+
+function renderDetail() {
+    if (!AppState.selectedCase) return;
+    showPanel('detail');
+    const d = AppState.selectedCase;
+    const evalResult = d.evalResult || {};
+    const pass = evalResult.pass;
+    const success = evalResult.success;
+    const score = formatNumber(evalResult.score);
+    const scoreStrategyName = evalResult.scoreStrategyName || '-';
+    const threshold = evalResult.threshold || '-';
+
+    let statusClass, statusText, metricClass;
+    if (pass === true) {
+        statusClass = 'pass';
+        statusText = '通过';
+        metricClass = 'good';
+    } else if (success === true) {
+        statusClass = 'fail';
+        statusText = '未通过';
+        metricClass = 'bad';
+    } else {
+        statusClass = 'evalerror';
+        statusText = '评测错误';
+        metricClass = 'evalerror';
+    }
+
+    document.getElementById('detailContent').innerHTML = `
+      <div class="detail-panel">
+          <!-- 详情头部 -->
+          <div class="detail-header">
+            <span class="datail-dataindex">#${d.inputData.dataIndex}</span>
+            <span class="metric-badge ${statusClass}">${statusText}</span>
+            <span class="metric-value ${metricClass}">${score}</span>
+            <!-- 打分策略名称 -->
+            <span class="detail-strategy">${scoreStrategyName}, 阈值: ${threshold}</span>
+           <!-- 四个快速跳转按钮 -->
+           <div class="header-jumps">
+             <a href="#section-input"   class="jump-btn">输入数据</a>
+             <a href="#section-api"     class="jump-btn">API调用结果</a>
+             <a href="#section-eval"    class="jump-btn">评测结果</a>
+             <a href="#section-scorer"  class="jump-btn">评测详情</a>
+           </div>
+            <!-- 增加分享按钮 -->
+           <span class="share-btn" onclick="shareCase()" title="分享链接">
+              <svg class="share-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3s3-1.34 3-3-1.34-3-3-3z"/>
+              </svg>
+           </span>
+          </div>
+          <!-- 详情主体 -->
+          <div class="detail-content-scroll">
+            ${section('输入数据', jsonDiv(d.inputData.inputItem))}
+            ${section('API调用结果', apiDiv(d.apiCompletionResult))}
+            ${section('评测结果', evalDiv(d.evalResult))}
+            ${section('评测详情', scorerDiv(evalResult.scorerResults))}
+          </div>
+      </div>
+`;
+
+    // 激活 json-viewer
+    document.querySelectorAll('pre.json-viewer').forEach(el => new JsonViewer(el));
+}
+
+/* 分享case链接 */
+function shareCase() {
+    const url = new URL(location.href);
+    navigator.clipboard.writeText(url.href).then(() => {
+        const tip = document.getElementById('copyTip');
+        tip.classList.add('show');
+        setTimeout(() => tip.classList.remove('show'), 1500);
+    });
+}
+
+function section(title, content) {
+    const id = 'section-' + ({
+        '输入数据': 'input',
+        'API调用结果': 'api',
+        '评测结果': 'eval',
+        '评测详情': 'scorer'
+    }[title] || 'other');
+    return `<div class="detail-section" id="${id}">
+              <div class="detail-section-header">${title}</div>
+              <div class="detail-section-content">${content}</div>
+            </div>`;
+}
+
+function jsonDiv(obj) {
+    if (!obj) {
+        return `<span>没有输入数据</span>`
+    }
+    return `<div>
+                    <andypf-json-viewer
+                            show-toolbar="true"
+                            show-data-types="false"
+                            theme="github"
+                            expanded="3"
+                            data="${escapeHtml(JSON.stringify(obj, null, 2))}">
+                    </andypf-json-viewer>
+               </div>`
+}
+
+function apiDiv(r) {
+    if (!r) {
+        return `<span>没有API调用结果</span>`
+    }
+    return `
+          <div class="detail-row"><div class="detail-label">耗时</div><div class="detail-value">${r.timeCost}ms</div></div>
+          <div class="detail-row"><div class="detail-label">时间</div><div class="detail-value">${fmt(r.startTime)} / ${fmt(r.endTime)}</div></div>
+          <div class="detail-row"><div class="detail-label">状态</div><div class="detail-value">${r.success ? '<span style="color:#67c23a">正常</span>' : '<span style="color:#f56c6c">出错</span>'}</div></div>
+          ${r.resultItem ? jsonDiv(r.resultItem) : ''}`;
+}
+
+function evalDiv(r) {
+    if (!r) {
+        return `<span>没有评测结果</span>`;
+    }
+    // 安全处理各字段
+    const pass = r.pass === true;
+    const score = formatNumber(r.score);
+    const reason = r.reason || '-';
+    const scoreStrategyName = r.scoreStrategyName || '-';
+    const threshold = typeof r.threshold === 'number' ? r.threshold : '-';
+    const timeCost = typeof r.timeCost === 'number' ? r.timeCost + 'ms' : '-';
+    const startTime = r.startTime ? fmt(r.startTime) : '-';
+    const endTime = r.endTime ? fmt(r.endTime) : '-';
+    const success = r.success === true;
+    const statusHtml = success
+        ? '<span style="color:#67c23a">正常</span>'
+        : '<span style="color:#f56c6c">出错</span>';
+
+    return `
+      <div class="detail-row"><div class="detail-label">分数</div><div class="detail-value metric-value ${pass ? 'good' : 'bad'}">${score}</div></div>
+      <div class="detail-row"><div class="detail-label">理由</div><div class="detail-value">${reason}</div></div>
+      <div class="detail-row"><div class="detail-label">策略</div><div class="detail-value">${scoreStrategyName}</div></div>
+      <div class="detail-row"><div class="detail-label">阈值</div><div class="detail-value">${threshold}</div></div>
+      <div class="detail-row"><div class="detail-label">耗时</div><div class="detail-value">${timeCost}</div></div>
+      <div class="detail-row"><div class="detail-label">时间</div><div class="detail-value">${startTime} / ${endTime}</div></div>
+      <div class="detail-row"><div class="detail-label">状态</div><div class="detail-value">${statusHtml}</div></div>
+    `;
+}
+
+
+function scorerDiv(list) {
+    if (!list || list.length === 0) {
+        return `<span>没有评估器</span>`
+    }
+    return list.map(s => {
+        const pass = s.pass;
+        return `<div style="margin-bottom:6px;padding:6px;border-left:3px solid ${pass ? '#67c23a' : '#f56c6c'};background:${pass ? '#e1f3d8' : '#fde2e2'};border-radius:2px;">
+                      <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600">
+                        <div>
+                            <span>${s.metric}${s.star ? '<span style="color:#ff4757;margin-left:4px">必过</span>' : ''}</span>
+                            <span>${s.success ? '' : '<span style="color:#ff4757;margin-left:4px">评测出错</span>'}</span>
+                        </div>
+                        <span class="metric-badge ${pass ? 'pass' : 'fail'}">${pass ? '通过' : '未通过'} | 阈值 ${s.threshold} | 得分率 ${formatNumber(s.scoreRate)} | 得分 ${formatNumber(s.score)} / ${formatNumber(s.totalScore)}</span>
+                      </div>
+                      <div style="font-size:12px;color:#606266;margin:5px 0">${s.reason}</div>
+                      ${s.extra ? (() => {
+            const map = wrapperScorerResultExtra(s.extra);
+            return jsonDiv(map);
+        })() : ''
+        }
+                    </div>`;
+    }).join('');
+}
+
+/**
+ * 统一把后端 extra 对象里 **所有** 可能出现 CheckItem[] 字符串的 value
+ * 转成展示用的扁平 Map；转换失败原样返回。
+ * @param {Object} extra  后端返回的 plain object
+ * @returns {Object}      同结构对象，仅把可转换的 value 替换掉
+ */
+function wrapperScorerResultExtra(extra = {}) {
+    const out = {};
+
+    Object.entries(extra).forEach(([k, v]) => {
+        out[k] = parseValue(v);
+    });
+
+    return out;
+}
+
+/* --------- 真正转换函数 --------- */
+function parseValue(raw) {
+    // 1. 必须是字符串
+    if (typeof raw !== 'string') return raw;
+
+    try {
+        const arr = JSON.parse(raw);
+        if (!Array.isArray(arr)) return raw;
+
+        // 2. 字段完整性校验
+        const required = ['name', 'score', 'reason', 'weight', 'star', 'executed',
+            'defaultScore', 'checkDescription', 'checkMethod'];
+        const ok = arr.every(it => it && required.every(r => r in it));
+        if (!ok) return raw;
+
+        // 3. 转换
+        const map = {};
+        arr.forEach(it => {
+            const weightScore = formatNumber(it.score * it.weight);
+            map[it.name] = {
+                '分数 | 权重 | 权重分数': `${formatNumber(it.score)} | ${formatNumber(it.weight)} | ${weightScore}`,
+                '默认分数': it.defaultScore,
+                '理由': it.reason,
+                '类型': it.star ? '必过检查' : '普通检查',
+                '检查方法 | 执行情况': `${it.checkMethod} | ${it.executed ? '已执行' : '未执行'}`,
+                '检查要求': it.checkDescription
+            };
+        });
+        return map;
+    } catch (_) {
+        return raw;
+    }
+}
+
+/* ---------- 工具 ---------- */
+function showPanel(name) {
+    document.getElementById('overviewContent').style.display = name === 'overview' ? 'flex' : 'none';
+    document.getElementById('detailContent').style.display = name === 'detail' ? '' : 'none';
+    document.getElementById('attributeContent').style.display = name === 'attribute' ? '' : 'none';
+    document.getElementById('attributeV2Panel').style.display = name === 'attributeV2Panel' ? '' : 'none';
+}
+
+function fmt(ts) {
+    if (!ts) return '-';
+    const d = new Date(ts);
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+function pad(n) {
+    return n < 10 ? '0' + n : n;
+}
+
+function escapeHtml(str) {
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')   // ← 关键：把 " 转成 &quot;
+        .replace(/'/g, '&#39;');
+}
+
+initializeApp();
+
+/* 平滑滚动 */
+document.addEventListener('click', e => {
+    if (e.target.classList.contains('nav-link')) {
+        e.preventDefault();
+        const id = e.target.getAttribute('href').slice(1); // 去掉 #
+        document.getElementById(id)?.scrollIntoView({behavior: 'smooth', block: 'start'});
+    }
+});
+
+/* 电梯高亮 & 回顶按钮显隐 */
+const navLinks = [...document.querySelectorAll('.nav-link')];
+const sections = navLinks.map(link => document.getElementById(link.href.split('#')[1]));
+
+function updateElevator() {
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    // 电梯高亮
+    let idx = sections.findIndex(sec => sec && sec.offsetTop - 100 > scrollTop);
+    if (idx === -1) idx = sections.length - 1; else idx = Math.max(0, idx - 1);
+    navLinks.forEach((a, i) => a.classList.toggle('active', i === idx));
+}
+
+window.addEventListener('scroll', updateElevator);
+// 首次进入也刷新一次
+updateElevator();
+
+const tipBtn = document.getElementById('searchTipBtn');
+const tipPop = document.getElementById('searchTipPop');
+const tipClose = document.getElementById('tipClose');
+
+tipBtn.onclick = () => tipPop.classList.toggle('show');
+tipClose.onclick = () => tipPop.classList.remove('show');
+
+/* 点击页面其他地方也关闭 */
+document.addEventListener('click', e => {
+    if (!tipPop.contains(e.target) && e.target !== tipBtn) {
+        tipPop.classList.remove('show');
+    }
+});
+
+/* 归因菜单开关 */
+function toggleAttrMenu() {
+    const menu = document.getElementById('attrMenu');
+    menu.classList.toggle('show');
+}
+
+/* 选择归因版本 */
+function chooseAttr(version) {
+    // 关闭菜单
+    document.getElementById('attrMenu').classList.remove('show');
+    // 高亮当前按钮（可选）
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('attrTrigger').classList.add('active');
+
+    // 执行对应渲染
+    if (version === 'old') renderAttribute();
+    if (version === 'v2') renderAttributeV2();
+}
+
+/* 点击页面其他地方关闭菜单 */
+document.addEventListener('click', e => {
+    const menu = document.getElementById('attrMenu');
+    const trigger = document.getElementById('attrTrigger');
+    if (!menu.contains(e.target) && e.target !== trigger) {
+        menu.classList.remove('show');
+    }
+});
+

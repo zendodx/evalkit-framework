@@ -1,4 +1,4 @@
-package com.evalkit.framework.eval.model;
+package com.evalkit.framework.eval.model.attribute.v1;
 
 import lombok.Data;
 

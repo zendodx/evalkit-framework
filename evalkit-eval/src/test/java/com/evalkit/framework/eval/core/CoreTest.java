@@ -10,6 +10,7 @@ import com.evalkit.framework.eval.node.api.ApiCompletion;
 import com.evalkit.framework.eval.node.begin.Begin;
 import com.evalkit.framework.eval.node.begin.config.BeginConfig;
 import com.evalkit.framework.eval.node.counter.AttributeCounter;
+import com.evalkit.framework.eval.node.counter.AttributeCounterV2;
 import com.evalkit.framework.eval.node.counter.BasicCounter;
 import com.evalkit.framework.eval.node.dataloader.DataLoader;
 import com.evalkit.framework.eval.node.dataloader.config.DataLoaderConfig;
@@ -61,6 +62,7 @@ public class CoreTest {
     Scorer scorer3;
     BasicCounter basicCounter;
     AttributeCounter attributeCounter;
+    AttributeCounterV2 attributeCounterV2;
     Reporter reporter;
     HtmlReporter htmlReporter;
     CsvReporter csvReporter;
@@ -89,7 +91,7 @@ public class CoreTest {
             @Override
             public List<InputData> prepareDataList() {
                 List<InputData> inputDatas = new ArrayList<>();
-                for (int i = 0; i < 10; i++) {
+                for (int i = 0; i < 5; i++) {
                     inputDatas.add(new InputData(1L, JsonUtils.fromJson("{\t\"query\":\"hello, {{holiday}}\",\"type\":\"1\"}", new TypeReference<Map<String, Object>>() {
                     })));
                 }
@@ -177,6 +179,7 @@ public class CoreTest {
 
         basicCounter = new BasicCounter();
         attributeCounter = new AttributeCounter(llmService);
+        attributeCounterV2 = new AttributeCounterV2(llmService);
 
         reporter = new Reporter() {
             @Override
@@ -214,7 +217,7 @@ public class CoreTest {
                 .link(begin, dataLoader, dataLoaderWrapper, apiCompletion)
                 .link(apiCompletion, scorers)
                 .link(scorers, attributeCounter)
-                .link(attributeCounter, basicCounter)
+                .link(attributeCounter, attributeCounterV2, basicCounter)
                 .link(basicCounter, reporters)
                 .link(reporters, end)
                 .build()

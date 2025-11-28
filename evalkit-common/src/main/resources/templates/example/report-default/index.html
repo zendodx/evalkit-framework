@@ -3,19 +3,16 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title th:text="${reportName}">评测报告</title>
+    <title>核心链路测试</title>
 
-    <!-- 外部库（CDN）-->
-    <th:block th:with="cdnDomain=${#strings.isEmpty(cdn) ? 'cdn.jsdelivr.net' : cdn}">
-        <link rel="stylesheet"
-              th:href="@{https://{domain}/npm/json-viewer-js@1.0.8/dist/json-viewer.css(domain=${cdnDomain})}"/>
-        <script th:src="@{https://{domain}/npm/chart.js@4.4.0/dist/chart.umd.min.js(domain=${cdnDomain})}"></script>
-        <script th:src="@{https://{domain}/npm/json-viewer-js@1.0.8/dist/json-viewer.min.js(domain=${cdnDomain})}"></script>
-        <script src="https://pfau-software.de/json-viewer/dist/iife/index.js"></script>
-    </th:block>
+    <!-- CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/json-viewer-js@1.0.8/dist/json-viewer.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/json-viewer-js@1.0.8/dist/json-viewer.min.js"></script>
+    <script src="https://pfau-software.de/json-viewer/dist/iife/index.js"></script>
 
-    <!-- 本页资源 -->
-    <th:block th:replace="~{fragments/css/report-default-style :: style}"/>
+    <!-- 本页 -->
+    <link rel="stylesheet" href="css/style.css"/>
 </head>
 <body>
 <!-- 侧边栏 -->
@@ -114,17 +111,13 @@
 
 <!-- 复制提示 -->
 <div id="copyTip" class="copy-bubble">已复制</div>
+
 </body>
 
-<!-- 业务脚本 -->
-<script th:inline="javascript">
-    const evaluationData = /*[[${evaluationData}]]*/ [];
-    const metricsData = /*[[${metricsData}]]*/ {};
-    const attributeCountResult = /*[[${attributeCountResult}]]*/ {};
-    const attributeCountResultV2 = /*[[${attributeCountResultV2}]]*/ {};
-    // Initialize the application when DOM is loaded
+<script src="js/data/data.js"></script>
+<script src="js/app.js"></script>
+<script>
     document.addEventListener('DOMContentLoaded', initializeApp);
 </script>
-<th:block th:replace="~{fragments/js/report-default-app :: app}"/>
 </body>
 </html>

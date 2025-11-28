@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
 @Data
 public class DeltaEvalFacade extends EvalFacade {
     /* 缓存文件存储位置 */
-    protected final static String CACHE_FILE_PATH = "cache_data/";
+    protected final static String CACHE_FILE_PATH = "eval_cache_data/";
     /* 增量评测配置 */
     protected DeltaEvalConfig config;
     /* 评测结果上报 */
@@ -110,6 +110,13 @@ public class DeltaEvalFacade extends EvalFacade {
             evalTaskMapper = new EvalTaskMapper(sqLiteEmbeddedServer);
             log.info("Initialize workflow success, middleware file save path: {}", parentPath + taskName);
         } catch (Exception e) {
+            // 初始化出错时要关闭MQ和DB连接
+            if (activeMQEmbeddedServer != null) {
+                activeMQEmbeddedServer.stop();
+            }
+            if (sqLiteEmbeddedServer != null) {
+                sqLiteEmbeddedServer.stop();
+            }
             throw new WorkflowException("Initialize workflow error: " + e.getMessage(), e);
         }
     }

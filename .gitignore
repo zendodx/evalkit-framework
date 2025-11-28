@@ -54,6 +54,7 @@ activemq-data
 *.html
 *.csv
 cache_data
+delta_eval_cache_data
 testMQ
 
 # mvn flatten
