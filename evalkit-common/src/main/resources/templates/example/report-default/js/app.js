@@ -1,1162 +1,613 @@
-const evaluationData = [{
-    "dataIndex": 0,
-    "inputData": {"dataIndex": 0, "inputItem": {"query": "hello, \u5143\u5BB5\u8282", "type": "1"}},
-    "apiCompletionResult": {
-        "dataIndex": 0,
-        "resultItem": {"response": "Mock response for hello, \u5143\u5BB5\u8282"},
-        "startTime": 1764241320609,
-        "endTime": 1764241320610,
-        "timeCost": 1,
-        "success": true
+// Global state management
+const AppState = {
+    currentFilter: 'all',
+    selectedCase: null,
+    charts: {
+        passChart: null,
+        distChart: null,
+        tpChart: null,
+        attributionChart: null
     },
-    "evalResult": {
-        "dataIndex": 0,
-        "score": 1.0,
-        "reason": "[{\"\u8BC4\u4F30\u6307\u6807\":\"\u56DE\u590D\u957F\u5EA6\u68C0\u67E5\",\"\u8BC4\u4F30\u7406\u7531\":\"hello, \u5143\u5BB5\u8282 \u7684\u56DE\u590D\u957F\u5EA6\u8D85\u8FC75\u4E2A\u5B57\u7B26\"},{\"\u8BC4\u4F30\u6307\u6807\":\"\u76F8\u4F3C\u5EA6\u68C0\u67E5level1\",\"\u8BC4\u4F30\u7406\u7531\":\"\u76F8\u4F3C\u5EA6\u4E3A0.0000\uFF0C\u5C0F\u4E8E\u9608\u503C0.5000\"},{\"\u8BC4\u4F30\u6307\u6807\":\"\u5F02\u5E38\u6D4B\u8BD5\",\"\u8BC4\u4F30\u7406\u7531\":\"Error: \/ by zero\"}]",
-        "startTime": 1764241320635,
-        "endTime": 1764241320878,
-        "timeCost": 242,
-        "scorerResults": [{
-            "dataIndex": 0,
-            "metric": "\u56DE\u590D\u957F\u5EA6\u68C0\u67E5",
-            "score": 1.0,
-            "scoreRate": 1.0,
-            "totalScore": 1.0,
-            "reason": "hello, \u5143\u5BB5\u8282 \u7684\u56DE\u590D\u957F\u5EA6\u8D85\u8FC75\u4E2A\u5B57\u7B26",
-            "extra": null,
-            "statTime": 1764241320878,
-            "endTime": 1764241320878,
-            "timeCost": 0,
-            "success": true,
-            "pass": true,
-            "threshold": 0.0,
-            "star": false
-        }, {
-            "dataIndex": 0,
-            "metric": "\u76F8\u4F3C\u5EA6\u68C0\u67E5level1",
-            "score": 0.0,
-            "scoreRate": 0.0,
-            "totalScore": 1.0,
-            "reason": "\u76F8\u4F3C\u5EA6\u4E3A0.0000\uFF0C\u5C0F\u4E8E\u9608\u503C0.5000",
-            "extra": {"similarity": 0.0, "similarityThreshold": 0.5},
-            "statTime": 1764241320635,
-            "endTime": 1764241320877,
-            "timeCost": 242,
-            "success": true,
-            "pass": true,
-            "threshold": 0.0,
-            "star": false
-        }, {
-            "dataIndex": 0,
-            "metric": "\u5F02\u5E38\u6D4B\u8BD5",
-            "score": 0.0,
-            "scoreRate": 0.0,
-            "totalScore": 1.0,
-            "reason": "Error: \/ by zero",
-            "extra": null,
-            "statTime": 0,
-            "endTime": 0,
-            "timeCost": 0,
-            "success": false,
-            "pass": false,
-            "threshold": 0.0,
-            "star": false
-        }],
-        "success": true,
-        "pass": true,
-        "threshold": 1.0,
-        "scoreStrategyName": "\u6700\u5927\u5F97\u5206\u7387\u7B56\u7565"
+    // Configuration
+    config: {
+        decimalPlaces: 2,
+        priceDecimalPlaces: 6,
+        chartColors: [
+            '#67c23a', '#f56c6c', '#909399', '#409eff',
+            '#e6a23c', '#7232d6', '#ff6032'
+        ]
     },
-    "extra": null
-}, {
-    "dataIndex": 1,
-    "inputData": {"dataIndex": 1, "inputItem": {"query": "hello, \u5357\u65B9\u5C0F\u5E74", "type": "1"}},
-    "apiCompletionResult": {
-        "dataIndex": 1,
-        "resultItem": {"response": "Mock response for hello, \u5357\u65B9\u5C0F\u5E74"},
-        "startTime": 1764241320610,
-        "endTime": 1764241320611,
-        "timeCost": 1,
-        "success": true
-    },
-    "evalResult": {
-        "dataIndex": 1,
-        "score": 1.0,
-        "reason": "[{\"\u8BC4\u4F30\u6307\u6807\":\"\u56DE\u590D\u957F\u5EA6\u68C0\u67E5\",\"\u8BC4\u4F30\u7406\u7531\":\"hello, \u5357\u65B9\u5C0F\u5E74 \u7684\u56DE\u590D\u957F\u5EA6\u8D85\u8FC75\u4E2A\u5B57\u7B26\"},{\"\u8BC4\u4F30\u6307\u6807\":\"\u76F8\u4F3C\u5EA6\u68C0\u67E5level1\",\"\u8BC4\u4F30\u7406\u7531\":\"\u76F8\u4F3C\u5EA6\u4E3A0.0000\uFF0C\u5C0F\u4E8E\u9608\u503C0.5000\"},{\"\u8BC4\u4F30\u6307\u6807\":\"\u5F02\u5E38\u6D4B\u8BD5\",\"\u8BC4\u4F30\u7406\u7531\":\"Error: \/ by zero\"}]",
-        "startTime": 1764241320894,
-        "endTime": 1764241320913,
-        "timeCost": 19,
-        "scorerResults": [{
-            "dataIndex": 1,
-            "metric": "\u56DE\u590D\u957F\u5EA6\u68C0\u67E5",
-            "score": 1.0,
-            "scoreRate": 1.0,
-            "totalScore": 1.0,
-            "reason": "hello, \u5357\u65B9\u5C0F\u5E74 \u7684\u56DE\u590D\u957F\u5EA6\u8D85\u8FC75\u4E2A\u5B57\u7B26",
-            "extra": null,
-            "statTime": 1764241320894,
-            "endTime": 1764241320894,
-            "timeCost": 0,
-            "success": true,
-            "pass": true,
-            "threshold": 0.0,
-            "star": false
-        }, {
-            "dataIndex": 1,
-            "metric": "\u76F8\u4F3C\u5EA6\u68C0\u67E5level1",
-            "score": 0.0,
-            "scoreRate": 0.0,
-            "totalScore": 1.0,
-            "reason": "\u76F8\u4F3C\u5EA6\u4E3A0.0000\uFF0C\u5C0F\u4E8E\u9608\u503C0.5000",
-            "extra": {"similarity": 0.0, "similarityThreshold": 0.5},
-            "statTime": 1764241320894,
-            "endTime": 1764241320913,
-            "timeCost": 19,
-            "success": true,
-            "pass": true,
-            "threshold": 0.0,
-            "star": false
-        }, {
-            "dataIndex": 1,
-            "metric": "\u5F02\u5E38\u6D4B\u8BD5",
-            "score": 0.0,
-            "scoreRate": 0.0,
-            "totalScore": 1.0,
-            "reason": "Error: \/ by zero",
-            "extra": null,
-            "statTime": 0,
-            "endTime": 0,
-            "timeCost": 0,
-            "success": false,
-            "pass": false,
-            "threshold": 0.0,
-            "star": false
-        }],
-        "success": true,
-        "pass": true,
-        "threshold": 1.0,
-        "scoreStrategyName": "\u6700\u5927\u5F97\u5206\u7387\u7B56\u7565"
-    },
-    "extra": null
-}, {
-    "dataIndex": 2,
-    "inputData": {"dataIndex": 2, "inputItem": {"query": "hello, \u52B3\u52A8\u8282", "type": "1"}},
-    "apiCompletionResult": {
-        "dataIndex": 2,
-        "resultItem": {"response": "Mock response for hello, \u52B3\u52A8\u8282"},
-        "startTime": 1764241320611,
-        "endTime": 1764241320611,
-        "timeCost": 0,
-        "success": true
-    },
-    "evalResult": {
-        "dataIndex": 2,
-        "score": 1.0,
-        "reason": "[{\"\u8BC4\u4F30\u6307\u6807\":\"\u56DE\u590D\u957F\u5EA6\u68C0\u67E5\",\"\u8BC4\u4F30\u7406\u7531\":\"hello, \u52B3\u52A8\u8282 \u7684\u56DE\u590D\u957F\u5EA6\u8D85\u8FC75\u4E2A\u5B57\u7B26\"},{\"\u8BC4\u4F30\u6307\u6807\":\"\u76F8\u4F3C\u5EA6\u68C0\u67E5level1\",\"\u8BC4\u4F30\u7406\u7531\":\"\u76F8\u4F3C\u5EA6\u4E3A0.0000\uFF0C\u5C0F\u4E8E\u9608\u503C0.5000\"},{\"\u8BC4\u4F30\u6307\u6807\":\"\u5F02\u5E38\u6D4B\u8BD5\",\"\u8BC4\u4F30\u7406\u7531\":\"Error: \/ by zero\"}]",
-        "startTime": 1764241320894,
-        "endTime": 1764241320923,
-        "timeCost": 8,
-        "scorerResults": [{
-            "dataIndex": 2,
-            "metric": "\u56DE\u590D\u957F\u5EA6\u68C0\u67E5",
-            "score": 1.0,
-            "scoreRate": 1.0,
-            "totalScore": 1.0,
-            "reason": "hello, \u52B3\u52A8\u8282 \u7684\u56DE\u590D\u957F\u5EA6\u8D85\u8FC75\u4E2A\u5B57\u7B26",
-            "extra": null,
-            "statTime": 1764241320894,
-            "endTime": 1764241320894,
-            "timeCost": 0,
-            "success": true,
-            "pass": true,
-            "threshold": 0.0,
-            "star": false
-        }, {
-            "dataIndex": 2,
-            "metric": "\u76F8\u4F3C\u5EA6\u68C0\u67E5level1",
-            "score": 0.0,
-            "scoreRate": 0.0,
-            "totalScore": 1.0,
-            "reason": "\u76F8\u4F3C\u5EA6\u4E3A0.0000\uFF0C\u5C0F\u4E8E\u9608\u503C0.5000",
-            "extra": {"similarity": 0.0, "similarityThreshold": 0.5},
-            "statTime": 1764241320915,
-            "endTime": 1764241320923,
-            "timeCost": 8,
-            "success": true,
-            "pass": true,
-            "threshold": 0.0,
-            "star": false
-        }, {
-            "dataIndex": 2,
-            "metric": "\u5F02\u5E38\u6D4B\u8BD5",
-            "score": 0.0,
-            "scoreRate": 0.0,
-            "totalScore": 1.0,
-            "reason": "Error: \/ by zero",
-            "extra": null,
-            "statTime": 0,
-            "endTime": 0,
-            "timeCost": 0,
-            "success": false,
-            "pass": false,
-            "threshold": 0.0,
-            "star": false
-        }],
-        "success": true,
-        "pass": true,
-        "threshold": 1.0,
-        "scoreStrategyName": "\u6700\u5927\u5F97\u5206\u7387\u7B56\u7565"
-    },
-    "extra": null
-}, {
-    "dataIndex": 3,
-    "inputData": {"dataIndex": 3, "inputItem": {"query": "hello, \u60C5\u4EBA\u8282", "type": "1"}},
-    "apiCompletionResult": {
-        "dataIndex": 3,
-        "resultItem": {"response": "Mock response for hello, \u60C5\u4EBA\u8282"},
-        "startTime": 1764241320611,
-        "endTime": 1764241320611,
-        "timeCost": 0,
-        "success": true
-    },
-    "evalResult": {
-        "dataIndex": 3,
-        "score": 1.0,
-        "reason": "[{\"\u8BC4\u4F30\u6307\u6807\":\"\u56DE\u590D\u957F\u5EA6\u68C0\u67E5\",\"\u8BC4\u4F30\u7406\u7531\":\"hello, \u60C5\u4EBA\u8282 \u7684\u56DE\u590D\u957F\u5EA6\u8D85\u8FC75\u4E2A\u5B57\u7B26\"},{\"\u8BC4\u4F30\u6307\u6807\":\"\u76F8\u4F3C\u5EA6\u68C0\u67E5level1\",\"\u8BC4\u4F30\u7406\u7531\":\"\u76F8\u4F3C\u5EA6\u4E3A0.0000\uFF0C\u5C0F\u4E8E\u9608\u503C0.5000\"},{\"\u8BC4\u4F30\u6307\u6807\":\"\u5F02\u5E38\u6D4B\u8BD5\",\"\u8BC4\u4F30\u7406\u7531\":\"Error: \/ by zero\"}]",
-        "startTime": 1764241320894,
-        "endTime": 1764241320983,
-        "timeCost": 57,
-        "scorerResults": [{
-            "dataIndex": 3,
-            "metric": "\u56DE\u590D\u957F\u5EA6\u68C0\u67E5",
-            "score": 1.0,
-            "scoreRate": 1.0,
-            "totalScore": 1.0,
-            "reason": "hello, \u60C5\u4EBA\u8282 \u7684\u56DE\u590D\u957F\u5EA6\u8D85\u8FC75\u4E2A\u5B57\u7B26",
-            "extra": null,
-            "statTime": 1764241320894,
-            "endTime": 1764241320894,
-            "timeCost": 0,
-            "success": true,
-            "pass": true,
-            "threshold": 0.0,
-            "star": false
-        }, {
-            "dataIndex": 3,
-            "metric": "\u76F8\u4F3C\u5EA6\u68C0\u67E5level1",
-            "score": 0.0,
-            "scoreRate": 0.0,
-            "totalScore": 1.0,
-            "reason": "\u76F8\u4F3C\u5EA6\u4E3A0.0000\uFF0C\u5C0F\u4E8E\u9608\u503C0.5000",
-            "extra": {"similarity": 0.0, "similarityThreshold": 0.5},
-            "statTime": 1764241320926,
-            "endTime": 1764241320983,
-            "timeCost": 57,
-            "success": true,
-            "pass": true,
-            "threshold": 0.0,
-            "star": false
-        }, {
-            "dataIndex": 3,
-            "metric": "\u5F02\u5E38\u6D4B\u8BD5",
-            "score": 0.0,
-            "scoreRate": 0.0,
-            "totalScore": 1.0,
-            "reason": "Error: \/ by zero",
-            "extra": null,
-            "statTime": 0,
-            "endTime": 0,
-            "timeCost": 0,
-            "success": false,
-            "pass": false,
-            "threshold": 0.0,
-            "star": false
-        }],
-        "success": true,
-        "pass": true,
-        "threshold": 1.0,
-        "scoreStrategyName": "\u6700\u5927\u5F97\u5206\u7387\u7B56\u7565"
-    },
-    "extra": null
-}, {
-    "dataIndex": 4,
-    "inputData": {"dataIndex": 4, "inputItem": {"query": "hello, \u6D88\u8D39\u8005\u6743\u76CA\u65E5", "type": "1"}},
-    "apiCompletionResult": {
-        "dataIndex": 4,
-        "resultItem": {"response": "Mock response for hello, \u6D88\u8D39\u8005\u6743\u76CA\u65E5"},
-        "startTime": 1764241320611,
-        "endTime": 1764241320611,
-        "timeCost": 0,
-        "success": true
-    },
-    "evalResult": {
-        "dataIndex": 4,
-        "score": 1.0,
-        "reason": "[{\"\u8BC4\u4F30\u6307\u6807\":\"\u56DE\u590D\u957F\u5EA6\u68C0\u67E5\",\"\u8BC4\u4F30\u7406\u7531\":\"hello, \u6D88\u8D39\u8005\u6743\u76CA\u65E5 \u7684\u56DE\u590D\u957F\u5EA6\u8D85\u8FC75\u4E2A\u5B57\u7B26\"},{\"\u8BC4\u4F30\u6307\u6807\":\"\u76F8\u4F3C\u5EA6\u68C0\u67E5level1\",\"\u8BC4\u4F30\u7406\u7531\":\"\u76F8\u4F3C\u5EA6\u4E3A0.0000\uFF0C\u5C0F\u4E8E\u9608\u503C0.5000\"},{\"\u8BC4\u4F30\u6307\u6807\":\"\u5F02\u5E38\u6D4B\u8BD5\",\"\u8BC4\u4F30\u7406\u7531\":\"Error: \/ by zero\"}]",
-        "startTime": 1764241320894,
-        "endTime": 1764241320983,
-        "timeCost": 54,
-        "scorerResults": [{
-            "dataIndex": 4,
-            "metric": "\u56DE\u590D\u957F\u5EA6\u68C0\u67E5",
-            "score": 1.0,
-            "scoreRate": 1.0,
-            "totalScore": 1.0,
-            "reason": "hello, \u6D88\u8D39\u8005\u6743\u76CA\u65E5 \u7684\u56DE\u590D\u957F\u5EA6\u8D85\u8FC75\u4E2A\u5B57\u7B26",
-            "extra": null,
-            "statTime": 1764241320894,
-            "endTime": 1764241320894,
-            "timeCost": 0,
-            "success": true,
-            "pass": true,
-            "threshold": 0.0,
-            "star": false
-        }, {
-            "dataIndex": 4,
-            "metric": "\u76F8\u4F3C\u5EA6\u68C0\u67E5level1",
-            "score": 0.0,
-            "scoreRate": 0.0,
-            "totalScore": 1.0,
-            "reason": "\u76F8\u4F3C\u5EA6\u4E3A0.0000\uFF0C\u5C0F\u4E8E\u9608\u503C0.5000",
-            "extra": {"similarity": 0.0, "similarityThreshold": 0.5},
-            "statTime": 1764241320929,
-            "endTime": 1764241320983,
-            "timeCost": 54,
-            "success": true,
-            "pass": true,
-            "threshold": 0.0,
-            "star": false
-        }, {
-            "dataIndex": 4,
-            "metric": "\u5F02\u5E38\u6D4B\u8BD5",
-            "score": 0.0,
-            "scoreRate": 0.0,
-            "totalScore": 1.0,
-            "reason": "Error: \/ by zero",
-            "extra": null,
-            "statTime": 0,
-            "endTime": 0,
-            "timeCost": 0,
-            "success": false,
-            "pass": false,
-            "threshold": 0.0,
-            "star": false
-        }],
-        "success": true,
-        "pass": true,
-        "threshold": 1.0,
-        "scoreStrategyName": "\u6700\u5927\u5F97\u5206\u7387\u7B56\u7565"
-    },
-    "extra": null
-}, {
-    "dataIndex": 5,
-    "inputData": {"dataIndex": 5, "inputItem": {"query": "hello, \u4E07\u5723\u8282", "type": "1"}},
-    "apiCompletionResult": {
-        "dataIndex": 5,
-        "resultItem": {"response": "Mock response for hello, \u4E07\u5723\u8282"},
-        "startTime": 1764241320611,
-        "endTime": 1764241320611,
-        "timeCost": 0,
-        "success": true
-    },
-    "evalResult": {
-        "dataIndex": 5,
-        "score": 1.0,
-        "reason": "[{\"\u8BC4\u4F30\u6307\u6807\":\"\u56DE\u590D\u957F\u5EA6\u68C0\u67E5\",\"\u8BC4\u4F30\u7406\u7531\":\"hello, \u4E07\u5723\u8282 \u7684\u56DE\u590D\u957F\u5EA6\u8D85\u8FC75\u4E2A\u5B57\u7B26\"},{\"\u8BC4\u4F30\u6307\u6807\":\"\u76F8\u4F3C\u5EA6\u68C0\u67E5level1\",\"\u8BC4\u4F30\u7406\u7531\":\"\u76F8\u4F3C\u5EA6\u4E3A0.0000\uFF0C\u5C0F\u4E8E\u9608\u503C0.5000\"},{\"\u8BC4\u4F30\u6307\u6807\":\"\u5F02\u5E38\u6D4B\u8BD5\",\"\u8BC4\u4F30\u7406\u7531\":\"Error: \/ by zero\"}]",
-        "startTime": 1764241320894,
-        "endTime": 1764241320983,
-        "timeCost": 56,
-        "scorerResults": [{
-            "dataIndex": 5,
-            "metric": "\u56DE\u590D\u957F\u5EA6\u68C0\u67E5",
-            "score": 1.0,
-            "scoreRate": 1.0,
-            "totalScore": 1.0,
-            "reason": "hello, \u4E07\u5723\u8282 \u7684\u56DE\u590D\u957F\u5EA6\u8D85\u8FC75\u4E2A\u5B57\u7B26",
-            "extra": null,
-            "statTime": 1764241320894,
-            "endTime": 1764241320894,
-            "timeCost": 0,
-            "success": true,
-            "pass": true,
-            "threshold": 0.0,
-            "star": false
-        }, {
-            "dataIndex": 5,
-            "metric": "\u76F8\u4F3C\u5EA6\u68C0\u67E5level1",
-            "score": 0.0,
-            "scoreRate": 0.0,
-            "totalScore": 1.0,
-            "reason": "\u76F8\u4F3C\u5EA6\u4E3A0.0000\uFF0C\u5C0F\u4E8E\u9608\u503C0.5000",
-            "extra": {"similarity": 0.0, "similarityThreshold": 0.5},
-            "statTime": 1764241320927,
-            "endTime": 1764241320983,
-            "timeCost": 56,
-            "success": true,
-            "pass": true,
-            "threshold": 0.0,
-            "star": false
-        }, {
-            "dataIndex": 5,
-            "metric": "\u5F02\u5E38\u6D4B\u8BD5",
-            "score": 0.0,
-            "scoreRate": 0.0,
-            "totalScore": 1.0,
-            "reason": "Error: \/ by zero",
-            "extra": null,
-            "statTime": 0,
-            "endTime": 0,
-            "timeCost": 0,
-            "success": false,
-            "pass": false,
-            "threshold": 0.0,
-            "star": false
-        }],
-        "success": true,
-        "pass": true,
-        "threshold": 1.0,
-        "scoreStrategyName": "\u6700\u5927\u5F97\u5206\u7387\u7B56\u7565"
-    },
-    "extra": null
-}, {
-    "dataIndex": 6,
-    "inputData": {"dataIndex": 6, "inputItem": {"query": "hello, \u4E07\u5723\u8282", "type": "1"}},
-    "apiCompletionResult": {
-        "dataIndex": 6,
-        "resultItem": {"response": "Mock response for hello, \u4E07\u5723\u8282"},
-        "startTime": 1764241320611,
-        "endTime": 1764241320611,
-        "timeCost": 0,
-        "success": true
-    },
-    "evalResult": {
-        "dataIndex": 6,
-        "score": 1.0,
-        "reason": "[{\"\u8BC4\u4F30\u6307\u6807\":\"\u56DE\u590D\u957F\u5EA6\u68C0\u67E5\",\"\u8BC4\u4F30\u7406\u7531\":\"hello, \u4E07\u5723\u8282 \u7684\u56DE\u590D\u957F\u5EA6\u8D85\u8FC75\u4E2A\u5B57\u7B26\"},{\"\u8BC4\u4F30\u6307\u6807\":\"\u76F8\u4F3C\u5EA6\u68C0\u67E5level1\",\"\u8BC4\u4F30\u7406\u7531\":\"\u76F8\u4F3C\u5EA6\u4E3A0.0000\uFF0C\u5C0F\u4E8E\u9608\u503C0.5000\"},{\"\u8BC4\u4F30\u6307\u6807\":\"\u5F02\u5E38\u6D4B\u8BD5\",\"\u8BC4\u4F30\u7406\u7531\":\"Error: \/ by zero\"}]",
-        "startTime": 1764241320915,
-        "endTime": 1764241320983,
-        "timeCost": 56,
-        "scorerResults": [{
-            "dataIndex": 6,
-            "metric": "\u56DE\u590D\u957F\u5EA6\u68C0\u67E5",
-            "score": 1.0,
-            "scoreRate": 1.0,
-            "totalScore": 1.0,
-            "reason": "hello, \u4E07\u5723\u8282 \u7684\u56DE\u590D\u957F\u5EA6\u8D85\u8FC75\u4E2A\u5B57\u7B26",
-            "extra": null,
-            "statTime": 1764241320915,
-            "endTime": 1764241320915,
-            "timeCost": 0,
-            "success": true,
-            "pass": true,
-            "threshold": 0.0,
-            "star": false
-        }, {
-            "dataIndex": 6,
-            "metric": "\u76F8\u4F3C\u5EA6\u68C0\u67E5level1",
-            "score": 0.0,
-            "scoreRate": 0.0,
-            "totalScore": 1.0,
-            "reason": "\u76F8\u4F3C\u5EA6\u4E3A0.0000\uFF0C\u5C0F\u4E8E\u9608\u503C0.5000",
-            "extra": {"similarity": 0.0, "similarityThreshold": 0.5},
-            "statTime": 1764241320927,
-            "endTime": 1764241320983,
-            "timeCost": 56,
-            "success": true,
-            "pass": true,
-            "threshold": 0.0,
-            "star": false
-        }, {
-            "dataIndex": 6,
-            "metric": "\u5F02\u5E38\u6D4B\u8BD5",
-            "score": 0.0,
-            "scoreRate": 0.0,
-            "totalScore": 1.0,
-            "reason": "Error: \/ by zero",
-            "extra": null,
-            "statTime": 0,
-            "endTime": 0,
-            "timeCost": 0,
-            "success": false,
-            "pass": false,
-            "threshold": 0.0,
-            "star": false
-        }],
-        "success": true,
-        "pass": true,
-        "threshold": 1.0,
-        "scoreStrategyName": "\u6700\u5927\u5F97\u5206\u7387\u7B56\u7565"
-    },
-    "extra": null
-}, {
-    "dataIndex": 7,
-    "inputData": {"dataIndex": 7, "inputItem": {"query": "hello, \u9664\u5915", "type": "1"}},
-    "apiCompletionResult": {
-        "dataIndex": 7,
-        "resultItem": {"response": "Mock response for hello, \u9664\u5915"},
-        "startTime": 1764241320611,
-        "endTime": 1764241320611,
-        "timeCost": 0,
-        "success": true
-    },
-    "evalResult": {
-        "dataIndex": 7,
-        "score": 1.0,
-        "reason": "[{\"\u8BC4\u4F30\u6307\u6807\":\"\u56DE\u590D\u957F\u5EA6\u68C0\u67E5\",\"\u8BC4\u4F30\u7406\u7531\":\"hello, \u9664\u5915 \u7684\u56DE\u590D\u957F\u5EA6\u8D85\u8FC75\u4E2A\u5B57\u7B26\"},{\"\u8BC4\u4F30\u6307\u6807\":\"\u76F8\u4F3C\u5EA6\u68C0\u67E5level1\",\"\u8BC4\u4F30\u7406\u7531\":\"\u76F8\u4F3C\u5EA6\u4E3A0.0000\uFF0C\u5C0F\u4E8E\u9608\u503C0.5000\"},{\"\u8BC4\u4F30\u6307\u6807\":\"\u5F02\u5E38\u6D4B\u8BD5\",\"\u8BC4\u4F30\u7406\u7531\":\"Error: \/ by zero\"}]",
-        "startTime": 1764241320924,
-        "endTime": 1764241320983,
-        "timeCost": 56,
-        "scorerResults": [{
-            "dataIndex": 7,
-            "metric": "\u56DE\u590D\u957F\u5EA6\u68C0\u67E5",
-            "score": 1.0,
-            "scoreRate": 1.0,
-            "totalScore": 1.0,
-            "reason": "hello, \u9664\u5915 \u7684\u56DE\u590D\u957F\u5EA6\u8D85\u8FC75\u4E2A\u5B57\u7B26",
-            "extra": null,
-            "statTime": 1764241320924,
-            "endTime": 1764241320924,
-            "timeCost": 0,
-            "success": true,
-            "pass": true,
-            "threshold": 0.0,
-            "star": false
-        }, {
-            "dataIndex": 7,
-            "metric": "\u76F8\u4F3C\u5EA6\u68C0\u67E5level1",
-            "score": 0.0,
-            "scoreRate": 0.0,
-            "totalScore": 1.0,
-            "reason": "\u76F8\u4F3C\u5EA6\u4E3A0.0000\uFF0C\u5C0F\u4E8E\u9608\u503C0.5000",
-            "extra": {"similarity": 0.0, "similarityThreshold": 0.5},
-            "statTime": 1764241320927,
-            "endTime": 1764241320983,
-            "timeCost": 56,
-            "success": true,
-            "pass": true,
-            "threshold": 0.0,
-            "star": false
-        }, {
-            "dataIndex": 7,
-            "metric": "\u5F02\u5E38\u6D4B\u8BD5",
-            "score": 0.0,
-            "scoreRate": 0.0,
-            "totalScore": 1.0,
-            "reason": "Error: \/ by zero",
-            "extra": null,
-            "statTime": 0,
-            "endTime": 0,
-            "timeCost": 0,
-            "success": false,
-            "pass": false,
-            "threshold": 0.0,
-            "star": false
-        }],
-        "success": true,
-        "pass": true,
-        "threshold": 1.0,
-        "scoreStrategyName": "\u6700\u5927\u5F97\u5206\u7387\u7B56\u7565"
-    },
-    "extra": null
-}, {
-    "dataIndex": 8,
-    "inputData": {"dataIndex": 8, "inputItem": {"query": "hello, \u5EFA\u519B\u8282", "type": "1"}},
-    "apiCompletionResult": {
-        "dataIndex": 8,
-        "resultItem": {"response": "Mock response for hello, \u5EFA\u519B\u8282"},
-        "startTime": 1764241320611,
-        "endTime": 1764241320611,
-        "timeCost": 0,
-        "success": true
-    },
-    "evalResult": {
-        "dataIndex": 8,
-        "score": 1.0,
-        "reason": "[{\"\u8BC4\u4F30\u6307\u6807\":\"\u56DE\u590D\u957F\u5EA6\u68C0\u67E5\",\"\u8BC4\u4F30\u7406\u7531\":\"hello, \u5EFA\u519B\u8282 \u7684\u56DE\u590D\u957F\u5EA6\u8D85\u8FC75\u4E2A\u5B57\u7B26\"},{\"\u8BC4\u4F30\u6307\u6807\":\"\u76F8\u4F3C\u5EA6\u68C0\u67E5level1\",\"\u8BC4\u4F30\u7406\u7531\":\"\u76F8\u4F3C\u5EA6\u4E3A0.0000\uFF0C\u5C0F\u4E8E\u9608\u503C0.5000\"},{\"\u8BC4\u4F30\u6307\u6807\":\"\u5F02\u5E38\u6D4B\u8BD5\",\"\u8BC4\u4F30\u7406\u7531\":\"Error: \/ by zero\"}]",
-        "startTime": 1764241320924,
-        "endTime": 1764241320983,
-        "timeCost": 54,
-        "scorerResults": [{
-            "dataIndex": 8,
-            "metric": "\u56DE\u590D\u957F\u5EA6\u68C0\u67E5",
-            "score": 1.0,
-            "scoreRate": 1.0,
-            "totalScore": 1.0,
-            "reason": "hello, \u5EFA\u519B\u8282 \u7684\u56DE\u590D\u957F\u5EA6\u8D85\u8FC75\u4E2A\u5B57\u7B26",
-            "extra": null,
-            "statTime": 1764241320924,
-            "endTime": 1764241320924,
-            "timeCost": 0,
-            "success": true,
-            "pass": true,
-            "threshold": 0.0,
-            "star": false
-        }, {
-            "dataIndex": 8,
-            "metric": "\u76F8\u4F3C\u5EA6\u68C0\u67E5level1",
-            "score": 0.0,
-            "scoreRate": 0.0,
-            "totalScore": 1.0,
-            "reason": "\u76F8\u4F3C\u5EA6\u4E3A0.0000\uFF0C\u5C0F\u4E8E\u9608\u503C0.5000",
-            "extra": {"similarity": 0.0, "similarityThreshold": 0.5},
-            "statTime": 1764241320929,
-            "endTime": 1764241320983,
-            "timeCost": 54,
-            "success": true,
-            "pass": true,
-            "threshold": 0.0,
-            "star": false
-        }, {
-            "dataIndex": 8,
-            "metric": "\u5F02\u5E38\u6D4B\u8BD5",
-            "score": 0.0,
-            "scoreRate": 0.0,
-            "totalScore": 1.0,
-            "reason": "Error: \/ by zero",
-            "extra": null,
-            "statTime": 0,
-            "endTime": 0,
-            "timeCost": 0,
-            "success": false,
-            "pass": false,
-            "threshold": 0.0,
-            "star": false
-        }],
-        "success": true,
-        "pass": true,
-        "threshold": 1.0,
-        "scoreStrategyName": "\u6700\u5927\u5F97\u5206\u7387\u7B56\u7565"
-    },
-    "extra": null
-}, {
-    "dataIndex": 9,
-    "inputData": {"dataIndex": 9, "inputItem": {"query": "hello, \u56FD\u5E86\u8282", "type": "1"}},
-    "apiCompletionResult": {
-        "dataIndex": 9,
-        "resultItem": {"response": "Mock response for hello, \u56FD\u5E86\u8282"},
-        "startTime": 1764241320611,
-        "endTime": 1764241320611,
-        "timeCost": 0,
-        "success": true
-    },
-    "evalResult": {
-        "dataIndex": 9,
-        "score": 1.0,
-        "reason": "[{\"\u8BC4\u4F30\u6307\u6807\":\"\u56DE\u590D\u957F\u5EA6\u68C0\u67E5\",\"\u8BC4\u4F30\u7406\u7531\":\"hello, \u56FD\u5E86\u8282 \u7684\u56DE\u590D\u957F\u5EA6\u8D85\u8FC75\u4E2A\u5B57\u7B26\"},{\"\u8BC4\u4F30\u6307\u6807\":\"\u76F8\u4F3C\u5EA6\u68C0\u67E5level1\",\"\u8BC4\u4F30\u7406\u7531\":\"\u76F8\u4F3C\u5EA6\u4E3A0.0000\uFF0C\u5C0F\u4E8E\u9608\u503C0.5000\"},{\"\u8BC4\u4F30\u6307\u6807\":\"\u5F02\u5E38\u6D4B\u8BD5\",\"\u8BC4\u4F30\u7406\u7531\":\"Error: \/ by zero\"}]",
-        "startTime": 1764241320924,
-        "endTime": 1764241320983,
-        "timeCost": 54,
-        "scorerResults": [{
-            "dataIndex": 9,
-            "metric": "\u56DE\u590D\u957F\u5EA6\u68C0\u67E5",
-            "score": 1.0,
-            "scoreRate": 1.0,
-            "totalScore": 1.0,
-            "reason": "hello, \u56FD\u5E86\u8282 \u7684\u56DE\u590D\u957F\u5EA6\u8D85\u8FC75\u4E2A\u5B57\u7B26",
-            "extra": null,
-            "statTime": 1764241320924,
-            "endTime": 1764241320924,
-            "timeCost": 0,
-            "success": true,
-            "pass": true,
-            "threshold": 0.0,
-            "star": false
-        }, {
-            "dataIndex": 9,
-            "metric": "\u76F8\u4F3C\u5EA6\u68C0\u67E5level1",
-            "score": 0.0,
-            "scoreRate": 0.0,
-            "totalScore": 1.0,
-            "reason": "\u76F8\u4F3C\u5EA6\u4E3A0.0000\uFF0C\u5C0F\u4E8E\u9608\u503C0.5000",
-            "extra": {"similarity": 0.0, "similarityThreshold": 0.5},
-            "statTime": 1764241320929,
-            "endTime": 1764241320983,
-            "timeCost": 54,
-            "success": true,
-            "pass": true,
-            "threshold": 0.0,
-            "star": false
-        }, {
-            "dataIndex": 9,
-            "metric": "\u5F02\u5E38\u6D4B\u8BD5",
-            "score": 0.0,
-            "scoreRate": 0.0,
-            "totalScore": 1.0,
-            "reason": "Error: \/ by zero",
-            "extra": null,
-            "statTime": 0,
-            "endTime": 0,
-            "timeCost": 0,
-            "success": false,
-            "pass": false,
-            "threshold": 0.0,
-            "star": false
-        }],
-        "success": true,
-        "pass": true,
-        "threshold": 1.0,
-        "scoreStrategyName": "\u6700\u5927\u5F97\u5206\u7387\u7B56\u7565"
-    },
-    "extra": null
-}];
-const metricsData = {
-    "counterName": "basicCountResult",
-    "type": 0,
-    "typeName": "\u57FA\u7840\u7EDF\u8BA1",
-    "passRate": 1.0,
-    "unPassRate": 0.0,
-    "completionErrorRate": 0.0,
-    "completionSuccessRate": 1.0,
-    "evalErrorRate": 0.0,
-    "evalSuccessRate": 1.0,
-    "passCount": 10,
-    "unPassCount": 0,
-    "totalCount": 10,
-    "completionErrorCount": 0,
-    "completionSuccessCount": 10,
-    "evalErrorCount": 0,
-    "evalSuccessCount": 10,
-    "completionAvgTimeCost": 0.2,
-    "completionMinTimeCost": 0,
-    "completionMaxTimeCost": 1,
-    "completionTP99TimeCost": 1,
-    "completionTP95TimeCost": 1,
-    "completionTP90TimeCost": 1,
-    "completionTP80TimeCost": 0,
-    "completionTP70TimeCost": 0,
-    "completionTP60TimeCost": 0,
-    "completionTP50TimeCost": 0,
-    "evalAvgTimeCost": 65.6,
-    "evalMinTimeCost": 8,
-    "evalMaxTimeCost": 242,
-    "minScore": 1.0,
-    "maxScore": 1.0,
-    "avgScore": 1.0,
-    "tp99Score": 1.0,
-    "tp95Score": 1.0,
-    "tp90Score": 1.0,
-    "tp80Score": 1.0,
-    "tp70Score": 1.0,
-    "tp60Score": 1.0,
-    "tp50Score": 1.0,
-    "scoreStdDev": 0.0,
-    "llmTokenCounts": [{
-        "model": "deepseek-chat",
-        "inToken": 2621,
-        "outToken": 630,
-        "totalToken": 3251,
-        "inTokenPrice": 0.010484,
-        "outTokenPrice": 0.007863,
-        "totalTokenPrice": 0.018347000000000002
-    }]
+    // Cached DOM elements
+    elements: {},
+    // Search functionality
+    search: {
+        input: null,
+        clearBtn: null,
+        keyword: '',
+        debounceTimer: null
+    }
 };
-const attributeCountResult = {
-    "counterName": "attributeCountResult",
-    "overallAttribution": [{
-        "issueName": "\u7CFB\u7EDF\u5F02\u5E38",
-        "caseIds": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    }, {
-        "issueName": "\u76F8\u4F3C\u5EA6\u4F4E",
-        "caseIds": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    }, {"issueName": "\u56DE\u590D\u8FC7\u957F", "caseIds": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}]
-};
-const attributeCountResultV2 = {
-    "counterName": "attributeCountResultV2",
-    "categories": [{
-        "categoryName": "\u7CFB\u7EDF\u5F02\u5E38",
-        "categoryCode": "",
-        "issues": [{
-            "issueName": "\u9664\u96F6\u9519\u8BEF\u5BFC\u81F4\u7CFB\u7EDF\u5D29\u6E83",
-            "issueCode": "",
-            "confidence": 0.95,
-            "sentiment": "NEG",
-            "caseIds": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-            "representative": "\u56DE\u590D\u957F\u5EA6\u5408\u683C\u4F46\u76F8\u4F3C\u5EA6\u4E3A\u96F6\uFF0C\u4E14\u5747\u51FA\u73B0\u9664\u96F6\u5F02\u5E38\u3002"
-        }]
-    }]
-};
-let currentFilter = 'all';
-let selectedCase = null;
-let passChart, distChart, tpChart;
-// 统一小数点后位数
-let toFixedNumber = 2;
-let toPriceFixedNumber = 6;
 
-/* ---------- 初始化 ---------- */
-function init() {
+/* ---------- Initialization ---------- */
+function initializeApp() {
+    // Cache DOM elements
+    cacheDOMElements();
+
+    // Initialize event listeners
+    setupEventListeners();
+
+    // Initial render
     renderCaseList();
     renderOverview();
-    // 等待50ms后执行,目的是等待json预览框组件渲染完成,不然不展示数据
+
+    // Handle URL parameters after a short delay to ensure JSON viewer is ready
     setTimeout(() => {
-        // 处理 URL 跳转
-        jumpByUrlParam();
+        handleUrlNavigation();
     }, 50);
 }
 
-/* ---------- 搜索相关 ---------- */
-const searchInput = document.getElementById('caseSearch');
-const clearBtn = document.getElementById('clearSearch');
-let keyword = '';
+function cacheDOMElements() {
+    AppState.elements = {
+        caseSearch: document.getElementById('caseSearch'),
+        clearSearch: document.getElementById('clearSearch'),
+        caseList: document.getElementById('caseList'),
+        caseCount: document.getElementById('caseCount'),
+        overviewContent: document.getElementById('overviewContent'),
+        detailContent: document.getElementById('detailContent'),
+        attributeContent: document.getElementById('attributeContent'),
+        attributeV2Panel: document.getElementById('attributeV2Panel'),
+        copyTip: document.getElementById('copyTip')
+    };
 
-/* 监听输入 + 清空 */
-searchInput.addEventListener('input', e => {
-    keyword = e.target.value.trim();
-    renderCaseList();
-});
-clearBtn.addEventListener('click', () => {
-    keyword = '';
-    searchInput.value = '';
-    renderCaseList();
-});
+    // Search elements
+    AppState.search.input = AppState.elements.caseSearch;
+    AppState.search.clearBtn = AppState.elements.clearSearch;
+}
 
-/* ===== 多条件过滤（& | ! ）===== */
-function matchKeyword(item, kw) {
-    if (!kw) return true;                       // 空关键词 = 全过
-    const str = [
-        '#' + item.inputData.dataIndex,
+function setupEventListeners() {
+    // Search input with debouncing
+    AppState.search.input.addEventListener('input', debounce((e) => {
+        AppState.search.keyword = e.target.value.trim();
+        renderCaseList();
+    }, 300));
+
+    AppState.search.clearBtn.addEventListener('click', clearSearch);
+
+    // Search tip functionality
+    const tipBtn = document.getElementById('searchTipBtn');
+    const tipPop = document.getElementById('searchTipPop');
+    const tipClose = document.getElementById('tipClose');
+
+    if (tipBtn && tipPop && tipClose) {
+        tipBtn.onclick = () => tipPop.classList.toggle('show');
+        tipClose.onclick = () => tipPop.classList.remove('show');
+
+        document.addEventListener('click', (e) => {
+            if (!tipPop.contains(e.target) && e.target !== tipBtn) {
+                tipPop.classList.remove('show');
+            }
+        });
+    }
+
+    // Attribute menu functionality
+    setupAttributeMenu();
+}
+
+function setupAttributeMenu() {
+    const attrTrigger = document.getElementById('attrTrigger');
+    const attrMenu = document.getElementById('attrMenu');
+
+    if (attrTrigger && attrMenu) {
+        attrTrigger.onclick = function () {
+            attrMenu.style.display = attrMenu.style.display === 'block' ? 'none' : 'block';
+        };
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function (e) {
+            if (!attrTrigger.contains(e.target) && !attrMenu.contains(e.target)) {
+                attrMenu.style.display = 'none';
+            }
+        });
+    }
+}
+
+/* ---------- Utility Functions ---------- */
+function debounce(func, wait) {
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(AppState.search.debounceTimer);
+            func(...args);
+        };
+        clearTimeout(AppState.search.debounceTimer);
+        AppState.search.debounceTimer = setTimeout(later, wait);
+    };
+}
+
+function clearSearch() {
+    AppState.search.keyword = '';
+    AppState.search.input.value = '';
+    renderCaseList();
+}
+
+function formatNumber(value, decimals = AppState.config.decimalPlaces) {
+    return typeof value === 'number' ? value.toFixed(decimals) : '-';
+}
+
+function formatPrice(value) {
+    return formatNumber(value, AppState.config.priceDecimalPlaces);
+}
+
+function formatTime(ms) {
+    return typeof ms === 'number' ? `${formatNumber(ms)}ms` : '-';
+}
+
+function formatPercentage(value) {
+    return typeof value === 'number' ? `${formatNumber(value * 100)}%` : '-';
+}
+
+/* ---------- Search and Filter Functions ---------- */
+function createSearchMatcher(keyword) {
+    if (!keyword) return () => true;
+
+    const searchString = keyword.toLowerCase();
+
+    // For complex search expressions with &, |, ! operators
+    if (searchString.includes('&') || searchString.includes('|') || searchString.includes('!') || searchString.includes('(')) {
+        return createComplexMatcher(keyword);
+    }
+
+    // Simple keyword matching
+    return (item) => {
+        const searchContent = [
+            `#${item.inputData.dataIndex}`,
+            JSON.stringify(item.inputData?.inputItem || ''),
+            JSON.stringify(item.apiCompletionResult?.resultItem || ''),
+            item.evalResult?.reason || ''
+        ].join(' ').toLowerCase();
+
+        return searchContent.includes(searchString);
+    };
+}
+
+function createComplexMatcher(keyword) {
+    try {
+        const tokens = tokenizeSearchExpression(keyword);
+        const ast = parseSearchExpression(tokens);
+        return (item) => evaluateSearchAST(ast, item);
+    } catch (e) {
+        // Fallback to simple matching on syntax error
+        const simpleKeyword = keyword.toLowerCase();
+        return (item) => {
+            const searchContent = [
+                `#${item.inputData.dataIndex}`,
+                JSON.stringify(item.inputData?.inputItem || ''),
+                JSON.stringify(item.apiCompletionResult?.resultItem || ''),
+                item.evalResult?.reason || ''
+            ].join(' ').toLowerCase();
+
+            return searchContent.includes(simpleKeyword);
+        };
+    }
+}
+
+function tokenizeSearchExpression(expression) {
+    return expression
+        .replace(/\(/g, ' ( ')
+        .replace(/\)/g, ' ) ')
+        .split(/\s+/)
+        .filter(Boolean)
+        .map(token => token.toLowerCase());
+}
+
+function parseSearchExpression(tokens) {
+    let index = 0;
+
+    const peek = () => tokens[index];
+    const consume = () => tokens[index++];
+
+    const parseExpression = () => {
+        let left = parseTerm();
+        while (peek() === '|') {
+            consume();
+            left = {type: 'OR', left, right: parseTerm()};
+        }
+        return left;
+    };
+
+    const parseTerm = () => {
+        let left = parseFactor();
+        while (peek() === '&') {
+            consume();
+            left = {type: 'AND', left, right: parseFactor()};
+        }
+        return left;
+    };
+
+    const parseFactor = () => {
+        if (peek() === '!') {
+            consume();
+            return {type: 'NOT', operand: parseFactor()};
+        }
+        if (peek() === '(') {
+            consume();
+            const expr = parseExpression();
+            consume(); // consume ')'
+            return expr;
+        }
+        return {type: 'TERM', value: consume()};
+    };
+
+    return parseExpression();
+}
+
+function evaluateSearchAST(node, item) {
+    const searchContent = [
+        `#${item.inputData.dataIndex}`,
         JSON.stringify(item.inputData?.inputItem || ''),
         JSON.stringify(item.apiCompletionResult?.resultItem || ''),
         item.evalResult?.reason || ''
     ].join(' ').toLowerCase();
 
-    /* 1. 词法 */
-    const tokens = kw
-        .replace(/\(/g, ' ( ')
-        .replace(/\)/g, ' ) ')
-        .split(/\s+/)
-        .filter(Boolean)
-        .map(t => t.toLowerCase());
-
-    /* 2. 递归下降解析 */
-    let idx = 0;
-    const parse = () => {
-        const peek = () => tokens[idx];
-        const consume = () => tokens[idx++];
-
-        const parseExpr = () => {
-            let left = parseTerm();
-            while (peek() === '|') {
-                consume();
-                left = {op: '|', left, right: parseTerm()};
-            }
-            return left;
-        };
-        const parseTerm = () => {
-            let left = parseFactor();
-            while (peek() === '&') {
-                consume();
-                left = {op: '&', left, right: parseFactor()};
-            }
-            return left;
-        };
-        const parseFactor = () => {
-            if (peek() === '!') {
-                consume();
-                return {op: '!', right: parseFactor()};
-            }
-            if (peek() === '(') {
-                consume();
-                const e = parseExpr();
-                consume();
-                return e;
-            }
-            return {op: 'term', val: consume()};
-        };
-        return parseExpr();
-    };
-
-    /* 3. 求值 */
-    const evalAST = (node) => {
-        switch (node.op) {
-            case 'term':
-                return str.includes(node.val);
-            case '&':
-                return evalAST(node.left) && evalAST(node.right);
-            case '|':
-                return evalAST(node.left) || evalAST(node.right);
-            case '!':
-                return !evalAST(node.right);
-            default:
-                return false;
-        }
-    };
-
-    try {
-        const ast = parse();
-        return evalAST(ast);
-    } catch (e) {
-        /* 语法错误时退回到普通包含匹配 */
-        return str.includes(kw.toLowerCase());
+    switch (node.type) {
+        case 'TERM':
+            return searchContent.includes(node.value);
+        case 'AND':
+            return evaluateSearchAST(node.left, item) && evaluateSearchAST(node.right, item);
+        case 'OR':
+            return evaluateSearchAST(node.left, item) || evaluateSearchAST(node.right, item);
+        case 'NOT':
+            return !evaluateSearchAST(node.operand, item);
+        default:
+            return false;
     }
 }
 
-/* 重写原来的 renderCaseList（只改列表生成部分） */
+/* ---------- Case List Rendering ---------- */
 function renderCaseList() {
-    const listBox = document.getElementById('caseList');
-    /* 1. 先按原过滤器筛一遍 */
-    let data = currentFilter === 'all'
-        ? evaluationData
-        : evaluationData.filter(d => d.evalResult && d.evalResult.pass === (currentFilter === 'pass'));
+    const {caseList, caseCount} = AppState.elements;
 
-    /* 2. 再按关键词二次筛选 */
-    // 简单搜索
-    // if (keyword) {
-    //     data = data.filter(item => {
-    //         const input = JSON.stringify(item.inputData?.inputItem || '');
-    //         const apiResult = JSON.stringify(item.apiCompletionResult?.resultItem || '');
-    //         const reason = item.evalResult?.reason || '';
-    //         return (`#${item.inputData.dataIndex} ${input} ${apiResult} ${reason}`).toLowerCase()
-    //             .includes(keyword.toLowerCase());
-    //     });
-    // }
+    // Filter data based on current filter and search
+    const filteredData = filterCaseData();
 
-    // 多条件搜索
-    if (keyword) {
-        data = data.filter(item => matchKeyword(item, keyword));
-    }
+    // Update case count
+    caseCount.textContent = filteredData.length || 0;
 
-    // 统计筛选后用例数量
-    document.getElementById('caseCount').textContent = data?.length || 0;
-
-    if (!data.length) {
-        listBox.innerHTML = '<div style="padding:12px;font-size:13px;color:#909399">无匹配用例</div>';
+    if (filteredData.length === 0) {
+        caseList.innerHTML = '<div style="padding:12px;font-size:13px;color:#909399">无匹配用例</div>';
         return;
     }
 
-    /* 3. 生成 DOM，支持高亮 */
-    listBox.innerHTML = data.map(item => {
+    // Generate and render case list
+    caseList.innerHTML = generateCaseListHTML(filteredData);
+}
+
+function filterCaseData() {
+    // Apply status filter
+    let filteredData = AppState.currentFilter === 'all'
+        ? evaluationData
+        : evaluationData.filter(item =>
+            item.evalResult && item.evalResult.pass === (AppState.currentFilter === 'pass')
+        );
+
+    // Apply search filter
+    if (AppState.search.keyword) {
+        const searchMatcher = createSearchMatcher(AppState.search.keyword);
+        filteredData = filteredData.filter(searchMatcher);
+    }
+
+    return filteredData;
+}
+
+function generateCaseListHTML(data) {
+    const {keyword} = AppState.search;
+    const {selectedCase} = AppState;
+
+    return data.map(item => {
         const evalResult = item.evalResult || {};
-        const pass = evalResult.pass;
-        const success = evalResult.success;
-        const score = typeof evalResult.score === 'number' ? evalResult.score.toFixed(toFixedNumber) : '-';
+        const statusInfo = getStatusInfo(evalResult);
+        const score = formatNumber(evalResult.score);
 
-        let statusClass, statusText, metricClass;
-        if (pass === true) {
-            statusClass = 'pass';
-            statusText = '通过';
-            metricClass = 'good';
-        } else if (success === true) {
-            statusClass = 'fail';
-            statusText = '未通过';
-            metricClass = 'bad';
-        } else {
-            statusClass = 'evalerror';
-            statusText = '评测出错';
-            metricClass = 'evalerror';
-        }
-
-        /* 高亮函数 */
-        const hl = txt => keyword
-            ? txt.replace(new RegExp(`(${keyword})`, 'gi'), '<span class="highlight">$1</span>')
-            : txt;
+        const isSelected = selectedCase?.dataIndex === item.dataIndex;
+        const highlightedIndex = highlightText(`#${item.inputData.dataIndex}`, keyword);
 
         return `
-          <div class="case-item ${selectedCase?.dataIndex === item.dataIndex ? 'active' : ''}"
+          <div class="case-item ${isSelected ? 'active' : ''}"
                onclick="selectCase(${item.dataIndex})">
-            <div class="case-title">${hl('#' + item.inputData.dataIndex)}</div>
+            <div class="case-title">${highlightedIndex}</div>
             <div class="case-status">
-              <span class="status-dot ${statusClass}"></span>
-              <span>${statusText}</span>
-              <span class="metric-value ${metricClass}">${score}</span>
+              <span class="status-dot ${statusInfo.class}"></span>
+              <span>${statusInfo.text}</span>
+              <span class="metric-value ${statusInfo.metricClass}">${score}</span>
             </div>
           </div>`;
     }).join('');
 }
 
-/* ---------- URL dataIndex参数快速定位 ---------- */
-function jumpByUrlParam() {
-    const params = new URLSearchParams(location.search);
-    const idx = params.get('dataIndex');
-    if (idx == null) return;               // 没有参数就跳过
-    const target = evaluationData.find(d => String(d.dataIndex) === idx);
-    if (!target) return;                   // 数据里找不到也跳过
-
-    currentFilter = 'all';                 // 先保证“全部”过滤器
-    selectedCase = target;                 // 设定当前选中
-    renderCaseList();                      // 重刷左侧列表（会标亮）
-    renderDetail();                        // 刷右侧详情
+function getStatusInfo(evalResult) {
+    if (evalResult.pass === true) {
+        return {class: 'pass', text: '通过', metricClass: 'good'};
+    } else if (evalResult.success === true) {
+        return {class: 'fail', text: '未通过', metricClass: 'bad'};
+    } else {
+        return {class: 'evalerror', text: '评测出错', metricClass: 'evalerror'};
+    }
 }
 
-/* ---------- 总览 ---------- */
+function highlightText(text, keyword) {
+    if (!keyword) return text;
+    return text.replace(new RegExp(`(${keyword})`, 'gi'), '<span class="highlight">$1</span>');
+}
+
+/* ---------- URL Navigation ---------- */
+function handleUrlNavigation() {
+    const params = new URLSearchParams(location.search);
+    const dataIndex = params.get('dataIndex');
+
+    if (dataIndex == null) return;
+
+    const targetCase = evaluationData.find(d => String(d.dataIndex) === dataIndex);
+    if (!targetCase) return;
+
+    navigateToCase(targetCase);
+}
+
+function navigateToCase(targetCase) {
+    AppState.currentFilter = 'all';
+    AppState.selectedCase = targetCase;
+    renderCaseList();
+    renderDetail();
+}
+
+function updateUrlWithCurrentCase() {
+    if (!AppState.selectedCase) return;
+
+    const url = new URL(location.href);
+    url.searchParams.set('dataIndex', AppState.selectedCase.inputData.dataIndex);
+    window.history.replaceState(null, '', url);
+}
+
+/* ---------- Overview Rendering ---------- */
 function renderOverview() {
-    setActiveBtn('overviewBtn');
+    setActiveButton('overviewBtn');
     showPanel('overview');
 
-    // 安全获取 metricsData 字段，避免 null/undefined 报错
-    const md = metricsData || {};
+    const metrics = metricsData || {};
 
-    function safePercent(val) {
-        return typeof val === 'number' ? (val * 100).toFixed(toFixedNumber) + '%' : '-';
-    }
+    // Render metric grids
+    renderBasicMetrics(metrics);
+    renderCompletionMetrics(metrics);
+    renderEvaluationMetrics(metrics);
+    renderLLMMetrics(metrics);
 
-    function safeInt(val) {
-        return typeof val === 'number' ? val : '-';
-    }
-
-    function safeFloat(val) {
-        return typeof val === 'number' ? val.toFixed(toFixedNumber) : '-';
-    }
-
-    function safePriceFloat(val) {
-        return typeof val === 'number' ? val.toFixed(toPriceFixedNumber) : '-';
-    }
-
-
-    function safeMs(val) {
-        return typeof val === 'number' ? val.toFixed(toFixedNumber) + 'ms' : '-';
-    }
-
-    /* 指标卡片 */
-    const basic = [
-        {label: '通过率', v: safePercent(md.passRate), c: 'good'},
-        {label: '未通过率', v: safePercent(md.unPassRate), c: 'bad'},
-        {label: '通过数', v: safeInt(md.passCount), c: 'good'},
-        {label: '未通过数', v: safeInt(md.unPassCount), c: 'bad'},
-        {label: '总数', v: safeInt(md.totalCount), c: 'default'}
-    ];
-    renderGrid('basicMetricsGrid', basic);
-
-    const cp = [
-        {label: '成功率', v: safePercent(md.completionSuccessRate), c: 'good'},
-        {label: '错误率', v: safePercent(md.completionErrorRate), c: 'bad'},
-        {label: '平均耗时', v: safeMs(md.completionAvgTimeCost), c: 'default'},
-        {label: '最小耗时', v: safeMs(md.completionMinTimeCost), c: 'default'},
-        {label: '最大耗时', v: safeMs(md.completionMaxTimeCost), c: 'default'},
-        {label: 'TP99', v: safeMs(md.completionTP99TimeCost), c: 'default'},
-        {label: 'TP95', v: safeMs(md.completionTP95TimeCost), c: 'default'},
-        {label: 'TP90', v: safeMs(md.completionTP90TimeCost), c: 'default'},
-        {label: 'TP80', v: safeMs(md.completionTP80TimeCost), c: 'default'},
-        {label: 'TP70', v: safeMs(md.completionTP70TimeCost), c: 'default'},
-        {label: 'TP60', v: safeMs(md.completionTP60TimeCost), c: 'default'},
-        {label: 'TP50', v: safeMs(md.completionTP50TimeCost), c: 'default'}
-    ];
-    renderGrid('completionMetricsGrid', cp);
-
-    const ev = [
-        {label: '成功率', v: safePercent(md.evalSuccessRate), c: 'good'},
-        {label: '错误率', v: safePercent(md.evalErrorRate), c: 'bad'},
-        {label: '平均耗时', v: safeMs(md.evalAvgTimeCost), c: 'default'},
-        {label: '最小耗时', v: safeMs(md.evalMinTimeCost), c: 'default'},
-        {label: '最大耗时', v: safeMs(md.evalMaxTimeCost), c: 'default'},
-        {label: '最小分数', v: safeFloat(md.minScore), c: 'default'},
-        {label: '最大分数', v: safeFloat(md.maxScore), c: 'default'},
-        {label: '平均分数', v: safeFloat(md.avgScore), c: 'default'},
-        {label: '分数标准差', v: safeFloat(md.scoreStdDev), c: 'default'},
-        {label: 'TP99', v: safeFloat(md.tp99Score), c: 'default'},
-        {label: 'TP95', v: safeFloat(md.tp95Score), c: 'default'},
-        {label: 'TP90', v: safeFloat(md.tp90Score), c: 'default'},
-        {label: 'TP80', v: safeFloat(md.tp80Score), c: 'default'},
-        {label: 'TP70', v: safeFloat(md.tp70Score), c: 'default'},
-        {label: 'TP60', v: safeFloat(md.tp60Score), c: 'default'},
-        {label: 'TP50', v: safeFloat(md.tp50Score), c: 'default'}
-    ];
-
-    renderGrid('evalMetricsGrid', ev);
-
-    const llm = [];
-    md?.llmTokenCounts.map(m => {
-        const model = m.model
-        llm.push({label: model + "输入token", v: safeInt(m.inToken), c: 'default'});
-        llm.push({label: model + "输出token", v: safeInt(m.outToken), c: 'default'});
-        llm.push({label: model + "总token", v: safeInt(m.totalToken), c: 'default'});
-        llm.push({label: model + "输入token费用", v: safePriceFloat(m.inTokenPrice), c: 'default'});
-        llm.push({label: model + "输出token费用", v: safePriceFloat(m.outTokenPrice), c: 'default'});
-        llm.push({label: model + "总token费用", v: safePriceFloat(m.totalTokenPrice), c: 'default'});
-    })
-
-    renderGrid('LLMMetricsGrid', llm);
-
-    /* 图表 */
-    renderCharts();
+    // Render charts
+    renderOverviewCharts();
 }
 
-function renderGrid(id, list) {
-    document.getElementById(id).innerHTML = list.map(m => `
+function renderBasicMetrics(metrics) {
+    const basicMetrics = [
+        {label: '通过率', value: formatPercentage(metrics.passRate), class: 'good'},
+        {label: '未通过率', value: formatPercentage(metrics.unPassRate), class: 'bad'},
+        {label: '通过数', value: metrics.passCount, class: 'good'},
+        {label: '未通过数', value: metrics.unPassCount, class: 'bad'},
+        {label: '总数', value: metrics.totalCount, class: 'default'}
+    ];
+
+    renderMetricGrid('basicMetricsGrid', basicMetrics);
+}
+
+function renderCompletionMetrics(metrics) {
+    const completionMetrics = [
+        {label: '成功率', value: formatPercentage(metrics.completionSuccessRate), class: 'good'},
+        {label: '错误率', value: formatPercentage(metrics.completionErrorRate), class: 'bad'},
+        {label: '平均耗时', value: formatTime(metrics.completionAvgTimeCost), class: 'default'},
+        {label: '最小耗时', value: formatTime(metrics.completionMinTimeCost), class: 'default'},
+        {label: '最大耗时', value: formatTime(metrics.completionMaxTimeCost), class: 'default'},
+        {label: 'TP99', value: formatTime(metrics.completionTP99TimeCost), class: 'default'},
+        {label: 'TP95', value: formatTime(metrics.completionTP95TimeCost), class: 'default'},
+        {label: 'TP90', value: formatTime(metrics.completionTP90TimeCost), class: 'default'},
+        {label: 'TP80', value: formatTime(metrics.completionTP80TimeCost), class: 'default'},
+        {label: 'TP70', value: formatTime(metrics.completionTP70TimeCost), class: 'default'},
+        {label: 'TP60', value: formatTime(metrics.completionTP60TimeCost), class: 'default'},
+        {label: 'TP50', value: formatTime(metrics.completionTP50TimeCost), class: 'default'}
+    ];
+
+    renderMetricGrid('completionMetricsGrid', completionMetrics);
+}
+
+function renderEvaluationMetrics(metrics) {
+    const evaluationMetrics = [
+        {label: '成功率', value: formatPercentage(metrics.evalSuccessRate), class: 'good'},
+        {label: '错误率', value: formatPercentage(metrics.evalErrorRate), class: 'bad'},
+        {label: '平均耗时', value: formatTime(metrics.evalAvgTimeCost), class: 'default'},
+        {label: '最小耗时', value: formatTime(metrics.evalMinTimeCost), class: 'default'},
+        {label: '最大耗时', value: formatTime(metrics.evalMaxTimeCost), class: 'default'},
+        {label: '最小分数', value: formatNumber(metrics.minScore), class: 'default'},
+        {label: '最大分数', value: formatNumber(metrics.maxScore), class: 'default'},
+        {label: '平均分数', value: formatNumber(metrics.avgScore), class: 'default'},
+        {label: '分数标准差', value: formatNumber(metrics.scoreStdDev), class: 'default'},
+        {label: 'TP99', value: formatNumber(metrics.tp99Score), class: 'default'},
+        {label: 'TP95', value: formatNumber(metrics.tp95Score), class: 'default'},
+        {label: 'TP90', value: formatNumber(metrics.tp90Score), class: 'default'},
+        {label: 'TP80', value: formatNumber(metrics.tp80Score), class: 'default'},
+        {label: 'TP70', value: formatNumber(metrics.tp70Score), class: 'default'},
+        {label: 'TP60', value: formatNumber(metrics.tp60Score), class: 'default'},
+        {label: 'TP50', value: formatNumber(metrics.tp50Score), class: 'default'}
+    ];
+
+    renderMetricGrid('evalMetricsGrid', evaluationMetrics);
+}
+
+function renderLLMMetrics(metrics) {
+    const llmMetrics = [];
+
+    metrics?.llmTokenCounts?.forEach(model => {
+        llmMetrics.push(
+            {label: `${model.model}输入token`, value: model.inToken, class: 'default'},
+            {label: `${model.model}输出token`, value: model.outToken, class: 'default'},
+            {label: `${model.model}总token`, value: model.totalToken, class: 'default'},
+            {label: `${model.model}输入token费用`, value: formatPrice(model.inTokenPrice), class: 'default'},
+            {label: `${model.model}输出token费用`, value: formatPrice(model.outTokenPrice), class: 'default'},
+            {label: `${model.model}总token费用`, value: formatPrice(model.totalTokenPrice), class: 'default'}
+        );
+    });
+
+    renderMetricGrid('LLMMetricsGrid', llmMetrics);
+}
+
+function renderMetricGrid(elementId, metrics) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+
+    element.innerHTML = metrics.map(metric => `
       <div class="metric-card">
-        <div class="metric-label">${m.label}</div>
-        <div class="metric-value ${m.c}">${m.v}</div>
+        <div class="metric-label">${metric.label}</div>
+        <div class="metric-value ${metric.class}">${metric.value}</div>
       </div>`).join('');
 }
 
-function renderCharts() {
-    // 趋势：简单按 index 分段模拟
+function renderOverviewCharts() {
+    renderPassRateTrendChart();
+    renderDistributionChart();
+    renderTPMetricsChart();
+}
+
+function renderPassRateTrendChart() {
     const step = Math.ceil(evaluationData.length / 10);
-    const labels = [], passRates = [];
+    const labels = [];
+    const passRates = [];
+
     for (let i = 0; i < evaluationData.length; i += step) {
         const slice = evaluationData.slice(i, i + step);
-        // 过滤时保证 evalResult 存在且 pass 字段有意义
-        const pass = slice.filter(d => d.evalResult && d.evalResult.pass === true).length;
+        const passCount = slice.filter(d => d.evalResult && d.evalResult.pass === true).length;
+        const passRate = slice.length ? (passCount / slice.length * 100) : 0;
+
         labels.push(`${i + 1}-${Math.min(i + step, evaluationData.length)}`);
-        passRates.push(slice.length ? (pass / slice.length * 100).toFixed(toFixedNumber) : '0.0');
+        passRates.push(formatNumber(passRate));
     }
-    const lineCfg = {
+
+    const config = {
         type: 'line',
-        data: {labels, datasets: [{label: '通过率%', data: passRates, borderColor: '#67c23a', tension: 0.3}]},
-        options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {display: false}}}
+        data: {
+            labels,
+            datasets: [{
+                label: '通过率%',
+                data: passRates,
+                borderColor: '#67c23a',
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {legend: {display: false}}
+        }
     };
 
-    // 饼图数据安全处理
-    const md = metricsData || {};
-    const pieCfg = {
+    destroyChart('passChart');
+    AppState.charts.passChart = new Chart(document.getElementById('passTrendChart'), config);
+}
+
+function renderDistributionChart() {
+    const metrics = metricsData || {};
+    const config = {
         type: 'pie',
         data: {
             labels: ['通过', '未通过'],
             datasets: [{
                 data: [
-                    typeof md.passCount === 'number' ? md.passCount : 0,
-                    typeof md.unPassCount === 'number' ? md.unPassCount : 0
+                    typeof metrics.passCount === 'number' ? metrics.passCount : 0,
+                    typeof metrics.unPassCount === 'number' ? metrics.unPassCount : 0
                 ],
                 backgroundColor: ['#67c23a', '#f56c6c']
             }]
         },
-        options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {position: 'bottom'}}}
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {legend: {position: 'bottom'}}
+        }
     };
-    if (passChart) passChart.destroy();
-    if (distChart) distChart.destroy();
-    passChart = new Chart(document.getElementById('passTrendChart'), lineCfg);
-    distChart = new Chart(document.getElementById('distChart'), pieCfg);
 
-    /* TP 指标安全处理 */
-    const mdTp = metricsData || {};
-    const tps = [], tpLabels = [];
-
-    function safeTp(val) {
-        return typeof val === 'number' ? val : 0;
-    }
-
-    tpLabels.push('TP50');
-    tps.push(safeTp(mdTp.completionTP50TimeCost));
-    tpLabels.push('TP60');
-    tps.push(safeTp(mdTp.completionTP60TimeCost));
-    tpLabels.push('TP70');
-    tps.push(safeTp(mdTp.completionTP70TimeCost));
-    tpLabels.push('TP80');
-    tps.push(safeTp(mdTp.completionTP80TimeCost));
-    tpLabels.push('TP90');
-    tps.push(safeTp(mdTp.completionTP90TimeCost));
-    tpLabels.push('TP95');
-    tps.push(safeTp(mdTp.completionTP95TimeCost));
-    tpLabels.push('TP99');
-    tps.push(safeTp(mdTp.completionTP99TimeCost));
-    const tpCfg = {
-        type: 'line',
-        data: {labels: tpLabels, datasets: [{label: '耗时(ms)%', data: tps, borderColor: '#67c23a', tension: 0.3}]},
-        options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {display: false}}}
-    };
-    if (tpChart) tpChart.destroy();
-    tpChart = new Chart(document.getElementById('tpChart'), tpCfg);
+    destroyChart('distChart');
+    AppState.charts.distChart = new Chart(document.getElementById('distChart'), config);
 }
 
-function filterCases(f) {
-    currentFilter = f;
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
+function renderTPMetricsChart() {
+    const metrics = metricsData || {};
+    const tpLabels = ['TP50', 'TP60', 'TP70', 'TP80', 'TP90', 'TP95', 'TP99'];
+    const tpValues = [
+        metrics.completionTP50TimeCost || 0,
+        metrics.completionTP60TimeCost || 0,
+        metrics.completionTP70TimeCost || 0,
+        metrics.completionTP80TimeCost || 0,
+        metrics.completionTP90TimeCost || 0,
+        metrics.completionTP95TimeCost || 0,
+        metrics.completionTP99TimeCost || 0
+    ];
+
+    const config = {
+        type: 'line',
+        data: {
+            labels: tpLabels,
+            datasets: [{
+                label: '耗时(ms)',
+                data: tpValues,
+                borderColor: '#67c23a',
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {legend: {display: false}}
+        }
+    };
+
+    destroyChart('tpChart');
+    AppState.charts.tpChart = new Chart(document.getElementById('tpChart'), config);
+}
+
+function destroyChart(chartName) {
+    if (AppState.charts[chartName]) {
+        AppState.charts[chartName].destroy();
+        AppState.charts[chartName] = null;
+    }
+}
+
+function filterCases(filterType) {
+    AppState.currentFilter = filterType;
+    setActiveButton(filterType);
     renderCaseList();
+}
+
+function setActiveButton(buttonId) {
+    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+
+    let targetButton;
+    switch (buttonId) {
+        case 'all':
+        case 'pass':
+        case 'fail':
+            targetButton = document.querySelector(`[onclick="filterCases('${buttonId}')"]`);
+            break;
+        case 'overviewBtn':
+            targetButton = document.getElementById('overviewBtn');
+            break;
+        case 'attrTrigger':
+            targetButton = document.getElementById('attrTrigger');
+            break;
+        default:
+            return;
+    }
+
+    if (targetButton) {
+        targetButton.classList.add('active');
+    }
 }
 
 /* ----- 归因V2 ----- */
 function renderAttributeV2() {
-    setActiveBtn('attrTrigger');
+    setActiveButton('attrTrigger');
     showPanel('attributeV2Panel');
     const box = document.getElementById('attributeV2Content');
     const data = attributeCountResultV2;
@@ -1291,7 +742,7 @@ function renderCards(list) {
 
 /* ----------归因 ----------- */
 function renderAttribute() {
-    setActiveBtn('attrTrigger');
+    setActiveButton('attrTrigger');
     showPanel('attribute');
     const box = document.getElementById('attributeContent');
     if (!attributeCountResult || !attributeCountResult.overallAttribution?.length) {
@@ -1406,23 +857,23 @@ function renderAttributionChart(list) {
 
 /* ---------- 跳转到case详情页 ---------- */
 function jumpToCase(dataIndex) {
-    currentFilter = 'all';      // 保证节点不被过滤
-    renderCaseList();           // 重刷左侧列表
-    selectedCase = evaluationData.find(c => c.dataIndex === dataIndex);
-    renderDetail();             // 右侧详情
+    AppState.currentFilter = 'all';      // 保证节点不被过滤
+    renderCaseList();                   // 重刷左侧列表
+    AppState.selectedCase = evaluationData.find(c => c.dataIndex === dataIndex);
+    renderDetail();                     // 右侧详情
     showPanel('detail');
-    renderCaseList();           // 再次高亮当前行
+    renderCaseList();                   // 再次高亮当前行
     // 把当前已选用例重新写回 URL（保持与 selectCase 一致）
-    if (selectedCase) {
+    if (AppState.selectedCase) {
         const url = new URL(location.href);
-        url.searchParams.set('dataIndex', selectedCase.inputData.dataIndex);
+        url.searchParams.set('dataIndex', AppState.selectedCase.inputData.dataIndex);
         window.history.replaceState(null, '', url);
     }
 }
 
 /* ---------- 详情 ---------- */
 function selectCase(idx) {
-    selectedCase = evaluationData.find(d => d.dataIndex === idx);
+    AppState.selectedCase = evaluationData.find(d => d.dataIndex === idx);
     renderCaseList();
     renderDetail();
     /* === 新增：自动同步 URL === */
@@ -1432,13 +883,13 @@ function selectCase(idx) {
 }
 
 function renderDetail() {
-    if (!selectedCase) return;
+    if (!AppState.selectedCase) return;
     showPanel('detail');
-    const d = selectedCase;
+    const d = AppState.selectedCase;
     const evalResult = d.evalResult || {};
     const pass = evalResult.pass;
     const success = evalResult.success;
-    const score = typeof evalResult.score === 'number' ? evalResult.score.toFixed(toFixedNumber) : '-';
+    const score = formatNumber(evalResult.score);
     const scoreStrategyName = evalResult.scoreStrategyName || '-';
     const threshold = evalResult.threshold || '-';
 
@@ -1549,7 +1000,7 @@ function evalDiv(r) {
     }
     // 安全处理各字段
     const pass = r.pass === true;
-    const score = typeof r.score === 'number' ? r.score.toFixed(toFixedNumber) : '-';
+    const score = formatNumber(r.score);
     const reason = r.reason || '-';
     const scoreStrategyName = r.scoreStrategyName || '-';
     const threshold = typeof r.threshold === 'number' ? r.threshold : '-';
@@ -1585,7 +1036,7 @@ function scorerDiv(list) {
                             <span>${s.metric}${s.star ? '<span style="color:#ff4757;margin-left:4px">必过</span>' : ''}</span>
                             <span>${s.success ? '' : '<span style="color:#ff4757;margin-left:4px">评测出错</span>'}</span>
                         </div>
-                        <span class="metric-badge ${pass ? 'pass' : 'fail'}">${pass ? '通过' : '未通过'} | 阈值 ${s.threshold} | 得分率 ${s.scoreRate.toFixed(toFixedNumber)} | 得分 ${s.score.toFixed(toFixedNumber)} / ${s.totalScore.toFixed(toFixedNumber)}</span>
+                        <span class="metric-badge ${pass ? 'pass' : 'fail'}">${pass ? '通过' : '未通过'} | 阈值 ${s.threshold} | 得分率 ${formatNumber(s.scoreRate)} | 得分 ${formatNumber(s.score)} / ${formatNumber(s.totalScore)}</span>
                       </div>
                       <div style="font-size:12px;color:#606266;margin:5px 0">${s.reason}</div>
                       ${s.extra ? (() => {
@@ -1631,9 +1082,9 @@ function parseValue(raw) {
         // 3. 转换
         const map = {};
         arr.forEach(it => {
-            const weightScore = (it.score * it.weight).toFixed(toFixedNumber);
+            const weightScore = formatNumber(it.score * it.weight);
             map[it.name] = {
-                '分数 | 权重 | 权重分数': `${it.score.toFixed(toFixedNumber)} | ${it.weight.toFixed(toFixedNumber)} | ${weightScore}`,
+                '分数 | 权重 | 权重分数': `${formatNumber(it.score)} | ${formatNumber(it.weight)} | ${weightScore}`,
                 '默认分数': it.defaultScore,
                 '理由': it.reason,
                 '类型': it.star ? '必过检查' : '普通检查',
@@ -1674,7 +1125,7 @@ function escapeHtml(str) {
         .replace(/'/g, '&#39;');
 }
 
-init();
+initializeApp();
 
 /* 平滑滚动 */
 document.addEventListener('click', e => {
@@ -1742,10 +1193,4 @@ document.addEventListener('click', e => {
         menu.classList.remove('show');
     }
 });
-
-/* 统一设置高亮 */
-function setActiveBtn(btnId) {
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(btnId)?.classList.add('active');
-}
 
