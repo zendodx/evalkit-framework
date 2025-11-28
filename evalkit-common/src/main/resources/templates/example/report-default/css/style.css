@@ -826,6 +826,14 @@ canvas {
     border-color: #ccc;
 }
 
+.attr-chart-group {
+    display: flex;
+    /* 水平垂直居中 */
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+}
+
 .attr-chart {
     margin-bottom: 16px;
 }

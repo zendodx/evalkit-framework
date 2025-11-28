@@ -633,14 +633,22 @@
               <input id="attrSearchV2" class="attr-search" placeholder="搜索issue/类别"
                      oninput="filterAttrV2()" />
             </div>
-            <!-- 图表 -->
-            <div class="attr-chart"><canvas id="attrChartV2" height="240"></canvas></div>
+            <!-- 图表, 一级分类占比和issue占比-->
+            <div class="attr-chart-group">
+                <div class="attr-chart">
+                    <canvas id="attrChartV2Category" height="240"></canvas>
+                </div>
+                <div class="attr-chart">
+                    <canvas id="attrChartV2Issue" height="240"></canvas>
+                </div>
+            </div>
             <!-- 卡片列表 -->
             <div id="attrCardsV2" class="attr-cards"></div>
             <div id="copyTipV2" class="copy-tip">已复制</div>`;
 
         renderCards(list);
-        renderAttributionChartV2(list);
+        renderAttributionChartV2Category(list);
+        renderAttributionChartV2Issue(list);
 
         /* ---- 工具函数挂载 ---- */
         window.filterAttrV2 = () => {
@@ -661,9 +669,61 @@
         };
     }
 
-    function renderAttributionChartV2(list) {
+    let attributionChartV2Issue = null;
+    let attributionChartV2Category = null;
+
+    /* 归因V2渲染一级分类占比图表 */
+    function renderAttributionChartV2Category(list) {
+        const canvas = document.getElementById('attrChartV2Category');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        /* 1. 数据准备 */
+        const categoryNames = list.map(l => l.categoryName);
+        const categoryCounts = list.map(l => l.caseIds.length);
+
+        /* 2. 如果之前实例化过，先销毁 */
+        if (attributionChartV2Category) {
+            attributionChartV2Category.destroy();
+            attributionChartV2Category = null;
+        }
+
+        /* 3. 创建新图 */
+        attributionChartV2Category = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: categoryNames,
+                datasets: [{
+                    data: categoryCounts,
+                    backgroundColor: [
+                        '#67c23a', '#f56c6c', '#909399', '#409eff',
+                        '#e6a23c', '#7232d6', '#ff6032'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {position: 'bottom'},
+                    title: {
+                        display: true,
+                        text: '问题分类占比',
+                        font: {size: 13},
+                        padding: {bottom: 10}
+                    }
+                }
+            }
+        });
+    }
+
+    /* 归因V2渲染Issue占比图表 */
+    function renderAttributionChartV2Issue(list) {
         /* 0. 确保 canvas 已经存在于 DOM */
-        const canvas = document.getElementById('attrChartV2');
+        const canvas = document.getElementById('attrChartV2Issue');
         if (!canvas) return;               // 保险：不存在就退出
         const ctx = canvas.getContext('2d');
         if (!ctx) return;                  // 保险：取不到 2d 上下文也退出
@@ -673,13 +733,13 @@
         const issueCounts = list.map(l => l.caseIds.length);
 
         /* 2. 如果之前实例化过，先销毁 */
-        if (attributionChart) {
-            attributionChart.destroy();
-            attributionChart = null;
+        if (attributionChartV2Issue) {
+            attributionChartV2Issue.destroy();
+            attributionChartV2Issue = null;
         }
 
         /* 3. 创建新图 */
-        attributionChart = new Chart(ctx, {
+        attributionChartV2Issue = new Chart(ctx, {
             type: 'pie',
             data: {
                 labels: issueNames,
@@ -696,7 +756,15 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {legend: {position: 'bottom'}}
+                plugins: {
+                    legend: {position: 'bottom'},
+                    title: {
+                        display: true,
+                        text: '具体问题占比',
+                        font: {size: 13},
+                        padding: {bottom: 10}
+                    }
+                }
             }
         });
     }
@@ -851,7 +919,15 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {legend: {position: 'bottom'}}
+                plugins: {
+                    legend: {position: 'bottom'},
+                    title: {
+                        display: true,
+                        text: '具体问题占比',
+                        font: {size: 13},
+                        padding: {bottom: 10}
+                    }
+                }
             }
         });
     }
