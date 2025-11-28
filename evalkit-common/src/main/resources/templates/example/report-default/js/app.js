@@ -1712,3 +1712,31 @@ document.addEventListener('click', e => {
         tipPop.classList.remove('show');
     }
 });
+
+/* 归因菜单开关 */
+function toggleAttrMenu() {
+    const menu = document.getElementById('attrMenu');
+    menu.classList.toggle('show');
+}
+
+/* 选择归因版本 */
+function chooseAttr(version) {
+    // 关闭菜单
+    document.getElementById('attrMenu').classList.remove('show');
+    // 高亮当前按钮（可选）
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('attrTrigger').classList.add('active');
+
+    // 执行对应渲染
+    if (version === 'old') renderAttribute();
+    if (version === 'v2') renderAttributeV2();
+}
+
+/* 点击页面其他地方关闭菜单 */
+document.addEventListener('click', e => {
+    const menu = document.getElementById('attrMenu');
+    const trigger = document.getElementById('attrTrigger');
+    if (!menu.contains(e.target) && e.target !== trigger) {
+        menu.classList.remove('show');
+    }
+});

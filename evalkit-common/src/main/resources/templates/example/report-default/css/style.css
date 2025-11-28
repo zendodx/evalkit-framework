@@ -66,16 +66,17 @@ body {
     border-color: #409eff;
 }
 
+/* 搜索框 */
 .filter-search {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
     margin-top: 3px;
 }
 
 .search-box {
     position: relative;
-    width: 220px;
+    width: 200px;
 }
 
 #caseSearch {
@@ -125,16 +126,15 @@ body {
 
 /* 搜索框提示按钮 */
 .search-tip-btn {
-    width: 24px;
-    height: 24px;
-    margin-left: 6px;
+    width: 18px;
+    height: 18px;
     border: 1px solid #d9ecff;
     background: #ecf5ff;
     color: #409eff;
     border-radius: 50%;
     cursor: pointer;
     font-size: 12px;
-    line-height: 24px;
+    line-height: 0;
     text-align: center;
     transition: all .2s;
 }
@@ -144,6 +144,7 @@ body {
     color: #fff;
 }
 
+/* 搜索框提示弹出框 */
 .search-tip-pop {
     position: absolute;
     top: 36px;
@@ -902,4 +903,38 @@ canvas {
 
 .copy-bubble.show {
     opacity: 1;
+}
+
+/* ----- 左侧顶部工具栏扩展按钮 ----- */
+.attr-select {
+    position: relative; /* 作为下拉菜单的包含块 */
+}
+
+#attrMenu {
+    position: absolute;
+    left: 0;
+    top: 100%;
+    margin-top: 4px;
+    width: 100px;
+    background: #fff;
+    border: 1px solid #dcdfe6;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .15);
+    display: none; /* 默认隐藏 */
+    z-index: 999;
+}
+
+#attrMenu.show {
+    display: block;
+}
+
+.attr-item {
+    padding: 6px 10px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background .2s;
+}
+
+.attr-item:hover {
+    background: #f5f7fa;
 }
