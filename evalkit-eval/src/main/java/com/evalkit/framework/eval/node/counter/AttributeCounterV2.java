@@ -1,5 +1,6 @@
 package com.evalkit.framework.eval.node.counter;
 
+import com.evalkit.framework.common.utils.convert.TypeConvertUtils;
 import com.evalkit.framework.eval.model.CountResult;
 import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.model.EvalResult;
@@ -113,7 +114,7 @@ public class AttributeCounterV2 extends Counter {
     }
 
     /**
-     * 批量提取
+     * 批量提取Extracted
      *
      * @param list 输入用例列表
      * @return 提取结果
@@ -184,18 +185,38 @@ public class AttributeCounterV2 extends Counter {
         if (StringUtils.isEmpty(reply)) return res;
         String[] lines = reply.split("\n");
         for (String line : lines) {
-            String[] arr = line.split("\\|", 5);
-            if (arr.length < 5) continue;
-            int idx = Integer.parseInt(arr[0].trim());
-            CaseInput in = chunk.get(idx);
-            res.add(new Extracted(arr[1], arr[2],
-                    Double.parseDouble(arr[3]),
-                    "NEG".equals(arr[4]) ? Sentiment.NEG : Sentiment.NEUTRAL,
-                    in.getCaseId()));
+            // 解析过程中可能因为格式问题报错返回null,此时跳过
+            Extracted extracted = buildExtractedWithLLMReply(line, chunk);
+            if (extracted != null) {
+                res.add(extracted);
+            }
         }
         // res只保留负面情绪的问题
         res = res.stream().filter(e -> e.sentiment == Sentiment.NEG).collect(Collectors.toList());
         return res;
+    }
+
+    /**
+     * 解析大模型结果构建Extracted
+     */
+    private Extracted buildExtractedWithLLMReply(String line, List<CaseInput> chunk) {
+        String[] arr = line.split("\\|", 5);
+        if (arr.length < 5) {
+            return null;
+        }
+        try {
+            int idx = Integer.parseInt(arr[0].trim());
+            CaseInput in = chunk.get(idx);
+            String category = arr[1].trim();
+            String issue = arr[2].trim();
+            Double confidence = TypeConvertUtils.toDouble(arr[3].trim());
+            Sentiment sentiment = "NEG".equals(arr[4]) ? Sentiment.NEG : Sentiment.NEUTRAL;
+            Long caseId = in.getCaseId();
+            return new Extracted(category, issue, confidence, sentiment, caseId);
+        } catch (Exception e) {
+            log.error("Build extracted with LLM reply failed, error: {}", e.getMessage(), e);
+            return null;
+        }
     }
 
 
