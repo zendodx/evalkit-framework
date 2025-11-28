@@ -1416,6 +1416,12 @@ function jumpToCase(dataIndex) {
     renderDetail();             // 右侧详情
     showPanel('detail');
     renderCaseList();           // 再次高亮当前行
+    // 把当前已选用例重新写回 URL（保持与 selectCase 一致）
+    if (selectedCase) {
+        const url = new URL(location.href);
+        url.searchParams.set('dataIndex', selectedCase.inputData.dataIndex);
+        window.history.replaceState(null, '', url);
+    }
 }
 
 /* ---------- 详情 ---------- */
