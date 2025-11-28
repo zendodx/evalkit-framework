@@ -257,11 +257,17 @@ public class AttributeCounterV2 extends Counter {
                 .toLowerCase();
     }
 
+    /**
+     * 根据dataItem构造归因语料,过滤评估理由为空的用例
+     *
+     * @param dataItems 原数据
+     * @return 归因语料
+     */
     private List<CaseInput> buildInputs(List<DataItem> dataItems) {
         List<CaseInput> list = new ArrayList<>();
         for (DataItem item : dataItems) {
             EvalResult er = item.getEvalResult();
-            if (er != null && StringUtils.isNotBlank(er.getReason())) {
+            if (er != null && StringUtils.isNotEmpty(er.getReason())) {
                 list.add(new CaseInput(item.getDataIndex(), er.getReason()));
                 descriptionCache.put(item.getDataIndex(), er.getReason());
             }
