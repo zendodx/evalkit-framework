@@ -708,11 +708,14 @@
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        /* 1. 数据准备 */
-        const categoryNames = list.map(l => l.categoryName);
-        const categoryCounts = list.map(l => l.caseIds.length);
+        const categoryMap = list.reduce((m, {categoryName, caseIds}) => {
+            m.set(categoryName, (m.get(categoryName) || 0) + caseIds.length);
+            return m;
+        }, new Map());
 
-        /* 2. 如果之前实例化过，先销毁 */
+        const [categoryNames, categoryCounts] = [Array.from(categoryMap.keys()), Array.from(categoryMap.values())];
+
+        /* 如果之前实例化过，先销毁 */
         if (attributionChartV2Category) {
             attributionChartV2Category.destroy();
             attributionChartV2Category = null;
