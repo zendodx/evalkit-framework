@@ -628,18 +628,29 @@ function renderAttributeV2() {
               <h3>问题归因</h3>
               <span class="attribution-stat">共 ${total} 个 Case</span>
             </div>
+            <div class="attr-table-chart">
+                 <!-- 表格, 统计异常分类和问题 -->
+                <div class="attr-table">
+                  <table class="stat-table">
+                    <thead>
+                      <tr><th>异常类别</th><th>问题描述</th><th>问题数</th><th>占比</th></tr>
+                    </thead>
+                    <tbody id="statTableBody"></tbody>
+                  </table>
+                </div>
+                <!-- 图表, 异常分类和issue占比-->
+                <div class="attr-chart-group">
+                    <div class="attr-chart">
+                        <canvas id="attrChartV2Category" height="240"></canvas>
+                    </div>
+                    <div class="attr-chart">
+                        <canvas id="attrChartV2Issue" height="240"></canvas>
+                    </div>
+                </div>
+            </div>
             <div class="attr-toolbar">
               <input id="attrSearchV2" class="attr-search" placeholder="搜索issue/类别"
                      oninput="filterAttrV2()" />
-            </div>
-            <!-- 图表, 一级分类占比和issue占比-->
-            <div class="attr-chart-group">
-                <div class="attr-chart">
-                    <canvas id="attrChartV2Category" height="240"></canvas>
-                </div>
-                <div class="attr-chart">
-                    <canvas id="attrChartV2Issue" height="240"></canvas>
-                </div>
             </div>
             <!-- 卡片列表 -->
             <div id="attrCardsV2" class="attr-cards"></div>
@@ -666,6 +677,24 @@ function renderAttributeV2() {
             setTimeout(() => tip.classList.remove('show'), 1500);
         });
     };
+
+    const flatRows = categories.flatMap(c =>
+        c.issues.map((i, idx) => ({
+            category: idx === 0 ? c.categoryName : '', // 只有首行写类别
+            issue: i.issueName,
+            count: i.caseIds.length,
+            percent: (i.caseIds.length / total * 100).toFixed(1)
+        }))
+    );
+
+    // 一次性插 DOM
+    document.querySelector('#statTableBody').innerHTML = flatRows.map(r => `
+      <tr>
+        <td>${r.category}</td>
+        <td>${r.issue}</td>
+        <td>${r.count}</td>
+        <td>${r.percent}%</td>
+      </tr>`).join('');
 }
 
 let attributionChartV2Issue = null;
@@ -710,7 +739,7 @@ function renderAttributionChartV2Category(list) {
                 legend: {position: 'bottom'},
                 title: {
                     display: true,
-                    text: '问题分类占比',
+                    text: '异常类别占比',
                     font: {size: 13},
                     padding: {bottom: 10}
                 }
@@ -759,7 +788,7 @@ function renderAttributionChartV2Issue(list) {
                 legend: {position: 'bottom'},
                 title: {
                     display: true,
-                    text: '具体问题占比',
+                    text: '问题数量占比',
                     font: {size: 13},
                     padding: {bottom: 10}
                 }
@@ -922,7 +951,7 @@ function renderAttributionChart(list) {
                 legend: {position: 'bottom'},
                 title: {
                     display: true,
-                    text: '具体问题占比',
+                    text: '问题数量占比',
                     font: {size: 13},
                     padding: {bottom: 10}
                 }

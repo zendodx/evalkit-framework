@@ -807,6 +807,11 @@ canvas {
     font-size: 14px;
 }
 
+.stat-table td {
+    padding: 6px;
+    border: 1px solid #e4e7ed;
+}
+
 .attr-toolbar {
     margin-bottom: 12px;
 }
@@ -826,18 +831,90 @@ canvas {
     border-color: #ccc;
 }
 
-.attr-chart-group {
+.attr-table-chart {
     display: flex;
-    /* 水平垂直居中 */
+    gap: 5px;
+    align-items: stretch; /* 等高 */
     justify-content: center;
+    margin-bottom: 15px;
+}
+
+/* ---------- 左侧表格 ---------- */
+.attr-table {
+    flex: 1 1 360px; /* 最小 360px，可再压缩 */
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border: 1px solid #e4e7ed;
+    border-radius: 4px;
+    padding: 12px;
+    height: 100%;
+}
+
+.stat-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    text-align: left;
+}
+
+.stat-table th,
+.stat-table td {
+    padding: 6px 8px;
+    border: 1px solid #e4e7ed;
+}
+
+.stat-table th {
+    background: #f5f7fa;
+    font-weight: 600;
+}
+
+/* 隔行变色 */
+.stat-table tbody tr:nth-child(even) {
+    background: #fafafa;
+}
+
+/* 表格若超高则内部滚动 */
+.stat-table tbody {
+    display: block;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.stat-table thead,
+.stat-table tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+}
+
+/* ---------- 右侧图表 ---------- */
+.attr-chart-group {
+    flex: 2 1 0; /* 占剩余空间 */
+    display: flex;
+    gap: 5px;
     align-items: center;
-    gap: 24px;
+    justify-content: center;
 }
 
 .attr-chart {
-    margin-bottom: 16px;
+    flex: 1 1 220px; /* 单个图最小 220px */
+    background: #fff;
+    border: 1px solid #e4e7ed;
+    border-radius: 4px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
+.attr-chart canvas {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 240px;
+}
+
+/* 归因V2卡片 */
 .attr-cards {
     display: flex;
     flex-direction: column;
