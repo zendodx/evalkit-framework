@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 二级结构：Category -> Issue
+ * 异常分类
  */
 @Data
 public class Category {

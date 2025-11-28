@@ -177,7 +177,7 @@ public class AttributeCounterV2 extends Counter {
     }
 
     /**
-     * 解析回复 -> List<Extracted>
+     * 解析回复
      */
     private List<Extracted> parseReply(String reply, List<CaseInput> chunk) {
         List<Extracted> res = new ArrayList<>();
