@@ -31,21 +31,17 @@ public class LLMSummaryEvalReasonStrategy implements EvalReasonStrategy {
 
     @Override
     public String buildEvalReason(List<ScorerResult> scorerResults) {
-        StringBuilder sb = new StringBuilder();
-        for (ScorerResult scorerResult : scorerResults) {
-            sb.append(scorerResult.getReason()).append(" | ");
-        }
-        String rawReason = sb.toString();
+        String reason = appendRawReason(scorerResults);
         // 如果理由为空则不需要总结
-        if (StringUtils.isEmpty(rawReason)) {
+        if (StringUtils.isEmpty(reason)) {
             return "";
         }
         try {
-            String prompt = sysPrompt + "\n-----输入文本如下----\n" + rawReason;
+            String prompt = sysPrompt + "\n-----输入文本如下----\n" + reason;
             return llmService.chat(prompt);
         } catch (Exception e) {
             log.error("LLMSummaryEvalReasonStrategy build eval reason failed, error:{}", e.getMessage(), e);
-            return sb.toString();
+            return reason;
         }
     }
 

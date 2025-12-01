@@ -1,6 +1,7 @@
 package com.evalkit.framework.eval.node.scorer.strategy;
 
 import com.evalkit.framework.eval.model.ScorerResult;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 
@@ -22,4 +23,24 @@ public interface EvalReasonStrategy {
      * @return 策略名称
      */
     String getStrategyName();
+
+    /**
+     * 拼接原始的评估器理由
+     *
+     * @param scorerResults 评估器结果集合
+     * @return 原始评估理由
+     */
+    default String appendRawReason(List<ScorerResult> scorerResults) {
+        StringBuilder sb = new StringBuilder();
+        int index = 1;
+        for (ScorerResult scorerResult : scorerResults) {
+            String curReason = scorerResult.getReason();
+            if (StringUtils.isEmpty(curReason)) {
+                continue;
+            }
+            sb.append(index).append(". ").append(curReason).append("\n");
+            index++;
+        }
+        return sb.toString();
+    }
 }

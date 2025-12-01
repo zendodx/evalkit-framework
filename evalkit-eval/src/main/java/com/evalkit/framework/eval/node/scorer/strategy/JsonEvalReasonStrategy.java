@@ -20,13 +20,13 @@ public class JsonEvalReasonStrategy implements EvalReasonStrategy {
     public String buildEvalReason(List<ScorerResult> scorerResults) {
         List<Map<String, String>> lastReason = new ArrayList<>();
         for (ScorerResult scorerResult : scorerResults) {
-            String reason = scorerResult.getReason();
-            if (StringUtils.isEmpty(reason)) {
+            String curReason = scorerResult.getReason();
+            if (StringUtils.isEmpty(curReason)) {
                 continue;
             }
             Map<String, String> scorerReasonMap = new LinkedHashMap<>();
             scorerReasonMap.put("Metric", scorerResult.getMetric());
-            scorerReasonMap.put("Reason", reason);
+            scorerReasonMap.put("Reason", curReason);
             lastReason.add(scorerReasonMap);
         }
         if (CollectionUtils.isEmpty(lastReason)) {

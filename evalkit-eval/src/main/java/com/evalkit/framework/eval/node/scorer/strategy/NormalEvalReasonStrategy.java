@@ -12,11 +12,7 @@ import java.util.List;
 public class NormalEvalReasonStrategy implements EvalReasonStrategy {
     @Override
     public String buildEvalReason(List<ScorerResult> scorerResults) {
-        StringBuilder sb = new StringBuilder();
-        for (ScorerResult scorerResult : scorerResults) {
-            sb.append(scorerResult.getReason()).append(" | ");
-        }
-        return sb.toString();
+        return appendRawReason(scorerResults);
     }
 
     @Override
