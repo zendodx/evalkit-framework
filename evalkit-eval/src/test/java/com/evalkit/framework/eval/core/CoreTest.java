@@ -3,7 +3,6 @@ package com.evalkit.framework.eval.core;
 import com.evalkit.framework.common.utils.file.FileUtils;
 import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.common.utils.list.ListUtils;
-import com.evalkit.framework.common.utils.runtime.RuntimeEnvUtils;
 import com.evalkit.framework.common.utils.time.DateUtils;
 import com.evalkit.framework.eval.model.*;
 import com.evalkit.framework.eval.node.api.ApiCompletion;
@@ -26,12 +25,12 @@ import com.evalkit.framework.eval.node.scorer.Scorer;
 import com.evalkit.framework.eval.node.scorer.VectorSimilarityScorer;
 import com.evalkit.framework.eval.node.scorer.config.ScorerConfig;
 import com.evalkit.framework.eval.node.scorer.config.VectorSimilarityScorerConfig;
+import com.evalkit.framework.eval.node.scorer.strategy.JsonEvalReasonStrategy;
+import com.evalkit.framework.eval.node.scorer.strategy.LLMSummaryEvalReasonStrategy;
 import com.evalkit.framework.eval.node.scorer.strategy.MaxScoreRateStrategy;
 import com.evalkit.framework.infra.service.llm.LLMService;
-import com.evalkit.framework.infra.service.llm.LLMServiceFactory;
 import com.evalkit.framework.infra.service.llm.LLMTokenMetrics;
-import com.evalkit.framework.infra.service.llm.config.DeepseekLLMServiceConfig;
-import com.evalkit.framework.infra.service.llm.constants.LLMServiceEnum;
+import com.evalkit.framework.infra.utils.DebugUtils;
 import com.evalkit.framework.workflow.WorkflowBuilder;
 import com.evalkit.framework.workflow.model.WorkflowContext;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -72,18 +71,14 @@ public class CoreTest {
 
     @BeforeEach
     public void init() {
-        String deepSeekToken = RuntimeEnvUtils.getPropertyFromResource("secret.properties", "deepseek-token");
-        DeepseekLLMServiceConfig config = DeepseekLLMServiceConfig.builder()
-                .apiToken(deepSeekToken)
-                .inPrice(4)
-                .outPrice(3)
-                .build();
-        LLMService llmService = LLMServiceFactory.createLLMService(LLMServiceEnum.DEEPSEEK.name(), config);
+        LLMService llmService = DebugUtils.buildLLMService();
 
         begin = new Begin(
                 BeginConfig.builder()
                         .scoreStrategy(new MaxScoreRateStrategy())
                         .threshold(1)
+//                        .evalReasonStrategy(new LLMSummaryEvalReasonStrategy(llmService))
+                        .evalReasonStrategy(new JsonEvalReasonStrategy())
                         .build()
         );
 
@@ -91,7 +86,7 @@ public class CoreTest {
             @Override
             public List<InputData> prepareDataList() {
                 List<InputData> inputDatas = new ArrayList<>();
-                for (int i = 0; i < 5; i++) {
+                for (int i = 0; i < 1; i++) {
                     inputDatas.add(new InputData(1L, JsonUtils.fromJson("{\t\"query\":\"hello, {{holiday}}\",\"type\":\"1\"}", new TypeReference<Map<String, Object>>() {
                     })));
                 }

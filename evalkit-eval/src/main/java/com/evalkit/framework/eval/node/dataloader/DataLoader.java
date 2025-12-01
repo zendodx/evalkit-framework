@@ -9,6 +9,7 @@ import com.evalkit.framework.eval.model.EvalResult;
 import com.evalkit.framework.eval.model.InputData;
 import com.evalkit.framework.eval.node.dataloader.config.DataLoaderConfig;
 import com.evalkit.framework.eval.node.dataloader.injector.DataInjector;
+import com.evalkit.framework.eval.node.scorer.strategy.EvalReasonStrategy;
 import com.evalkit.framework.eval.node.scorer.strategy.ScoreStrategy;
 import com.evalkit.framework.workflow.model.WorkflowContext;
 import com.evalkit.framework.workflow.model.WorkflowNode;
@@ -204,7 +205,8 @@ public abstract class DataLoader extends WorkflowNode {
             List<DataItem> dataItems = WorkflowContextOps.getDataItems(ctx);
             double threshold = WorkflowContextOps.getThreshold(ctx);
             ScoreStrategy scoreStrategy = WorkflowContextOps.getScorerStrategy(ctx);
-            inputDataList.forEach(inputData -> dataItems.add(buildDataItem(inputData.getDataIndex(), inputData, threshold, scoreStrategy)));
+            EvalReasonStrategy evalReasonStrategy = WorkflowContextOps.getEvalReasonStrategy(ctx);
+            inputDataList.forEach(inputData -> dataItems.add(buildDataItem(inputData.getDataIndex(), inputData, threshold, scoreStrategy, evalReasonStrategy)));
             // 开启数据注入后,会将inputData中和DataItem相关的值直接注入到工作流上下文
             if (config.isOpenInjectData()) {
                 DataInjector.batchInject(dataItems, config.isInjectDataIndex(), config.isInjectInputData(), config.isInjectApiCompletionResult(), config.isInjectEvalResult(), config.isInjectExtra());
@@ -219,12 +221,14 @@ public abstract class DataLoader extends WorkflowNode {
     /**
      * 构建数据项,填充评测数据,初始化评测结果
      */
-    protected DataItem buildDataItem(Long dataIndex, InputData inputData, double threshold, ScoreStrategy scoreStrategy) {
+    protected DataItem buildDataItem(Long dataIndex, InputData inputData, double threshold, ScoreStrategy scoreStrategy, EvalReasonStrategy evalReasonStrategy) {
         DataItem dataItem = new DataItem(dataIndex, inputData);
         EvalResult evalResult = new EvalResult();
         evalResult.setThreshold(threshold);
         evalResult.setScoreStrategy(scoreStrategy);
         evalResult.setScoreStrategyName(scoreStrategy.getStrategyName());
+        evalResult.setEvalReasonStrategy(evalReasonStrategy);
+        evalResult.setEvalReasonStrategyName(evalReasonStrategy.getStrategyName());
         dataItem.setEvalResult(evalResult);
         return dataItem;
     }
