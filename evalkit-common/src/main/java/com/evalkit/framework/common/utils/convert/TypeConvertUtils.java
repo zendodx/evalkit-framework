@@ -1,5 +1,10 @@
 package com.evalkit.framework.common.utils.convert;
 
+import com.evalkit.framework.common.utils.json.JsonUtils;
+import com.fasterxml.jackson.core.type.TypeReference;
+
+import java.util.Map;
+
 /**
  * 类型转换工具类
  */
@@ -92,6 +97,23 @@ public final class TypeConvertUtils {
             return (Boolean) obj;
         }
         return Boolean.parseBoolean(String.valueOf(obj).trim());
+    }
+
+    /**
+     * obj转Map
+     *
+     * @param obj 任意对象
+     * @return Map
+     */
+    public static Map<String, Object> toMap(Object obj) {
+        if (obj == null) {
+            return null;
+        }
+        if (obj instanceof Map) {
+            return (Map) obj;
+        }
+        return JsonUtils.fromJson(JsonUtils.toJson(obj), new TypeReference<Map<String, Object>>() {
+        });
     }
 
     /* ======================== 泛型转换 ======================== */
