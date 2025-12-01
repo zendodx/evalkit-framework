@@ -2,6 +2,8 @@ package com.evalkit.framework.eval.node.scorer.strategy;
 
 import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.eval.model.ScorerResult;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -18,10 +20,17 @@ public class JsonEvalReasonStrategy implements EvalReasonStrategy {
     public String buildEvalReason(List<ScorerResult> scorerResults) {
         List<Map<String, String>> lastReason = new ArrayList<>();
         for (ScorerResult scorerResult : scorerResults) {
+            String reason = scorerResult.getReason();
+            if (StringUtils.isEmpty(reason)) {
+                continue;
+            }
             Map<String, String> scorerReasonMap = new LinkedHashMap<>();
-            scorerReasonMap.put("评估指标", scorerResult.getMetric());
-            scorerReasonMap.put("评估理由", scorerResult.getReason());
+            scorerReasonMap.put("Metric", scorerResult.getMetric());
+            scorerReasonMap.put("Reason", reason);
             lastReason.add(scorerReasonMap);
+        }
+        if (CollectionUtils.isEmpty(lastReason)) {
+            return "";
         }
         return JsonUtils.toJson(lastReason);
     }

@@ -4,6 +4,7 @@ import com.evalkit.framework.eval.model.ScorerResult;
 import com.evalkit.framework.infra.service.llm.LLMService;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 
@@ -34,8 +35,13 @@ public class LLMSummaryEvalReasonStrategy implements EvalReasonStrategy {
         for (ScorerResult scorerResult : scorerResults) {
             sb.append(scorerResult.getReason()).append(" | ");
         }
+        String rawReason = sb.toString();
+        // 如果理由为空则不需要总结
+        if (StringUtils.isEmpty(rawReason)) {
+            return "";
+        }
         try {
-            String prompt = sysPrompt + "\n-----输入文本如下----\n" + sb;
+            String prompt = sysPrompt + "\n-----输入文本如下----\n" + rawReason;
             return llmService.chat(prompt);
         } catch (Exception e) {
             log.error("LLMSummaryEvalReasonStrategy build eval reason failed, error:{}", e.getMessage(), e);
