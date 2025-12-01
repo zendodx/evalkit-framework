@@ -1,5 +1,6 @@
 package com.evalkit.framework.eval.node.counter;
 
+import com.evalkit.framework.common.utils.convert.TypeConvertUtils;
 import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.eval.model.CountResult;
 import com.evalkit.framework.eval.model.DataItem;
@@ -107,11 +108,13 @@ public class AttributeCounter extends Counter {
      */
     private List<Pair<Long, String>> extractChunk(List<CaseInput> chunk) {
         StringBuilder sb = new StringBuilder();
-        sb.append("你是一名客服工单分析师，请逐条给出【问题类型】，每条不超过20字；\n")
+        sb.append("你是一名客服工单分析师，请逐条给出【问题类型】；\n")
                 .append("如存在多种现象，用中文'#'分隔；相同现象返回完全一致的关键词。\n")
+                .append("注意: 输出编号必须和输入数据的编号对应\n")
+                .append("注意: 问题类型描述不超过20字\n")
                 .append("输出格式：编号|问题类型\n");
-        for (int i = 0; i < chunk.size(); i++) {
-            sb.append(i).append("|").append(chunk.get(i).getDescription()).append("\n");
+        for (CaseInput caseInput : chunk) {
+            sb.append(caseInput.caseId).append("|").append(caseInput.getDescription()).append("\n");
         }
 
         String reply = llmService.chat(sb.toString());
@@ -126,7 +129,10 @@ public class AttributeCounter extends Counter {
         for (String line : reply.split("\n")) {
             String[] arr = line.split("\\|", 2);
             if (arr.length < 2) continue;
-            int idx = Integer.parseInt(arr[0].trim());
+            int idx = TypeConvertUtils.toInteger(arr[0].trim());
+            if (idx >= chunk.size()) {
+                throw new RuntimeException("Extract chunk failed for index error, index: " + idx + ", chunk size: " + chunk.size());
+            }
             CaseInput in = chunk.get(idx);
             for (String issue : arr[1].split("#")) {
                 issue = issue.trim();

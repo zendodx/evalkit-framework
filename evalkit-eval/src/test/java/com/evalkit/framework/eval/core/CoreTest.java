@@ -77,8 +77,8 @@ public class CoreTest {
                 BeginConfig.builder()
                         .scoreStrategy(new MaxScoreRateStrategy())
                         .threshold(1)
-//                        .evalReasonStrategy(new LLMSummaryEvalReasonStrategy(llmService))
-                        .evalReasonStrategy(new JsonEvalReasonStrategy())
+                        .evalReasonStrategy(new LLMSummaryEvalReasonStrategy(llmService))
+//                        .evalReasonStrategy(new JsonEvalReasonStrategy())
                         .build()
         );
 
