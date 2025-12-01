@@ -649,27 +649,53 @@
                     </div>
                 </div>
             </div>
+            <!-- 工具栏 -->
             <div class="attr-toolbar">
-              <input id="attrSearchV2" class="attr-search" placeholder="搜索issue/类别"
-                     oninput="filterAttrV2()" />
+              <!-- 搜索框 -->
+              <input id="attrSearchV2" class="attr-search" placeholder="搜索issue/类别" oninput="filterAttrV2()" />
+              <!-- 异常类型下拉选择框 -->
+              <select id="categorySelect"  class="category-select" onchange="selectCategory()">
+              </select>
+              <!-- 异常类型问题数量展示 -->
+              <span id="issueCount" class="issue-count"> - </span>
             </div>
             <!-- 卡片列表 -->
             <div id="attrCardsV2" class="attr-cards"></div>
             <div id="copyTipV2" class="copy-tip">已复制</div>`;
 
+        // 渲染下拉选择框选项
+        renderCategorySelectOptions(list);
         renderCards(list);
         renderAttributionChartV2Category(list);
         renderAttributionChartV2Issue(list);
 
         /* ---- 工具函数挂载 ---- */
-        window.filterAttrV2 = () => {
-            const kw = document.getElementById('attrSearchV2').value.trim().toLowerCase();
-            const filtered = list.filter(item =>
-                item.issueName.toLowerCase().includes(kw) ||
-                (item.categoryName && item.categoryName.toLowerCase().includes(kw))
-            );
-            renderCards(filtered);
+        // 当前下拉框选中的类别（空串 = 全部）
+        let selectedCategory = '';
+
+        // 下拉框 change 事件
+        window.selectCategory = () => {
+            selectedCategory = document.getElementById('categorySelect').value.trim().toLowerCase();
+            applyFilter();
         };
+
+        // 搜索框 input 事件
+        window.filterAttrV2 = () => {
+            applyFilter();
+        };
+
+        // 真正只做一次 filter 的地方
+        function applyFilter() {
+            const kw = document.getElementById('attrSearchV2').value.trim().toLowerCase();
+            const filtered = list.filter(item => {
+                // 1. 类别筛选（下拉框）
+                const catOk = !selectedCategory || (item.categoryName && item.categoryName.toLowerCase() === selectedCategory);
+                // 2. 关键字筛选（搜索框）
+                const keyOk = !kw || item.issueName.toLowerCase().includes(kw) || (item.categoryName && item.categoryName.toLowerCase().includes(kw));
+                return catOk && keyOk;   // 交集
+            });
+            renderCards(filtered);
+        }
 
         window.copyCasesV2 = (name, arr) => {
             navigator.clipboard.writeText(arr.join(',')).then(() => {
@@ -696,6 +722,15 @@
         <td>${r.count}</td>
         <td>${r.percent}%</td>
       </tr>`).join('');
+    }
+
+    /* 归因V2渲染下拉选择框异常类型选项 */
+    function renderCategorySelectOptions(list) {
+        let options = list.map((item, idx) => `
+           <option value="${item.categoryName}">${item.categoryName}</option>
+        `).join('');
+        options = `<option value="">全部类别</option>` + options
+        document.getElementById('categorySelect').innerHTML = options;
     }
 
     let attributionChartV2Issue = null;
@@ -839,6 +874,10 @@
           </div>
         </div>`).join('');
         document.getElementById('attrCardsV2').innerHTML = cards;
+
+        // 更新问题数量
+        const caseCount = list.reduce((sum, item) => sum + item.caseIds.length, 0);
+        document.getElementById("issueCount").innerHTML = `共包含 ${list.length} 个问题 | ${caseCount} 个用例`
     }
 
     /* ----------归因 ----------- */
@@ -1302,4 +1341,6 @@
             menu.classList.remove('show');
         }
     });
+
+
 </script>
