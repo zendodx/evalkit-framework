@@ -725,10 +725,27 @@ function renderAttributeV2() {
 
 /* 归因V2渲染下拉选择框异常类型选项 */
 function renderCategorySelectOptions(list) {
-    let options = list.map((item, idx) => `
-           <option value="${item.categoryName}">${item.categoryName}</option>
-        `).join('');
-    options = `<option value="">全部类别</option>` + options
+    // 统计异常类型下的Issue数量
+    const issueMap = new Map();
+    for (const {categoryName} of list) {
+        issueMap.set(categoryName, (issueMap.get(categoryName) || 0) + 1);
+    }
+    const caseMap = new Map();
+    for (const {categoryName, caseIds} of list) {
+        caseMap.set(categoryName, (caseMap.get(categoryName) || 0) + caseIds.length);
+    }
+    // 异常类型名称排序
+    const sorted = [...issueMap.entries()].sort((a, b) =>
+        a[0].localeCompare(b[0], 'zh-CN')
+    );
+    // 渲染
+    const options = ['<option value="">全部类别</option>']
+        .concat(
+            sorted.map(([name, count]) =>
+                `<option value="${name}">${name}（问题数量:${count} | 用例数量:${caseMap.get(name) || 0}）</option>`
+            )
+        )
+        .join('');
     document.getElementById('categorySelect').innerHTML = options;
 }
 

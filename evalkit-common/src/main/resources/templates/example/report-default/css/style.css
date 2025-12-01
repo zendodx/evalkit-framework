@@ -826,6 +826,9 @@ canvas {
     border-radius: 3px;
     margin-top: 5px;
     outline: none;
+    /* 弹出列表最大高度 */
+    max-height: 200px;
+    overflow-y: auto;
 }
 
 .issue-count {
