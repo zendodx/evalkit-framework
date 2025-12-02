@@ -141,9 +141,11 @@ public class AttributeCounterV2 extends Counter {
     private List<Extracted> extractChunk(List<CaseInput> chunk) {
         StringBuilder sb = new StringBuilder();
         sb.append("你是一名资深客服分析经理，请逐条给出【根因类别】+【具体问题】+【置信度0-1】+【情感极性NEG/NEUTRAL】。\n")
+                .append("注意: 输出编号必须和输入数据的编号对应\n")
+                .append("注意: 根因类别描述不超过10个字, 具体问题描述不超过30字\n")
                 .append("输出格式：编号|类别|问题|置信度|极性\n");
-        for (int i = 0; i < chunk.size(); i++) {
-            sb.append(i).append("|").append(chunk.get(i).getDescription()).append("\n");
+        for (CaseInput caseInput : chunk) {
+            sb.append(caseInput.caseId).append("|").append(caseInput.getDescription()).append("\n");
         }
         String reply = llmService.chat(sb.toString());
         return parseReply(reply, chunk);
@@ -203,7 +205,10 @@ public class AttributeCounterV2 extends Counter {
             return null;
         }
         try {
-            int idx = Integer.parseInt(arr[0].trim());
+            int idx = TypeConvertUtils.toInteger(arr[0].trim());
+            if (idx >= chunk.size()) {
+                throw new RuntimeException("Extract chunk failed for index error, index: " + idx + ", chunk size: " + chunk.size());
+            }
             CaseInput in = chunk.get(idx);
             String category = arr[1].trim();
             String issue = arr[2].trim();

@@ -1,6 +1,7 @@
 package com.evalkit.framework.eval.model;
 
-import com.evalkit.framework.common.utils.json.JsonUtils;
+import com.evalkit.framework.eval.node.scorer.strategy.EvalReasonStrategy;
+import com.evalkit.framework.eval.node.scorer.strategy.NormalEvalReasonStrategy;
 import com.evalkit.framework.eval.node.scorer.strategy.ScoreStrategy;
 import com.evalkit.framework.eval.node.scorer.strategy.SumScoreStrategy;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -9,10 +10,7 @@ import lombok.Builder;
 import lombok.Data;
 import org.apache.commons.collections4.CollectionUtils;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
@@ -24,49 +22,56 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class EvalResult {
     /* 默认评估分数计算策略为求和 */
-    private final static ScoreStrategy DEFAULT_SCORE_STRATEGY = new SumScoreStrategy();
+    protected final static ScoreStrategy DEFAULT_SCORE_STRATEGY = new SumScoreStrategy();
     /* 默认评估分数通过阈值 */
-    private final static double DEFAULT_SCORE_THRESHOLD = 0;
+    protected final static double DEFAULT_SCORE_THRESHOLD = 0;
+    /* 默认评估理由构建策略 */
+    protected final static EvalReasonStrategy DEFAULT_EVAL_REASON_STRATEGY = new NormalEvalReasonStrategy();
     /* 数据索引 */
-    private Long dataIndex;
+    protected Long dataIndex;
     /* 评测分数 */
-    private double score;
+    protected double score;
     /* 评测理由,jsonArray格式,可用于归因 */
-    private String reason;
+    protected String reason;
     /* 评测开始时间戳 */
-    private long startTime;
+    protected long startTime;
     /* 评测结束时间戳 */
-    private long endTime;
+    protected long endTime;
     /* 评测耗时 */
-    private long timeCost;
+    protected long timeCost;
     /* 评估器结果列表 */
-    private List<ScorerResult> scorerResults;
+    protected List<ScorerResult> scorerResults;
     /* 评测是否成功 */
-    private boolean success;
+    protected boolean success;
     /* 评测是否通过 */
-    private boolean pass;
+    protected boolean pass;
     /* 评测通过阈值 */
-    private double threshold;
+    protected double threshold;
     /* 评估器分数整合策略 */
     @JsonIgnore
-    private ScoreStrategy scoreStrategy;
-    private String scoreStrategyName;
+    protected ScoreStrategy scoreStrategy;
+    protected String scoreStrategyName;
+    /* 评估器评测理由构建策略 */
+    @JsonIgnore
+    protected EvalReasonStrategy evalReasonStrategy;
+    protected String evalReasonStrategyName;
 
     public EvalResult() {
-        this(new CopyOnWriteArrayList<>(), DEFAULT_SCORE_STRATEGY, DEFAULT_SCORE_THRESHOLD);
+        this(new CopyOnWriteArrayList<>(), DEFAULT_SCORE_STRATEGY, DEFAULT_SCORE_THRESHOLD, DEFAULT_EVAL_REASON_STRATEGY);
     }
 
     public EvalResult(List<ScorerResult> scorerResults) {
-        this(scorerResults, DEFAULT_SCORE_STRATEGY, DEFAULT_SCORE_THRESHOLD);
+        this(scorerResults, DEFAULT_SCORE_STRATEGY, DEFAULT_SCORE_THRESHOLD, DEFAULT_EVAL_REASON_STRATEGY);
     }
 
-    public EvalResult(List<ScorerResult> scorerResults, ScoreStrategy scoreStrategy, double threshold) {
+    public EvalResult(List<ScorerResult> scorerResults, ScoreStrategy scoreStrategy, double threshold, EvalReasonStrategy evalReasonStrategy) {
         this.score = 0;
         this.reason = "";
         this.scorerResults = scorerResults;
         this.scoreStrategy = scoreStrategy;
         this.scoreStrategyName = scoreStrategy.getStrategyName();
         this.threshold = threshold;
+        this.evalReasonStrategy = evalReasonStrategy;
     }
 
     /**
@@ -140,14 +145,6 @@ public class EvalResult {
      * 更新评测理由,汇总各评估器的指标和理由
      */
     private void updateReason() {
-        List<Map<String, String>> lastReason = new ArrayList<>();
-        for (ScorerResult scorerResult : scorerResults) {
-            // 汇总每个评估指标的错误原因,可用于归因分析
-            Map<String, String> scorerReasonMap = new LinkedHashMap<>();
-            scorerReasonMap.put("评估指标", scorerResult.getMetric());
-            scorerReasonMap.put("评估理由", scorerResult.getReason());
-            lastReason.add(scorerReasonMap);
-        }
-        this.reason = JsonUtils.toJson(lastReason);
+        this.reason = evalReasonStrategy.buildEvalReason(scorerResults);
     }
 }

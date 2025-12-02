@@ -3,6 +3,7 @@ package com.evalkit.framework.eval.context;
 import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.eval.model.CountResult;
 import com.evalkit.framework.eval.model.DataItem;
+import com.evalkit.framework.eval.node.scorer.strategy.EvalReasonStrategy;
 import com.evalkit.framework.eval.node.scorer.strategy.ScoreStrategy;
 import com.evalkit.framework.workflow.model.WorkflowContext;
 import org.apache.commons.lang3.StringUtils;
@@ -22,6 +23,14 @@ public final class WorkflowContextOps {
 
     public static String getTaskName(WorkflowContext ctx) {
         return ctx.get(WorkflowContextKey.TASK_NAME, String.class);
+    }
+
+    public static void setEvalReasonStrategy(WorkflowContext ctx, EvalReasonStrategy evalReasonStrategy) {
+        ctx.put(WorkflowContextKey.EVAL_REASON_STRATEGY, evalReasonStrategy);
+    }
+
+    public static EvalReasonStrategy getEvalReasonStrategy(WorkflowContext ctx) {
+        return ctx.get(WorkflowContextKey.EVAL_REASON_STRATEGY, EvalReasonStrategy.class);
     }
 
     public static void setScorerStrategy(WorkflowContext ctx, ScoreStrategy strategy) {

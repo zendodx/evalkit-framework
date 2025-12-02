@@ -8,6 +8,7 @@ import com.evalkit.framework.eval.exception.EvalException;
 import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.model.ScorerResult;
 import com.evalkit.framework.eval.node.scorer.config.ScorerConfig;
+import com.evalkit.framework.eval.node.scorer.strategy.EvalReasonStrategy;
 import com.evalkit.framework.eval.node.scorer.strategy.ScoreRateStrategy;
 import com.evalkit.framework.eval.node.scorer.strategy.ScoreStrategy;
 import com.evalkit.framework.eval.node.scorer.strategy.ScoreValueStrategy;
@@ -193,6 +194,7 @@ public abstract class Scorer extends WorkflowNode {
         WorkflowContext ctx = getWorkflowContext();
         List<DataItem> dataItems = WorkflowContextOps.getDataItems(ctx);
         ScoreStrategy scorerStrategy = WorkflowContextOps.getScorerStrategy(ctx);
+        EvalReasonStrategy evalReasonStrategy = WorkflowContextOps.getEvalReasonStrategy(ctx);
         double threshold = WorkflowContextOps.getThreshold(ctx);
         if (CollectionUtils.isEmpty(dataItems)) {
             throw new EvalException("Data items is empty");
@@ -205,7 +207,7 @@ public abstract class Scorer extends WorkflowNode {
         dataItems.forEach(dataItem -> scorerResults.stream()
                 .filter(r -> Objects.equals(r.getDataIndex(), dataItem.getDataIndex()))
                 .findFirst()
-                .ifPresent(scorerResult -> dataItem.addScorerResult(scorerResult, scorerStrategy, threshold)));
+                .ifPresent(scorerResult -> dataItem.addScorerResult(scorerResult, scorerStrategy, threshold, evalReasonStrategy)));
         log.info("Scorer [{}] execute success, time cost: {}ms", config.getMetricName(), System.currentTimeMillis() - start);
     }
 }

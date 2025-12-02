@@ -1,6 +1,9 @@
 package com.evalkit.framework.eval.node.dataloader;
 
 
+import com.evalkit.framework.common.utils.convert.TypeConvertUtils;
+import com.evalkit.framework.common.utils.map.MapUtils;
+import com.evalkit.framework.eval.constants.DataItemField;
 import com.evalkit.framework.eval.constants.NodeNamePrefix;
 import com.evalkit.framework.eval.context.WorkflowContextOps;
 import com.evalkit.framework.eval.exception.EvalException;
@@ -9,6 +12,7 @@ import com.evalkit.framework.eval.model.EvalResult;
 import com.evalkit.framework.eval.model.InputData;
 import com.evalkit.framework.eval.node.dataloader.config.DataLoaderConfig;
 import com.evalkit.framework.eval.node.dataloader.injector.DataInjector;
+import com.evalkit.framework.eval.node.scorer.strategy.EvalReasonStrategy;
 import com.evalkit.framework.eval.node.scorer.strategy.ScoreStrategy;
 import com.evalkit.framework.workflow.model.WorkflowContext;
 import com.evalkit.framework.workflow.model.WorkflowNode;
@@ -20,6 +24,7 @@ import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
 
@@ -106,7 +111,7 @@ public abstract class DataLoader extends WorkflowNode {
     }
 
     /**
-     * 过滤
+     * 普通加载的过滤
      */
     protected void filter(List<InputData> inputDataList) {
         List<Predicate<InputData>> filters = config.getFilters();
@@ -114,6 +119,29 @@ public abstract class DataLoader extends WorkflowNode {
             return;
         }
         inputDataList.removeIf(item -> filters.stream().anyMatch(filter -> !filter.test(item)));
+    }
+
+    /**
+     * 数据注入时的过滤, 数据注入时,实际的输入数据包含在 $.inputItem.inputData.inputItem 中
+     *
+     * @param inputDataList 输入数据
+     */
+    protected void filterWhenInject(List<InputData> inputDataList) {
+        List<Predicate<InputData>> filters = config.getFilters();
+        if (CollectionUtils.isEmpty(filters) || CollectionUtils.isEmpty(inputDataList)) {
+            return;
+        }
+        inputDataList.removeIf(item -> {
+            try {
+                Map<String, Object> inputItem = item.getInputItem();
+                Map<String, Object> map = TypeConvertUtils.toMap(inputItem.get(DataItemField.inputDataKey));
+                InputData realInputData = MapUtils.fromMap(map, InputData.class);
+                return filters.stream().anyMatch(filter -> !filter.test(realInputData));
+            } catch (Exception e) {
+                log.error("Filter failed when inject data, error: {}", e.getMessage(), e);
+                return false;
+            }
+        });
     }
 
     /**
@@ -149,7 +177,12 @@ public abstract class DataLoader extends WorkflowNode {
         if (config.isShuffle()) {
             shuffle(inputDatas);
         }
-        filter(inputDatas);
+        // 数据注入的数据筛选和普通加载不同
+        if (config.isOpenInjectData()) {
+            filterWhenInject(inputDatas);
+        } else {
+            filter(inputDatas);
+        }
         inputDatas = slice(inputDatas);
         // 必须给每个数据项加索引
         addDataIndex(inputDatas);
@@ -204,7 +237,8 @@ public abstract class DataLoader extends WorkflowNode {
             List<DataItem> dataItems = WorkflowContextOps.getDataItems(ctx);
             double threshold = WorkflowContextOps.getThreshold(ctx);
             ScoreStrategy scoreStrategy = WorkflowContextOps.getScorerStrategy(ctx);
-            inputDataList.forEach(inputData -> dataItems.add(buildDataItem(inputData.getDataIndex(), inputData, threshold, scoreStrategy)));
+            EvalReasonStrategy evalReasonStrategy = WorkflowContextOps.getEvalReasonStrategy(ctx);
+            inputDataList.forEach(inputData -> dataItems.add(buildDataItem(inputData.getDataIndex(), inputData, threshold, scoreStrategy, evalReasonStrategy)));
             // 开启数据注入后,会将inputData中和DataItem相关的值直接注入到工作流上下文
             if (config.isOpenInjectData()) {
                 DataInjector.batchInject(dataItems, config.isInjectDataIndex(), config.isInjectInputData(), config.isInjectApiCompletionResult(), config.isInjectEvalResult(), config.isInjectExtra());
@@ -219,12 +253,14 @@ public abstract class DataLoader extends WorkflowNode {
     /**
      * 构建数据项,填充评测数据,初始化评测结果
      */
-    protected DataItem buildDataItem(Long dataIndex, InputData inputData, double threshold, ScoreStrategy scoreStrategy) {
+    protected DataItem buildDataItem(Long dataIndex, InputData inputData, double threshold, ScoreStrategy scoreStrategy, EvalReasonStrategy evalReasonStrategy) {
         DataItem dataItem = new DataItem(dataIndex, inputData);
         EvalResult evalResult = new EvalResult();
         evalResult.setThreshold(threshold);
         evalResult.setScoreStrategy(scoreStrategy);
         evalResult.setScoreStrategyName(scoreStrategy.getStrategyName());
+        evalResult.setEvalReasonStrategy(evalReasonStrategy);
+        evalResult.setEvalReasonStrategyName(evalReasonStrategy.getStrategyName());
         dataItem.setEvalResult(evalResult);
         return dataItem;
     }

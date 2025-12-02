@@ -35,6 +35,10 @@ public class JsonFileDataLoader extends JsonDataLoader {
 
     @Override
     public String prepareJsonpath() {
+        // Json文件的数据注入,默认取$.dataItems
+        if (config.isOpenInjectData()) {
+            return "$.dataItems";
+        }
         return config.getJsonPath();
     }
 

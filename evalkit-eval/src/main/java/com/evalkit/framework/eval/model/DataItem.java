@@ -1,5 +1,6 @@
 package com.evalkit.framework.eval.model;
 
+import com.evalkit.framework.eval.node.scorer.strategy.EvalReasonStrategy;
 import com.evalkit.framework.eval.node.scorer.strategy.ScoreStrategy;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,7 +35,7 @@ public class DataItem {
         this.inputData = inputData;
     }
 
-    public void addScorerResult(ScorerResult result, ScoreStrategy scoreStrategy, double threshold) {
+    public void addScorerResult(ScorerResult result, ScoreStrategy scoreStrategy, double threshold, EvalReasonStrategy evalReasonStrategy) {
         // 双重检查锁
         if (evalResult == null) {
             synchronized (this) {
@@ -46,6 +47,10 @@ public class DataItem {
                     }
                     if (threshold > 0) {
                         evalResult.setThreshold(threshold);
+                    }
+                    if (evalReasonStrategy != null) {
+                        evalResult.setEvalReasonStrategy(evalReasonStrategy);
+                        evalResult.setEvalReasonStrategyName(evalReasonStrategy.getStrategyName());
                     }
                 }
             }
