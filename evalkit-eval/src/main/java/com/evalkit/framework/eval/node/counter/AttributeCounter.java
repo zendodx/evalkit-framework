@@ -127,21 +127,39 @@ public class AttributeCounter extends Counter {
         /* 解析：每行 -> 编号|问题类型[#类型2] */
         List<Pair<Long, String>> res = new ArrayList<>();
         for (String line : reply.split("\n")) {
-            String[] arr = line.split("\\|", 2);
-            if (arr.length < 2) continue;
-            int idx = TypeConvertUtils.toInteger(arr[0].trim());
-            if (idx >= chunk.size()) {
-                throw new RuntimeException("Extract chunk failed for index error, index: " + idx + ", chunk size: " + chunk.size());
-            }
-            CaseInput in = chunk.get(idx);
-            for (String issue : arr[1].split("#")) {
-                issue = issue.trim();
-                if (!issue.isEmpty()) {
-                    res.add(Pair.of(in.getCaseId(), issue));
+            try {
+                String[] arr = line.split("\\|", 2);
+                if (arr.length < 2) continue;
+                long idx = TypeConvertUtils.toInteger(arr[0].trim());
+                CaseInput in = findCaseInputByCaseId(idx, chunk);
+                if (in == null) continue;
+                for (String issue : arr[1].split("#")) {
+                    issue = issue.trim();
+                    if (!issue.isEmpty()) {
+                        res.add(Pair.of(in.getCaseId(), issue));
+                    }
                 }
+            } catch (Exception e) {
+                log.error("Extract chunk fail, error: {}", e.getMessage(), e);
             }
         }
         return res;
+    }
+
+    /**
+     * 根据caseId在chunk中找到对应的CaseInput
+     *
+     * @param caseId 用例id
+     * @param chunk  输入用例列表
+     * @return 对应的CaseInput
+     */
+    private CaseInput findCaseInputByCaseId(Long caseId, List<CaseInput> chunk) {
+        for (CaseInput in : chunk) {
+            if (in.getCaseId().equals(caseId)) {
+                return in;
+            }
+        }
+        return null;
     }
 
     /**
