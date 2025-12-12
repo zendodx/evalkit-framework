@@ -153,6 +153,9 @@ public class AttributeCounterV2 extends Counter {
 
     /**
      * 按 token 数切分 list（贪心算法）
+     *
+     * @param list 输入用例列表
+     * @return 切分结果
      */
     private List<List<CaseInput>> chunkByToken(List<CaseInput> list) {
         List<List<CaseInput>> chunks = new ArrayList<>();
@@ -174,6 +177,9 @@ public class AttributeCounterV2 extends Counter {
 
     /**
      * 估算 token 数（含分隔符）
+     *
+     * @param text 文本
+     * @return token 数
      */
     private int estimateTokens(String text) {
         return (int) (text.length() * TOKEN_PER_CN_CHAR) + text.split("\n").length;
@@ -181,6 +187,10 @@ public class AttributeCounterV2 extends Counter {
 
     /**
      * 解析回复
+     *
+     * @param reply 大模型回复
+     * @param chunk 输入用例列表
+     * @return 解析的Extracted结果列表
      */
     private List<Extracted> parseReply(String reply, List<CaseInput> chunk) {
         List<Extracted> res = new ArrayList<>();
@@ -197,7 +207,11 @@ public class AttributeCounterV2 extends Counter {
     }
 
     /**
-     * 解析大模型结果构建Extracted
+     * 解析大模型结果构建Extracted,找不到构建结果时返回null
+     *
+     * @param line  大模型回复行
+     * @param chunk 输入用例列表
+     * @return 构建的Extracted结果
      */
     private Extracted buildExtractedWithLLMReply(String line, List<CaseInput> chunk) {
         String[] arr = line.split("\\|", 5);
@@ -205,11 +219,12 @@ public class AttributeCounterV2 extends Counter {
             return null;
         }
         try {
-            int idx = TypeConvertUtils.toInteger(arr[0].trim());
-            if (idx >= chunk.size()) {
-                throw new RuntimeException("Extract chunk failed for index error, index: " + idx + ", chunk size: " + chunk.size());
+            long idx = TypeConvertUtils.toLong(arr[0].trim());
+            // 根据idx在chunk找到实际的CaseInput
+            CaseInput in = findCaseInputByCaseId(idx, chunk);
+            if (in == null) {
+                return null;
             }
-            CaseInput in = chunk.get(idx);
             String category = arr[1].trim();
             String issue = arr[2].trim();
             Double confidence = TypeConvertUtils.toDouble(arr[3].trim());
@@ -220,6 +235,22 @@ public class AttributeCounterV2 extends Counter {
             log.error("Build extracted with LLM reply failed, error: {}", e.getMessage(), e);
             return null;
         }
+    }
+
+    /**
+     * 根据caseId在chunk中找到对应的CaseInput
+     *
+     * @param caseId 用例id
+     * @param chunk  输入用例列表
+     * @return 对应的CaseInput
+     */
+    private CaseInput findCaseInputByCaseId(Long caseId, List<CaseInput> chunk) {
+        for (CaseInput in : chunk) {
+            if (in.getCaseId().equals(caseId)) {
+                return in;
+            }
+        }
+        return null;
     }
 
 
