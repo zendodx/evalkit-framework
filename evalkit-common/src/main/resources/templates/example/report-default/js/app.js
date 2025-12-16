@@ -162,7 +162,8 @@ function createSearchMatcher(keyword) {
             `#${item.inputData.dataIndex}`,
             JSON.stringify(item.inputData?.inputItem || ''),
             JSON.stringify(item.apiCompletionResult?.resultItem || ''),
-            item.evalResult?.reason || ''
+            item.evalResult?.reason || '',
+            JSON.stringify(item.evalResult?.scorerResults || '')
         ].join(' ').toLowerCase();
 
         return searchContent.includes(searchString);
