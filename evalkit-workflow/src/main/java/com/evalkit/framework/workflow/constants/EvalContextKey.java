@@ -3,6 +3,7 @@ package com.evalkit.framework.workflow.constants;
 /**
  * 评测上下文key
  */
+@Deprecated
 public class EvalContextKey {
     // 评估器分数整合策略
     public static final String SCORE_STRATEGY = "score_strategy";
