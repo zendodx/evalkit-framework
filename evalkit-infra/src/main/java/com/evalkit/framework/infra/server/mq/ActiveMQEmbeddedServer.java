@@ -1,6 +1,7 @@
 package com.evalkit.framework.infra.server.mq;
 
 import com.evalkit.framework.common.utils.list.ListUtils;
+import com.evalkit.framework.common.utils.math.MathUtils;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.RedeliveryPolicy;
 import org.apache.activemq.broker.BrokerService;
@@ -27,11 +28,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ActiveMQEmbeddedServer {
     /* 默认MQ服务名 */
     private static final String DEFAULT_BROKER_NAME = "embeddedBroker";
-    private static final String DEFAULT_TCP_URL = "tcp://0.0.0.0:61616";
     private static final Logger log = LogManager.getLogger(ActiveMQEmbeddedServer.class);
 
     /* 动态端口计数器 */
-    private static final AtomicInteger portCounter = new AtomicInteger(61616);
+    private static final AtomicInteger portCounter = new AtomicInteger(61616 + MathUtils.random(0, 1000));
 
     /* MQ配置 */
     private final String brokerName;
