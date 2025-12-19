@@ -1,12 +1,8 @@
 package com.evalkit.framework.infra.server.mq;
 
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
-import javax.jms.JMSException;
 import javax.jms.Message;
 import java.io.File;
 import java.util.Arrays;
@@ -14,37 +10,23 @@ import java.util.List;
 
 @Slf4j
 class ActiveMQEmbeddedServerTest {
-    ActiveMQEmbeddedServer activeMQEmbeddedServer = ActiveMQEmbeddedServer.getInstance();
-
-    @BeforeEach
-    public void setUp() throws Exception {
-        activeMQEmbeddedServer.start("testMQ");
-    }
-
+    /**
+     * 基础MQ测试
+     */
     @Test
-    @Order(1)
-    public void testSendMessage() {
-        activeMQEmbeddedServer.sendTextMessageToQueue("testQueue", "Hello, ActiveMQ!");
-    }
-
-    @Test
-    @Order(2)
-    public void testBatchSendMessage() {
-        activeMQEmbeddedServer.batchSendTextMessageToQueue("testQueue", Arrays.asList("Hello, ActiveMQ!", "Hello, ActiveMQ!"));
-    }
-
-    @Test
-    @Order(3)
-    public void testReceiveMessage() throws JMSException {
-        Message message = activeMQEmbeddedServer.receiveMessageFromQueue("testQueue", 1000 * 3);
+    public void basicTest() throws Exception {
+        String task = "EvalTest";
+        ActiveMQEmbeddedServer server = ActiveMQEmbeddedServer.getInstance(task);
+        String tempDir = System.getProperty("java.io.tmpdir");
+        server.start(tempDir + "/" + task);
+        server.sendTextMessageToQueue("testQueue", "Hello, ActiveMQ!");
+        server.batchSendTextMessageToQueue("testQueue", Arrays.asList("Hello, ActiveMQ!", "Hello, ActiveMQ!"));
+        Message message = server.receiveMessageFromQueue("testQueue", 1000 * 3);
         log.info("received text: {}", message);
-    }
-
-    @Test
-    @Order(4)
-    public void testBatchReceiveMessage() {
-        List<Message> texts = activeMQEmbeddedServer.batchReceiveMessageFromQueue("testQueue", 1000 * 3, 10);
+        List<Message> texts = server.batchReceiveMessageFromQueue("testQueue", 1000 * 3, 10);
         log.info("received texts: {}", texts);
+        server.stop();
+        deleteDirectory(new File(tempDir + "/" + task));
     }
 
     /**
@@ -110,10 +92,5 @@ class ActiveMQEmbeddedServerTest {
             }
             directory.delete();
         }
-    }
-
-    @AfterEach
-    public void tearDown() throws Exception {
-        activeMQEmbeddedServer.stop();
     }
 }
