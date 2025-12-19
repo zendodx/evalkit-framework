@@ -6,6 +6,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.IntToLongFunction;
 import java.util.stream.Collectors;
@@ -58,8 +59,13 @@ public class OrderedBatchRunner {
 
         // 准备收集器：保证输出顺序与输入一致
         int size = data.size();
-        List<R> resultBox = Arrays.asList((R[]) new Object[size]);
+
+        // 使用线程安全的集合存储结果
+        List<R> resultBox = Collections.synchronizedList(new ArrayList<>(Collections.nCopies(size, (R) null)));
         CountDownLatch done = new CountDownLatch(size);
+
+        // 原子索引计数器，确保线程安全
+        AtomicInteger indexCounter = new AtomicInteger(0);
 
         // 构建顺序分发器
         OrderedDispatcher<OrderTask<T, R>> dispatcher =
@@ -70,7 +76,10 @@ public class OrderedBatchRunner {
                         .taskExecutor(t -> {
                             try {
                                 R r = task.apply(t.raw);
-                                resultBox.set(t.index, r);
+                                // 线程安全地设置结果
+                                synchronized (resultBox) {
+                                    resultBox.set(t.index, r);
+                                }
                             } catch (Exception e) {
                                 log.error("Ordered batch run task error, key={}", t.key, e);
                                 throw e;
@@ -90,17 +99,18 @@ public class OrderedBatchRunner {
                             e -> e.getValue().stream()
                                     .sorted(comparator)
                                     .collect(Collectors.toList())));
-            int index = 0;
+
+            // 按排序后的顺序分配索引
             for (List<T> group : grouped.values()) {
                 for (T item : group) {
-                    dispatcher.submit(new OrderTask<>(item, keyExtractor.apply(item), index++));
+                    dispatcher.submit(new OrderTask<>(item, keyExtractor.apply(item), indexCounter.getAndIncrement()));
                 }
             }
         } else {
             // 同组内先来的先处理
             for (int i = 0; i < size; i++) {
                 T item = data.get(i);
-                dispatcher.submit(new OrderTask<>(item, keyExtractor.apply(item), i));
+                dispatcher.submit(new OrderTask<>(item, keyExtractor.apply(item), indexCounter.getAndIncrement()));
             }
         }
 
