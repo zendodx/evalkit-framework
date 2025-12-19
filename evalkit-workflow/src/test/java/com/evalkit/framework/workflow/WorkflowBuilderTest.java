@@ -6,42 +6,51 @@ import com.evalkit.framework.workflow.model.WorkflowNode;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Slf4j
 class WorkflowBuilderTest {
+    WorkflowNode node1 = new WorkflowNode() {
+        @Override
+        protected void doExecute() {
+            WorkflowContext ctx = getWorkflowContext();
+            ctx.put("node1", 1);
+            System.out.println("Execute node1");
+        }
+    };
+
+    WorkflowNode node2 = new WorkflowNode() {
+        @Override
+        protected void doExecute() {
+            WorkflowContext ctx = getWorkflowContext();
+            ctx.put("node2", 2);
+            System.out.println("Execute node2");
+        }
+    };
+
+    WorkflowNode node3 = new WorkflowNode() {
+        @Override
+        protected void doExecute() {
+            WorkflowContext ctx = getWorkflowContext();
+            ctx.put("node3", 3);
+            System.out.println("Execute node3");
+        }
+    };
+
+    WorkflowNode node4 = new WorkflowNode() {
+        @Override
+        protected void doExecute() {
+            WorkflowContext ctx = getWorkflowContext();
+            ctx.put("node4", 4);
+            System.out.println("Execute node4");
+        }
+    };
+
     @Test
     public void testWorkflow() {
-        WorkflowNode node1 = new WorkflowNode() {
-            @Override
-            protected void doExecute() {
-                WorkflowContext ctx = getWorkflowContext();
-                ctx.put("node1", 1);
-                System.out.println("Execute node1");
-            }
-        };
-
-        WorkflowNode node2 = new WorkflowNode() {
-            @Override
-            protected void doExecute() {
-                WorkflowContext ctx = getWorkflowContext();
-                ctx.put("node2", 2);
-                System.out.println("Execute node2");
-            }
-        };
-
-        WorkflowNode node3 = new WorkflowNode() {
-            @Override
-            protected void doExecute() {
-                WorkflowContext ctx = getWorkflowContext();
-                ctx.put("node3", 3);
-                System.out.println("Execute node3");
-            }
-        };
-
-
         WorkflowBuilder builder = new WorkflowBuilder();
         Workflow workflow = builder.link(node1, node2, node3).build();
         workflow.execute();
@@ -52,5 +61,15 @@ class WorkflowBuilderTest {
         List<String> keys = ctx.keys();
         assertEquals(3, keys.size());
         log.info("Workflow context: {}", ctx);
+    }
+
+    @Test
+    public void testMixedLink() {
+        List<WorkflowNode> nodes = new ArrayList<>();
+        nodes.add(node2);
+        nodes.add(node3);
+        WorkflowBuilder builder = new WorkflowBuilder();
+        Workflow workflow = builder.link(node1, nodes, node4).build();
+        workflow.execute();
     }
 }
