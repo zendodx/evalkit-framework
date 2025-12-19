@@ -55,9 +55,9 @@ public class DeltaEvalFacade extends EvalFacade {
     protected final ScheduledExecutorService reporterScheduler = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "reporter-scheduler"));
     protected volatile ScheduledFuture<?> reporterFuture;
     /* MQ */
-    protected final ActiveMQEmbeddedServer activeMQEmbeddedServer = ActiveMQEmbeddedServer.getInstance();
+    protected ActiveMQEmbeddedServer activeMQEmbeddedServer;
     /* DB */
-    protected final SQLiteEmbeddedServer sqLiteEmbeddedServer = SQLiteEmbeddedServer.getInstance();
+    protected SQLiteEmbeddedServer sqLiteEmbeddedServer;
     protected DataItemMapper dataItemMapper;
     protected MQMessageProcessedMapper mqMessageProcessedMapper;
     protected EvalTaskMapper evalTaskMapper;
@@ -65,6 +65,10 @@ public class DeltaEvalFacade extends EvalFacade {
     public DeltaEvalFacade(DeltaEvalConfig config) {
         validConfig(config);
         this.config = config;
+        // 根据任务名创建多嵌入实例,解决单机运行占用问题
+        String taskName = config.getTaskName();
+        activeMQEmbeddedServer = ActiveMQEmbeddedServer.getInstance(config.getTaskName());
+        sqLiteEmbeddedServer = SQLiteEmbeddedServer.getInstance(taskName);
     }
 
     /**

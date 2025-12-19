@@ -3,6 +3,7 @@ package com.evalkit.framework.eval.facade;
 import com.evalkit.framework.common.utils.file.FileUtils;
 import com.evalkit.framework.common.utils.list.ListUtils;
 import com.evalkit.framework.common.utils.map.MapUtils;
+import com.evalkit.framework.common.utils.math.MathUtils;
 import com.evalkit.framework.common.utils.time.DateUtils;
 import com.evalkit.framework.eval.facade.config.DeltaEvalConfig;
 import com.evalkit.framework.eval.model.ApiCompletionResult;
@@ -26,15 +27,18 @@ import com.evalkit.framework.workflow.Workflow;
 import com.evalkit.framework.workflow.WorkflowBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.ThrowingSupplier;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
 class OrderedDeltaEvalFacadeTest {
@@ -74,14 +78,13 @@ class OrderedDeltaEvalFacadeTest {
         @Override
         protected void afterExecute() {
             log.info("===>Finish consume and eval, remain data size:{}, processed data size:{}", getRemainDataCount(), getProcessedDataCount());
-            List<File> files = FileUtils.listFiles("attaches/");
+            List<File> files = FileUtils.listFiles("attachments/" + config.getTaskName());
             List<String> collect = files.stream().map(File::getName).collect(Collectors.toList());
             log.info("===>attaches files:{}", collect);
         }
     }
 
-    @Test
-    public void test() throws Exception {
+    public void executeOrderedDeltaEval(String taskName) throws Exception {
         // 评测数据加载器
         DataLoader dataLoader1 = new DataLoader() {
             @Override
@@ -163,12 +166,12 @@ class OrderedDeltaEvalFacadeTest {
         };
 
         // 评测结果上报
-        String fileName = "ordered_delta_eval_test_" + DateUtils.nowToString();
+        String parentDir = "attachments/" + taskName;
         BasicCounter basicCounter = new BasicCounter();
-        HtmlReporter htmlReporter = new HtmlReporter(fileName, fileName);
-        JsonReporter jsonReporter = new JsonReporter(fileName, fileName);
-        ExcelReporter excelReporter = new ExcelReporter(fileName, fileName);
-        CsvReporter csvReporter = new CsvReporter(fileName, fileName);
+        HtmlReporter htmlReporter = new HtmlReporter(taskName, parentDir);
+        JsonReporter jsonReporter = new JsonReporter(taskName, parentDir);
+        ExcelReporter excelReporter = new ExcelReporter(taskName, parentDir);
+        CsvReporter csvReporter = new CsvReporter(taskName, parentDir);
 
         List<Scorer> scorers = ListUtils.of(scorer1, scorer2, scorer3);
 
@@ -180,7 +183,7 @@ class OrderedDeltaEvalFacadeTest {
 
         CustomDeltaEval cfe = new CustomDeltaEval(
                 DeltaEvalConfig.builder()
-                        .taskName("OrderedDeltaEvalTest")
+                        .taskName(taskName)
                         .dataLoader(multiDataLoader)
                         .evalWorkflow(evalWorkflow)
                         .reportWorkflow(reportWorkflow)
@@ -189,11 +192,41 @@ class OrderedDeltaEvalFacadeTest {
                         .enableResume(false)
                         .build()
         );
+        cfe.run();
+    }
 
-        // 必须在指定时间内跑完，否则认为死锁 / 阻塞
-        assertTimeoutPreemptively(java.time.Duration.ofSeconds(180), (ThrowingSupplier<Void>) () -> {
-            cfe.run();
-            return null;
-        });
+    /**
+     * 单次执行
+     */
+    @Test
+    public void singleTest() throws Exception {
+        executeOrderedDeltaEval("OrderedDeltaEvalTest_" + DateUtils.nowToString("yyyy-MM-dd_HH-mm-ss"));
+    }
+
+    /**
+     * 并发执行
+     */
+    @Test
+    public void parallelTest() throws InterruptedException {
+        int threadCount = 3;
+        ExecutorService pool = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
+            pool.submit(() -> {
+                try {
+                    startLatch.await();
+                    executeOrderedDeltaEval("OrderedDeltaEvalTest_" + DateUtils.nowToString("yyyy-MM-dd_HH-mm-ss_" + MathUtils.random(0, 100)));
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                } finally {
+                    doneLatch.countDown();
+                }
+            });
+        }
+        startLatch.countDown();
+        assertTrue(doneLatch.await(120, TimeUnit.SECONDS));
+        pool.shutdown();
     }
 }
