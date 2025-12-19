@@ -40,6 +40,13 @@ public class Workflow implements Cloneable {
         } catch (Exception e) {
             setStatus(WorkflowStatus.FAILED);
             throw new WorkflowException("Execute workflow error:" + e.getMessage(), e);
+        } finally {
+            try {
+                stop();
+                WorkflowContextHolder.clear();
+            } catch (Exception ignore) {
+
+            }
         }
     }
 
