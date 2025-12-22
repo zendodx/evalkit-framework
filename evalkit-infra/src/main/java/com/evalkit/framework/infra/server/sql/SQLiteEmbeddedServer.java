@@ -29,7 +29,7 @@ public class SQLiteEmbeddedServer {
             java.sql.Driver driver = (java.sql.Driver) driverClass.newInstance();
             java.sql.DriverManager.registerDriver(driver);
         } catch (Exception e) {
-            throw new RuntimeException("SQLite driver register failed", e);
+            throw new RuntimeException("[SQLite] Register driver failed", e);
         }
     }
 
@@ -82,7 +82,7 @@ public class SQLiteEmbeddedServer {
         try {
             getConnection().close();
         } catch (Exception e) {
-            log.error("Stop SQLite connection failed, error: {}", e.getMessage(), e);
+            log.error("[SQLite] Stop connection failed, error: {}", e.getMessage(), e);
         }
     }
 
@@ -90,7 +90,12 @@ public class SQLiteEmbeddedServer {
      * 获取数据库连接
      */
     public Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(dbUrl);
+        try {
+            return DriverManager.getConnection(dbUrl);
+        } catch (Exception e) {
+            log.error("[SQLite] Get connection failed, error: {}", e.getMessage(), e);
+            throw e;
+        }
     }
 
     /**
@@ -166,7 +171,7 @@ public class SQLiteEmbeddedServer {
         File file = new File(dbFilePath);
         if (file.exists()) {
             boolean delete = file.delete();
-            log.info("Delete db file: {}, result: {}", dbFilePath, delete);
+            log.info("[SQLite] Delete db file: {}, result: {}", dbFilePath, delete);
         }
     }
 
