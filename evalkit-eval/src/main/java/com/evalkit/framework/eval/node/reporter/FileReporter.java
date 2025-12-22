@@ -22,11 +22,10 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public abstract class FileReporter extends Reporter {
-
     /* 输出文件名 */
     protected String fileName;
     /* 输出文件夹 */
-    protected String parentDir = "attaches";
+    protected String parentDir = "attachments";
 
     private FileReporter() {
         this.fileName = DateUtils.nowToString();

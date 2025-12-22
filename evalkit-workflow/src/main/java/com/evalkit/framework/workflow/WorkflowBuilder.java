@@ -107,6 +107,65 @@ public class WorkflowBuilder {
     }
 
     /**
+     * 添加节点关系:单节点和多节点混合串联
+     * 支持传入单个节点或节点集合的任意组合
+     */
+    @SuppressWarnings("unchecked")
+    public final <T extends WorkflowNode> WorkflowBuilder link(Object... nodeItems) {
+        if (nodeItems.length == 0) {
+            throw new IllegalArgumentException("The number of node items must be greater than 0");
+        }
+        Object prev = nodeItems[0];
+        if (prev instanceof Collection) {
+            Collection<? extends T> prevCollection = (Collection<? extends T>) prev;
+            addNodes(prevCollection);
+        } else if (prev instanceof WorkflowNode) {
+            T prevNode = (T) prev;
+            addNode(prevNode);
+        } else {
+            throw new IllegalArgumentException("Node items must be WorkflowNode or Collection<? extends WorkflowNode>");
+        }
+        for (int i = 1; i < nodeItems.length; i++) {
+            Object cur = nodeItems[i];
+            // 验证当前节点类型
+            if (!(cur instanceof Collection || cur instanceof WorkflowNode)) {
+                throw new IllegalArgumentException("Node items must be WorkflowNode or Collection<? extends WorkflowNode>");
+            }
+            // 建立依赖关系
+            if (prev instanceof Collection && cur instanceof Collection) {
+                // 集合对集合
+                Collection<? extends T> prevCollection = (Collection<? extends T>) prev;
+                Collection<? extends T> curCollection = (Collection<? extends T>) cur;
+                addNodes(curCollection);
+                link(prevCollection, curCollection);
+                prev = curCollection;
+            } else if (prev instanceof Collection && cur instanceof WorkflowNode) {
+                // 集合对单节点
+                Collection<? extends T> prevCollection = (Collection<? extends T>) prev;
+                T curNode = (T) cur;
+                addNode(curNode);
+                link(prevCollection, curNode);
+                prev = curNode;
+            } else if (prev instanceof WorkflowNode && cur instanceof Collection) {
+                // 单节点对集合
+                T prevNode = (T) prev;
+                Collection<? extends T> curCollection = (Collection<? extends T>) cur;
+                addNodes(curCollection);
+                link(prevNode, curCollection);
+                prev = curCollection;
+            } else {
+                // 单节点对单节点
+                T prevNode = (T) prev;
+                T curNode = (T) cur;
+                addNode(curNode);
+                link(prevNode, curNode);
+                prev = curNode;
+            }
+        }
+        return this;
+    }
+
+    /**
      * 构建DAG图
      */
     public Workflow build() {

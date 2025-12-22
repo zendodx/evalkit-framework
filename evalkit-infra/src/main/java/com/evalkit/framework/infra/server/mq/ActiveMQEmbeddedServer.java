@@ -1,13 +1,14 @@
 package com.evalkit.framework.infra.server.mq;
 
 import com.evalkit.framework.common.utils.list.ListUtils;
+import com.evalkit.framework.common.utils.math.MathUtils;
+import com.evalkit.framework.common.utils.net.NetworkUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.RedeliveryPolicy;
 import org.apache.activemq.broker.BrokerService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import javax.jms.*;
 import javax.management.InstanceNotFoundException;
@@ -19,16 +20,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 嵌入式 ActiveMQ （JDK8 + 5.17.6）
+ * 端口获取方式: 动态分配端口,随机分配一个,然后检查是否被占用递增
  */
+@Slf4j
 public class ActiveMQEmbeddedServer {
-    /* MQ服务名 */
-    private static final String BROKER_NAME = "embeddedBroker";
-    private static final String VM_URL = "vm://" + BROKER_NAME + "?create=false";
-    private static final String TCP_URL = "tcp://0.0.0.0:61616";
-    private static final Logger log = LogManager.getLogger(ActiveMQEmbeddedServer.class);
+    /* 默认MQ服务名 */
+    private static final String DEFAULT_BROKER_NAME = "embeddedBroker";
+
+    /* 动态端口计数器 */
+    private static final AtomicInteger portCounter = new AtomicInteger(61616 + MathUtils.random(0, 1000));
+
+    /* MQ配置 */
+    private final String brokerName;
+    private final String tcpUrl;
+    private final String vmUrl;
 
     /* MQ服务 */
     private BrokerService broker;
@@ -37,13 +46,58 @@ public class ActiveMQEmbeddedServer {
     /* 缓存链接 */
     private final Set<Connection> activeConnections = ConcurrentHashMap.newKeySet();
 
-    /* 单例 */
-    private static final class InstanceHolder {
-        static final ActiveMQEmbeddedServer instance = new ActiveMQEmbeddedServer();
+    /**
+     * 私有构造函数，支持自定义配置
+     */
+    private ActiveMQEmbeddedServer(String brokerName, String tcpUrl) {
+        this.brokerName = brokerName;
+        this.tcpUrl = tcpUrl;
+        this.vmUrl = "vm://" + brokerName + "?create=false";
     }
 
+    /**
+     * 从61616端口开始,获取一个可用的端口
+     */
+    private static int getAvailablePort() {
+        int port = portCounter.getAndIncrement();
+        while (NetworkUtils.isPortUsed(port)) {
+            port = portCounter.getAndIncrement();
+        }
+        return port;
+    }
+
+    /**
+     * 获取默认实例（向后兼容）
+     */
+    @Deprecated
     public static ActiveMQEmbeddedServer getInstance() {
-        return InstanceHolder.instance;
+        return getInstance(DEFAULT_BROKER_NAME);
+    }
+
+    /**
+     * 获取指定名称的实例
+     */
+    public static ActiveMQEmbeddedServer getInstance(String brokerName) {
+        return getInstance(brokerName, null);
+    }
+
+    /**
+     * 获取指定名称和端口的实例
+     */
+    public static ActiveMQEmbeddedServer getInstance(String brokerName, Integer port) {
+        if (StringUtils.isEmpty(brokerName)) {
+            brokerName = DEFAULT_BROKER_NAME;
+        }
+        String tcpUrl;
+        if (port != null) {
+            tcpUrl = "tcp://0.0.0.0:" + port;
+        } else {
+            // 动态分配端口,随机分配一个,然后检查是否被占用递增
+            int dynamicPort = getAvailablePort();
+            tcpUrl = "tcp://0.0.0.0:" + dynamicPort;
+        }
+        log.info("[ActiveMQ] Embedded broker tcp url: {}", tcpUrl);
+        return new ActiveMQEmbeddedServer(brokerName, tcpUrl);
     }
 
     /**
@@ -51,19 +105,19 @@ public class ActiveMQEmbeddedServer {
      */
     public synchronized void start(String pathName) throws Exception {
         if (StringUtils.isEmpty(pathName)) {
-            throw new IllegalStateException("ActiveMQ path name is empty");
+            throw new IllegalStateException("[ActiveMQ] path name is empty");
         }
         // 已经创建则跳过
         if (broker != null) {
-            log.info("ActiveMQ Embedded Broker is already started");
+            log.info("[ActiveMQ] Embedded Broker is already started");
             return;
         }
         // 创建broker
         broker = new BrokerService();
-        broker.setBrokerName(BROKER_NAME);
+        broker.setBrokerName(brokerName);
         broker.setPersistent(true);
         broker.setDataDirectoryFile(new File(pathName));
-        broker.addConnector(TCP_URL);
+        broker.addConnector(tcpUrl);
         broker.start();
         broker.waitUntilStarted();
         // 初始化连接工厂
@@ -71,10 +125,10 @@ public class ActiveMQEmbeddedServer {
         policy.setInitialRedeliveryDelay(2000);
         policy.setRedeliveryDelay(3000);
         policy.setMaximumRedeliveries(3);
-        ActiveMQConnectionFactory amqFactory = new ActiveMQConnectionFactory(VM_URL);
+        ActiveMQConnectionFactory amqFactory = new ActiveMQConnectionFactory(vmUrl);
         amqFactory.setRedeliveryPolicy(policy);
         this.factory = amqFactory;
-        log.info("ActiveMQ embedded broker started");
+        log.info("[ActiveMQ] Embedded broker started with brokerName: {}, tcpUrl: {}", brokerName, tcpUrl);
     }
 
     /**
@@ -95,10 +149,10 @@ public class ActiveMQEmbeddedServer {
                 broker.stop();
                 broker.waitUntilStopped();
                 broker = null;
-                log.info("ActiveMQ embedded broker stopped");
+                log.info("[ActiveMQ] embedded broker stopped");
             }
         } catch (Exception e) {
-            log.error("Stop ActiveMQ embedded broker error: {}", e.getMessage(), e);
+            log.error("[ActiveMQ] Stop embedded broker failed, error: {}", e.getMessage(), e);
         }
     }
 
@@ -107,7 +161,7 @@ public class ActiveMQEmbeddedServer {
      */
     private void executeInSession(JmsCallback callback) {
         if (broker == null || !broker.isStarted()) {
-            throw new IllegalStateException("ActiveMQ embedded broker is not started. Call start() first.");
+            throw new IllegalStateException("[ActiveMQ] Embedded broker is not started. Call start() first.");
         }
         Connection conn = null;
         Session session = null;
@@ -231,7 +285,7 @@ public class ActiveMQEmbeddedServer {
      */
     public void batchReceiveInTx(String queueName, int batchSize, long timeout, JmsBatchCallback callback) {
         if (!isStarted()) {
-            throw new IllegalStateException("Broker already stopped");
+            throw new IllegalStateException("[ActiveMQ] Broker already stopped");
         }
         Connection conn = null;
         Session session = null;
@@ -259,7 +313,7 @@ public class ActiveMQEmbeddedServer {
             }
         } catch (Exception e) {
             rollback(session);
-            log.error("MQ batch receive failed, error: {}", e.getMessage(), e);
+            log.error("[ActiveMQ] Batch receive message failed, error: {}", e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
             closeQuietly(session, conn);
@@ -279,7 +333,7 @@ public class ActiveMQEmbeddedServer {
     public int getQueueMessageCount(String queueName) {
         try {
             ObjectName name = new ObjectName(
-                    "org.apache.activemq:type=Broker,brokerName=" + BROKER_NAME +
+                    "org.apache.activemq:type=Broker,brokerName=" + brokerName +
                             ",destinationType=Queue,destinationName=" + queueName);
             return ((Long) ManagementFactory.getPlatformMBeanServer()
                     .getAttribute(name, "QueueSize")).intValue();
@@ -287,8 +341,22 @@ public class ActiveMQEmbeddedServer {
             // 队列还没创建，返回 0
             return 0;
         } catch (Exception e) {
-            log.error("Failed to get queue message count for queue: {}", queueName, e);
+            log.error("[ActiveMQ] Get queue message count from queue: {} failed, error:{}", queueName, e.getMessage(), e);
             return 0;
         }
+    }
+
+    /**
+     * 获取broker名称
+     */
+    public String getBrokerName() {
+        return brokerName;
+    }
+
+    /**
+     * 获取TCP URL
+     */
+    public String getTcpUrl() {
+        return tcpUrl;
     }
 }

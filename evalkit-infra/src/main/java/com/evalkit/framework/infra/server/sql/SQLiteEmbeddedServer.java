@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * SQLite嵌入式服务
@@ -28,16 +29,40 @@ public class SQLiteEmbeddedServer {
             java.sql.Driver driver = (java.sql.Driver) driverClass.newInstance();
             java.sql.DriverManager.registerDriver(driver);
         } catch (Exception e) {
-            throw new RuntimeException("SQLite driver register failed", e);
+            throw new RuntimeException("[SQLite] Register driver failed", e);
         }
     }
 
+    /**
+     * 获取默认实例（单例模式，向后兼容）
+     */
+    public static SQLiteEmbeddedServer getInstance() {
+        return InstanceHolder.instance;
+    }
+
+    /**
+     * 获取指定实例（支持多实例）
+     */
+    public static SQLiteEmbeddedServer getInstance(String instanceName) {
+        if (StringUtils.isEmpty(instanceName)) {
+            return getInstance();
+        }
+        // 每个实例名称对应一个不同的实例
+        return InstanceCache.getInstance(instanceName);
+    }
+
+    /* 单例实例持有者（默认实例） */
     private static class InstanceHolder {
         static final SQLiteEmbeddedServer instance = new SQLiteEmbeddedServer();
     }
 
-    public static SQLiteEmbeddedServer getInstance() {
-        return InstanceHolder.instance;
+    /* 多实例缓存 */
+    private static class InstanceCache {
+        private static final ConcurrentHashMap<String, SQLiteEmbeddedServer> instances = new ConcurrentHashMap<>();
+
+        public static SQLiteEmbeddedServer getInstance(String instanceName) {
+            return instances.computeIfAbsent(instanceName, name -> new SQLiteEmbeddedServer());
+        }
     }
 
     /**
@@ -57,7 +82,7 @@ public class SQLiteEmbeddedServer {
         try {
             getConnection().close();
         } catch (Exception e) {
-            log.error("Stop SQLite connection failed, error: {}", e.getMessage(), e);
+            log.error("[SQLite] Stop connection failed, error: {}", e.getMessage(), e);
         }
     }
 
@@ -65,7 +90,12 @@ public class SQLiteEmbeddedServer {
      * 获取数据库连接
      */
     public Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(dbUrl);
+        try {
+            return DriverManager.getConnection(dbUrl);
+        } catch (Exception e) {
+            log.error("[SQLite] Get connection failed, error: {}", e.getMessage(), e);
+            throw e;
+        }
     }
 
     /**
@@ -141,7 +171,7 @@ public class SQLiteEmbeddedServer {
         File file = new File(dbFilePath);
         if (file.exists()) {
             boolean delete = file.delete();
-            log.info("Delete db file: {}, result: {}", dbFilePath, delete);
+            log.info("[SQLite] Delete db file: {}, result: {}", dbFilePath, delete);
         }
     }
 

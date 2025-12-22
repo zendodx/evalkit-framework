@@ -40,11 +40,18 @@ public class Workflow implements Cloneable {
         } catch (Exception e) {
             setStatus(WorkflowStatus.FAILED);
             throw new WorkflowException("Execute workflow error:" + e.getMessage(), e);
+        } finally {
+            try {
+                stop();
+                WorkflowContextHolder.clear();
+            } catch (Exception ignore) {
+
+            }
         }
     }
 
     public void stop() {
-        if (taskExecutor != null) {
+        if (taskExecutor != null && taskExecutor.isAutoShutdown()) {
             taskExecutor.shutdown();
         }
     }
@@ -68,7 +75,11 @@ public class Workflow implements Cloneable {
                 clone.setWorkflowContext(this.workflowContext.clone());
             }
             clone.status = this.status;
-            clone.taskExecutor = this.taskExecutor;
+            // 克隆时创建新的TaskExecutor，避免共享线程池
+            clone.taskExecutor = new TaskExecutor(
+                Runtime.getRuntime().availableProcessors(),
+                this.taskExecutor.isAutoShutdown()
+            );
             return clone;
         } catch (CloneNotSupportedException e) {
             throw new AssertionError();

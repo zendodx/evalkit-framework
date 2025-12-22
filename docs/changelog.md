@@ -1,5 +1,17 @@
 # ChangeLog
 
+## [0.9.5] - 2025-12-22
+
+### Added
+
+### Fixed
+
+- 修改ActiveMQServer初始端口随机化
+- 修复顺序批量执行器执行顺序错乱问题
+- 优化ActiveMQ端口获取方式
+- 优化ActiveMQ和SQLite日志和异常处理
+- 增量评测使用taskNameUuid替代taskName,解决任务名称不合法问题
+
 ## [0.9.4] - 2025-12-16
 
 ### Added
