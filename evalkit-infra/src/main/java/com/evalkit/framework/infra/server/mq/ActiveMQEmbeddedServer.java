@@ -2,6 +2,7 @@ package com.evalkit.framework.infra.server.mq;
 
 import com.evalkit.framework.common.utils.list.ListUtils;
 import com.evalkit.framework.common.utils.math.MathUtils;
+import com.evalkit.framework.common.utils.net.NetworkUtils;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.RedeliveryPolicy;
 import org.apache.activemq.broker.BrokerService;
@@ -24,6 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 嵌入式 ActiveMQ （JDK8 + 5.17.6）
+ * 端口获取方式: 动态分配端口,随机分配一个,然后检查是否被占用递增
  */
 public class ActiveMQEmbeddedServer {
     /* 默认MQ服务名 */
@@ -55,6 +57,17 @@ public class ActiveMQEmbeddedServer {
     }
 
     /**
+     * 从61616端口开始,获取一个可用的端口
+     */
+    private static int getAvailablePort() {
+        int port = portCounter.getAndIncrement();
+        while (!NetworkUtils.isPortUsed(port)) {
+            port = portCounter.getAndIncrement();
+        }
+        return port;
+    }
+
+    /**
      * 获取默认实例（向后兼容）
      */
     @Deprecated
@@ -80,8 +93,8 @@ public class ActiveMQEmbeddedServer {
         if (port != null) {
             tcpUrl = "tcp://0.0.0.0:" + port;
         } else {
-            // 动态分配端口
-            int dynamicPort = portCounter.getAndIncrement();
+            // 动态分配端口,随机分配一个,然后检查是否被占用递增
+            int dynamicPort = getAvailablePort();
             tcpUrl = "tcp://0.0.0.0:" + dynamicPort;
         }
         return new ActiveMQEmbeddedServer(brokerName, tcpUrl);
