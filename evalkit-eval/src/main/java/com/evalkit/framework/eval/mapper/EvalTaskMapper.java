@@ -27,61 +27,61 @@ public class EvalTaskMapper {
      * 创建评测任务
      */
     public void createEvalTask(EvalTask task) throws SQLException {
-        String sql = "INSERT INTO tb_eval_task (task_name, all_count, status, create_time, update_time) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO tb_eval_task (task_name, task_name_uuid, all_count, status, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?)";
         Date now = new Date();
         String timestamp = String.valueOf(DateUtils.timestamp(now));
-        server.executeUpdate(sql, task.getTaskName(), task.getAllCount(), task.getStatus(), timestamp, timestamp);
+        server.executeUpdate(sql, task.getTaskName(), task.getTaskNameUuid(), task.getAllCount(), task.getStatus(), timestamp, timestamp);
     }
 
     /**
      * 查询评测任务是否存在
      */
-    public boolean isEvalTaskExists(String taskName) throws SQLException {
-        String sql = "SELECT * FROM tb_eval_task WHERE task_name = ?";
-        List<Map<String, Object>> maps = server.executeQuery(sql, taskName);
+    public boolean isEvalTaskExists(String taskNameUuid) throws SQLException {
+        String sql = "SELECT * FROM tb_eval_task WHERE task_name_uuid = ?";
+        List<Map<String, Object>> maps = server.executeQuery(sql, taskNameUuid);
         return !maps.isEmpty();
     }
 
     /**
      * 查询评测数据总数executeQueryForLong
      */
-    public int queryTotalCount(String taskName) throws SQLException {
-        String sql = "SELECT all_count FROM tb_eval_task WHERE task_name = ?";
-        List<Map<String, Object>> maps = server.executeQuery(sql, taskName);
+    public int queryTotalCount(String taskNameUuid) throws SQLException {
+        String sql = "SELECT all_count FROM tb_eval_task WHERE task_name_uuid = ?";
+        List<Map<String, Object>> maps = server.executeQuery(sql, taskNameUuid);
         return (int) maps.get(0).get("all_count");
     }
 
     /**
      * 查询评测任务状态
      */
-    public int queryStatus(String taskName) throws SQLException {
-        String sql = "SELECT status FROM tb_eval_task WHERE task_name = ?";
-        List<Map<String, Object>> maps = server.executeQuery(sql, taskName);
+    public int queryStatus(String taskNameUuid) throws SQLException {
+        String sql = "SELECT status FROM tb_eval_task WHERE task_name_uuid = ?";
+        List<Map<String, Object>> maps = server.executeQuery(sql, taskNameUuid);
         return (int) maps.get(0).get("status");
     }
 
     /**
      * 更新评测任务状态
      */
-    public void updateStatus(String taskName, int status) throws SQLException {
-        String sql = "UPDATE tb_eval_task SET status = ?, update_time = ? WHERE task_name = ?";
+    public void updateStatus(String taskNameUuid, int status) throws SQLException {
+        String sql = "UPDATE tb_eval_task SET status = ?, update_time = ? WHERE task_name_uuid = ?";
         Date now = new Date();
         String timestamp = String.valueOf(DateUtils.timestamp(now));
         if (status == EvalTaskStatus.FINISH) {
             // 任务完成状态则更新finish_time
-            sql = "UPDATE tb_eval_task SET status = ?, update_time = ?, finish_time = ? WHERE task_name = ?";
-            server.executeUpdate(sql, status, timestamp, timestamp, taskName);
+            sql = "UPDATE tb_eval_task SET status = ?, update_time = ?, finish_time = ? WHERE task_name_uuid = ?";
+            server.executeUpdate(sql, status, timestamp, timestamp, taskNameUuid);
         } else {
-            server.executeUpdate(sql, status, timestamp, taskName);
+            server.executeUpdate(sql, status, timestamp, taskNameUuid);
         }
     }
 
     /**
      * 更新评测数据总数
      */
-    public void updateAllCount(String taskName, long count) throws SQLException {
-        String sql = "UPDATE tb_eval_task SET all_count = ? WHERE task_name = ?";
-        server.executeUpdate(sql, count, taskName);
+    public void updateAllCount(String taskNameUuid, long count) throws SQLException {
+        String sql = "UPDATE tb_eval_task SET all_count = ? WHERE task_name_uuid = ?";
+        server.executeUpdate(sql, count, taskNameUuid);
     }
 
     /**
@@ -90,7 +90,8 @@ public class EvalTaskMapper {
     private void createTable() throws SQLException {
         String sql = "CREATE TABLE tb_eval_task\n" +
                 "(\n" +
-                "    task_name TEXT PRIMARY KEY,\n" +
+                "    task_name TEXT KEY,\n" +
+                "    task_name_uuid TEXT PRIMARY KEY,\n" +
                 "    all_count INTEGER NOT NULL,\n" +
                 "    status INTEGER NOT NULL,\n" +
                 "    create_time TEXT NOT NULL,\n" +

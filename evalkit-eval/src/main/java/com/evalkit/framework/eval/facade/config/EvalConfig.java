@@ -1,6 +1,7 @@
 package com.evalkit.framework.eval.facade.config;
 
 import com.evalkit.framework.common.utils.json.JsonUtils;
+import com.evalkit.framework.common.utils.random.UuidUtils;
 import com.evalkit.framework.common.utils.runtime.RuntimeEnvUtils;
 import com.evalkit.framework.common.utils.time.DateUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -15,6 +16,8 @@ import java.util.Map;
 public class EvalConfig {
     /* 任务名称,增量评测统一任务需保持任务名称一致, 默认 EvalTest_运行时间 */
     protected String taskName;
+    /* taskName对应的uuid,用于ActiveMQ和SQLite的文件名称 */
+    protected String taskNameUuid;
     /* 评测数据集文件路径,默认空*/
     protected String filePath;
     /* 分页偏移量, 默认0 */
@@ -54,6 +57,7 @@ public class EvalConfig {
                          boolean injectEvalResult,
                          boolean injectExtra) {
         this.taskName = taskName;
+        this.taskNameUuid = UuidUtils.generateUuidByKey(taskName);
         this.filePath = filePath;
         this.offset = offset;
         this.limit = limit;
@@ -370,5 +374,13 @@ public class EvalConfig {
 
     public void setInjectExtra(boolean injectExtra) {
         this.injectExtra = injectExtra;
+    }
+
+    public String getTaskNameUuid() {
+        return taskNameUuid;
+    }
+
+    public void setTaskNameUuid(String taskNameUuid) {
+        this.taskNameUuid = taskNameUuid;
     }
 }

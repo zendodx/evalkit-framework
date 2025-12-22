@@ -66,9 +66,9 @@ public class DeltaEvalFacade extends EvalFacade {
         validConfig(config);
         this.config = config;
         // 根据任务名创建多嵌入实例,解决单机运行占用问题
-        String taskName = config.getTaskName();
-        activeMQEmbeddedServer = ActiveMQEmbeddedServer.getInstance(config.getTaskName());
-        sqLiteEmbeddedServer = SQLiteEmbeddedServer.getInstance(taskName);
+        String taskNameUuid = config.getTaskNameUuid();
+        activeMQEmbeddedServer = ActiveMQEmbeddedServer.getInstance(taskNameUuid);
+        sqLiteEmbeddedServer = SQLiteEmbeddedServer.getInstance(taskNameUuid);
     }
 
     /**
@@ -97,22 +97,22 @@ public class DeltaEvalFacade extends EvalFacade {
         try {
             // 中间件文件存储路径
             String parentPath = CACHE_FILE_PATH;
-            String taskName = config.getTaskName();
+            String taskNameUUid = config.getTaskNameUuid();
             // 如果没有开启断点续评则每次初始化时删除缓存(MQ和DB数据)
             if (!config.isEnableResume()) {
                 log.info("Not open resume eval from breakpoint, delete cache data");
-                FileUtils.deleteDirectory(parentPath + taskName);
-                FileUtils.deleteFile(parentPath + taskName + ".db");
+                FileUtils.deleteDirectory(parentPath + taskNameUUid);
+                FileUtils.deleteFile(parentPath + taskNameUUid + ".db");
             }
             // 启动MQ
-            activeMQEmbeddedServer.start(parentPath + taskName);
+            activeMQEmbeddedServer.start(parentPath + taskNameUUid);
             // 启动DB
-            sqLiteEmbeddedServer.start(parentPath + taskName);
+            sqLiteEmbeddedServer.start(parentPath + taskNameUUid);
             // 初始化Mapper
             dataItemMapper = new DataItemMapper(sqLiteEmbeddedServer);
             mqMessageProcessedMapper = new MQMessageProcessedMapper(sqLiteEmbeddedServer);
             evalTaskMapper = new EvalTaskMapper(sqLiteEmbeddedServer);
-            log.info("Initialize workflow success, middleware file save path: {}", parentPath + taskName);
+            log.info("Initialize workflow success, middleware file save path: {}", parentPath + taskNameUUid);
         } catch (Exception e) {
             // 初始化出错时要关闭MQ和DB连接
             if (activeMQEmbeddedServer != null) {
@@ -130,7 +130,7 @@ public class DeltaEvalFacade extends EvalFacade {
      */
     @Override
     protected void execute() {
-        String taskName = config.getTaskName();
+        String taskNameUUid = config.getTaskNameUuid();
         try {
             // 初始化评测任务
             initEvalTask();
@@ -141,10 +141,10 @@ public class DeltaEvalFacade extends EvalFacade {
             report();
             // 等待消费完成
             consumeFuture.get();
-            evalTaskMapper.updateStatus(taskName, EvalTaskStatus.FINISH);
+            evalTaskMapper.updateStatus(taskNameUUid, EvalTaskStatus.FINISH);
         } catch (Exception e) {
             try {
-                evalTaskMapper.updateStatus(taskName, EvalTaskStatus.FAILED);
+                evalTaskMapper.updateStatus(taskNameUUid, EvalTaskStatus.FAILED);
             } catch (Exception ignored) {
             }
             throw new WorkflowException("Workflow execution error: " + e.getMessage(), e);
@@ -169,21 +169,23 @@ public class DeltaEvalFacade extends EvalFacade {
      */
     protected void initEvalTask() {
         String taskName = config.getTaskName();
+        String taskNameUUid = config.getTaskNameUuid();
         try {
-            boolean evalTaskExists = evalTaskMapper.isEvalTaskExists(taskName);
+            boolean evalTaskExists = evalTaskMapper.isEvalTaskExists(taskNameUUid);
             if (evalTaskExists) {
                 return;
             }
             Date now = new Date();
             EvalTask evalTask = EvalTask.builder()
                     .taskName(taskName)
+                    .taskNameUuid(taskNameUUid)
                     .allCount(0)
                     .status(EvalTaskStatus.INIT)
                     .createTime(now)
                     .updateTime(now)
                     .build();
             evalTaskMapper.createEvalTask(evalTask);
-            log.info("Init eval task success, taskName: {}", taskName);
+            log.info("Init eval task success, taskName: {}, taskNameUuid: {}", taskName, taskNameUUid);
         } catch (SQLException e) {
             log.error("Init eval task error: {}", e.getMessage(), e);
             throw new RuntimeException(e);
@@ -194,8 +196,8 @@ public class DeltaEvalFacade extends EvalFacade {
      * 加载数据到MQ
      */
     protected void loadData() {
-        String taskName = config.getTaskName();
-        long queueSize = activeMQEmbeddedServer.getQueueMessageCount(taskName);
+        String taskNameUuid = config.getTaskNameUuid();
+        long queueSize = activeMQEmbeddedServer.getQueueMessageCount(taskNameUuid);
         int count;
         try {
             count = dataItemMapper.count();
@@ -234,15 +236,15 @@ public class DeltaEvalFacade extends EvalFacade {
             List<String> messages = dataItems.stream()
                     .map(JsonUtils::toJson)
                     .collect(Collectors.toList());
-            activeMQEmbeddedServer.batchSendTextMessageToQueue(taskName, messages);
+            activeMQEmbeddedServer.batchSendTextMessageToQueue(taskNameUuid, messages);
         }
         try {
-            evalTaskMapper.updateAllCount(taskName, activeMQEmbeddedServer.getQueueMessageCount(taskName));
-            evalTaskMapper.updateStatus(taskName, EvalTaskStatus.PROCESSING);
+            evalTaskMapper.updateAllCount(taskNameUuid, activeMQEmbeddedServer.getQueueMessageCount(taskNameUuid));
+            evalTaskMapper.updateStatus(taskNameUuid, EvalTaskStatus.PROCESSING);
         } catch (SQLException e) {
             log.error("Update all count error: {}", e.getMessage(), e);
         }
-        log.info("Load data to MQ success, queue size: {}", activeMQEmbeddedServer.getQueueMessageCount(taskName));
+        log.info("Load data to MQ success, queue size: {}", activeMQEmbeddedServer.getQueueMessageCount(taskNameUuid));
     }
 
     /**
@@ -250,7 +252,7 @@ public class DeltaEvalFacade extends EvalFacade {
      */
     @Override
     protected CompletableFuture<Void> eval() {
-        String taskName = config.getTaskName();
+        String taskNameUuid = config.getTaskNameUuid();
         int threadNum = config.getThreadNum();
         int mqReceiveTimeout = config.getMqReceiveTimeout();
         int batchSize = config.getBatchSize();
@@ -261,7 +263,7 @@ public class DeltaEvalFacade extends EvalFacade {
         for (int i = 0; i < threadNum; i++) {
             pool.submit(() -> {
                 do {
-                    activeMQEmbeddedServer.batchReceiveInTx(taskName, batchSize, mqReceiveTimeout, (batch, session) -> {
+                    activeMQEmbeddedServer.batchReceiveInTx(taskNameUuid, batchSize, mqReceiveTimeout, (batch, session) -> {
                         if (batch.isEmpty()) {
                             return false;
                         }
@@ -399,7 +401,8 @@ public class DeltaEvalFacade extends EvalFacade {
      */
     @Override
     public long getRemainDataCount() {
-        return activeMQEmbeddedServer.getQueueMessageCount(config.getTaskName());
+        String taskNameUuid = config.getTaskNameUuid();
+        return activeMQEmbeddedServer.getQueueMessageCount(taskNameUuid);
     }
 
     /**
@@ -419,7 +422,8 @@ public class DeltaEvalFacade extends EvalFacade {
      */
     public long getTotalCount() {
         try {
-            return evalTaskMapper.queryTotalCount(config.getTaskName());
+            String taskNameUuid = config.getTaskNameUuid();
+            return evalTaskMapper.queryTotalCount(taskNameUuid);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

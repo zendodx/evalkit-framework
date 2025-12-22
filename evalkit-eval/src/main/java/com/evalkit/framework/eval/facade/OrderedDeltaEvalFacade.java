@@ -79,7 +79,7 @@ public abstract class OrderedDeltaEvalFacade extends DeltaEvalFacade {
      */
     @Override
     protected CompletableFuture<Void> eval() {
-        String taskName = config.getTaskName();
+        String taskNameUuid = config.getTaskNameUuid();
         int threadNum = config.getThreadNum();
         int mqReceiveTimeout = config.getMqReceiveTimeout();
         int batchSize = config.getBatchSize();
@@ -104,7 +104,7 @@ public abstract class OrderedDeltaEvalFacade extends DeltaEvalFacade {
                 AtomicInteger emptyRounds = new AtomicInteger(0);
                 try {
                     do {
-                        activeMQEmbeddedServer.batchReceiveInTx(taskName, batchSize, mqReceiveTimeout, (batch, session) -> {
+                        activeMQEmbeddedServer.batchReceiveInTx(taskNameUuid, batchSize, mqReceiveTimeout, (batch, session) -> {
                             if (batch.isEmpty()) {
                                 log.info("Empty batch, start empty rounds count:{}", emptyRounds.get());
                                 emptyRounds.incrementAndGet();
