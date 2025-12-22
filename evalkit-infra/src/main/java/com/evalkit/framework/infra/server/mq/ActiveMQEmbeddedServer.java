@@ -3,13 +3,12 @@ package com.evalkit.framework.infra.server.mq;
 import com.evalkit.framework.common.utils.list.ListUtils;
 import com.evalkit.framework.common.utils.math.MathUtils;
 import com.evalkit.framework.common.utils.net.NetworkUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.RedeliveryPolicy;
 import org.apache.activemq.broker.BrokerService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import javax.jms.*;
 import javax.management.InstanceNotFoundException;
@@ -27,10 +26,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 嵌入式 ActiveMQ （JDK8 + 5.17.6）
  * 端口获取方式: 动态分配端口,随机分配一个,然后检查是否被占用递增
  */
+@Slf4j
 public class ActiveMQEmbeddedServer {
     /* 默认MQ服务名 */
     private static final String DEFAULT_BROKER_NAME = "embeddedBroker";
-    private static final Logger log = LogManager.getLogger(ActiveMQEmbeddedServer.class);
 
     /* 动态端口计数器 */
     private static final AtomicInteger portCounter = new AtomicInteger(61616 + MathUtils.random(0, 1000));
@@ -61,7 +60,7 @@ public class ActiveMQEmbeddedServer {
      */
     private static int getAvailablePort() {
         int port = portCounter.getAndIncrement();
-        while (!NetworkUtils.isPortUsed(port)) {
+        while (NetworkUtils.isPortUsed(port)) {
             port = portCounter.getAndIncrement();
         }
         return port;
@@ -97,6 +96,7 @@ public class ActiveMQEmbeddedServer {
             int dynamicPort = getAvailablePort();
             tcpUrl = "tcp://0.0.0.0:" + dynamicPort;
         }
+        log.info("[ActiveMQ] Embedded broker tcp url: {}", tcpUrl);
         return new ActiveMQEmbeddedServer(brokerName, tcpUrl);
     }
 
@@ -105,11 +105,11 @@ public class ActiveMQEmbeddedServer {
      */
     public synchronized void start(String pathName) throws Exception {
         if (StringUtils.isEmpty(pathName)) {
-            throw new IllegalStateException("ActiveMQ path name is empty");
+            throw new IllegalStateException("[ActiveMQ] path name is empty");
         }
         // 已经创建则跳过
         if (broker != null) {
-            log.info("ActiveMQ Embedded Broker is already started");
+            log.info("[ActiveMQ] Embedded Broker is already started");
             return;
         }
         // 创建broker
@@ -128,7 +128,7 @@ public class ActiveMQEmbeddedServer {
         ActiveMQConnectionFactory amqFactory = new ActiveMQConnectionFactory(vmUrl);
         amqFactory.setRedeliveryPolicy(policy);
         this.factory = amqFactory;
-        log.info("ActiveMQ embedded broker started with name: {}, port: {}", brokerName, tcpUrl);
+        log.info("[ActiveMQ] Embedded broker started with brokerName: {}, tcpUrl: {}", brokerName, tcpUrl);
     }
 
     /**
@@ -149,10 +149,10 @@ public class ActiveMQEmbeddedServer {
                 broker.stop();
                 broker.waitUntilStopped();
                 broker = null;
-                log.info("ActiveMQ embedded broker stopped");
+                log.info("[ActiveMQ] embedded broker stopped");
             }
         } catch (Exception e) {
-            log.error("Stop ActiveMQ embedded broker error: {}", e.getMessage(), e);
+            log.error("[ActiveMQ] Stop embedded broker failed, error: {}", e.getMessage(), e);
         }
     }
 
@@ -161,7 +161,7 @@ public class ActiveMQEmbeddedServer {
      */
     private void executeInSession(JmsCallback callback) {
         if (broker == null || !broker.isStarted()) {
-            throw new IllegalStateException("ActiveMQ embedded broker is not started. Call start() first.");
+            throw new IllegalStateException("[ActiveMQ] Embedded broker is not started. Call start() first.");
         }
         Connection conn = null;
         Session session = null;
@@ -285,7 +285,7 @@ public class ActiveMQEmbeddedServer {
      */
     public void batchReceiveInTx(String queueName, int batchSize, long timeout, JmsBatchCallback callback) {
         if (!isStarted()) {
-            throw new IllegalStateException("Broker already stopped");
+            throw new IllegalStateException("[ActiveMQ] Broker already stopped");
         }
         Connection conn = null;
         Session session = null;
@@ -313,7 +313,7 @@ public class ActiveMQEmbeddedServer {
             }
         } catch (Exception e) {
             rollback(session);
-            log.error("MQ batch receive failed, error: {}", e.getMessage(), e);
+            log.error("[ActiveMQ] Batch receive message failed, error: {}", e.getMessage(), e);
             throw new RuntimeException(e);
         } finally {
             closeQuietly(session, conn);
@@ -341,7 +341,7 @@ public class ActiveMQEmbeddedServer {
             // 队列还没创建，返回 0
             return 0;
         } catch (Exception e) {
-            log.error("Failed to get queue message count for queue: {}", queueName, e);
+            log.error("[ActiveMQ] Get queue message count from queue: {} failed, error:{}", queueName, e.getMessage(), e);
             return 0;
         }
     }
