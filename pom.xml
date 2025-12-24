@@ -42,6 +42,7 @@
         <module>evalkit-workflow</module>
         <module>evalkit-infra</module>
         <module>evalkit-eval</module>
+        <module>evalkit-test</module>
     </modules>
 
     <properties>
