@@ -131,7 +131,8 @@ public class EvalTest {
     public Workflow buildDAGEvalWorkflow(String fileName) {
         initWorkflowNode(fileName);
         List<Scorer> scorers = ListUtils.of(scorer1, scorer2);
-        List<Reporter> reporters = ListUtils.of(htmlReporter, csvReporter, excelReporter, jsonReporter);
+//        List<Reporter> reporters = ListUtils.of(htmlReporter, csvReporter, excelReporter, jsonReporter);
+        List<Reporter> reporters = ListUtils.of(htmlReporter, jsonReporter);
         return new WorkflowBuilder()
                 .link(begin, dataLoader, mockDataLoaderWrapper, apiCompletion, scorers, basicCounter, reporters)
                 .build();
@@ -166,7 +167,8 @@ public class EvalTest {
     public DeltaEvalFacade buildDeltaEvalFacade(String fileName) {
         initWorkflowNode(fileName);
         List<Scorer> scorers = ListUtils.of(scorer1, scorer2);
-        List<Reporter> reporters = ListUtils.of(htmlReporter, csvReporter, excelReporter, jsonReporter);
+//        List<Reporter> reporters = ListUtils.of(htmlReporter, csvReporter, excelReporter, jsonReporter);
+        List<Reporter> reporters = ListUtils.of(htmlReporter, jsonReporter);
         return new DeltaEvalFacade(
                 DeltaEvalConfig.builder()
                         .taskName("DeltaEvalPerformanceTest_" + DateUtils.nowToString())

@@ -61,3 +61,4 @@ test_report
 
 # mvn flatten
 .flattened-pom.xml
+.dump

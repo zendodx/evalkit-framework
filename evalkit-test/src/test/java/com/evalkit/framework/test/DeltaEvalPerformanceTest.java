@@ -23,15 +23,18 @@ import java.util.Map;
 public class DeltaEvalPerformanceTest {
     private static final Logger logger = LoggerFactory.getLogger(DeltaEvalPerformanceTest.class);
     private static final String tempDir = System.getProperty("java.io.tmpdir");
-    private static final String fileName = "DAGEvalTest_" + UuidUtils.generateUuid() + ".xlsx";
-    public static int caseCount = 1000;
+    private static final String fileName = "DeltaEvalPerformanceTest_" + UuidUtils.generateUuid() + ".xlsx";
+    public static int caseCount = 10000 * 5;
     private static PerformanceMonitor performanceMonitor;
 
     /**
      * 构建临时评测文件
      */
     @BeforeAll
-    public static void setUp() {
+    public static void setUp() throws InterruptedException {
+        System.gc();
+        Thread.sleep(5000);
+
         String reportName = String.format("DeltaEvalPerformanceTest_caseCount_%s", caseCount);
         performanceMonitor = new PerformanceMonitor(reportName);
         performanceMonitor.recordMemorySnapshot("测试准备开始");
