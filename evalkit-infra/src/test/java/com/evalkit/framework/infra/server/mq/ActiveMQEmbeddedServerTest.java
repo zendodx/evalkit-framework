@@ -1,5 +1,6 @@
 package com.evalkit.framework.infra.server.mq;
 
+import com.evalkit.framework.common.utils.file.FileUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -26,7 +27,7 @@ class ActiveMQEmbeddedServerTest {
         List<Message> texts = server.batchReceiveMessageFromQueue("testQueue", 1000 * 3, 10);
         log.info("received texts: {}", texts);
         server.stop();
-        deleteDirectory(new File(tempDir + "/" + task));
+        FileUtils.deleteDirectory(new File(tempDir + "/" + task));
     }
 
     /**
@@ -65,32 +66,13 @@ class ActiveMQEmbeddedServerTest {
             server3.stop();
 
             // 清理临时文件
-            deleteDirectory(new File(tempDir + "/" + task1));
-            deleteDirectory(new File(tempDir + "/" + task2));
-            deleteDirectory(new File(tempDir + "/" + task3));
+            FileUtils.deleteDirectory(new File(tempDir + "/" + task1));
+            FileUtils.deleteDirectory(new File(tempDir + "/" + task2));
+            FileUtils.deleteDirectory(new File(tempDir + "/" + task3));
 
             log.info("finish multiEmbeddedServerTest");
         } catch (Exception e) {
             log.error("ActiveMQEmbeddedServerTest multiEmbeddedServerTest error: {}", e.getMessage(), e);
-        }
-    }
-
-    /**
-     * 删除目录
-     */
-    private static void deleteDirectory(File directory) {
-        if (directory.exists()) {
-            File[] files = directory.listFiles();
-            if (files != null) {
-                for (File file : files) {
-                    if (file.isDirectory()) {
-                        deleteDirectory(file);
-                    } else {
-                        file.delete();
-                    }
-                }
-            }
-            directory.delete();
         }
     }
 }

@@ -2,13 +2,12 @@ package com.evalkit.framework.eval.node.scorer;
 
 import com.evalkit.framework.common.utils.list.ListUtils;
 import com.evalkit.framework.common.utils.map.MapUtils;
-import com.evalkit.framework.common.utils.time.DateUtils;
 import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.model.InputData;
 import com.evalkit.framework.eval.node.begin.Begin;
 import com.evalkit.framework.eval.node.begin.config.BeginConfig;
 import com.evalkit.framework.eval.node.dataloader.DataLoader;
-import com.evalkit.framework.eval.node.reporter.html.HtmlReporter;
+import com.evalkit.framework.eval.node.reporter.StdReporter;
 import com.evalkit.framework.eval.node.scorer.checker.AbstractChecker;
 import com.evalkit.framework.eval.node.scorer.checker.Checker;
 import com.evalkit.framework.eval.node.scorer.checker.config.CheckerConfig;
@@ -161,9 +160,8 @@ class MultiCheckerBasedScorerTest {
 
         CustomScorer customScorer = new CustomScorer();
 
-        String fileName = "MultiCheckerBasedScorerTest_" + DateUtils.nowToString("yyyyMMdd_HHmmss");
-        HtmlReporter htmlReporter = new HtmlReporter(fileName, fileName);
+        StdReporter stdReporter = new StdReporter();
 
-        new WorkflowBuilder().link(begin, dataLoader, customScorer, htmlReporter).build().execute();
+        new WorkflowBuilder().link(begin, dataLoader, customScorer, stdReporter).build().execute();
     }
 }

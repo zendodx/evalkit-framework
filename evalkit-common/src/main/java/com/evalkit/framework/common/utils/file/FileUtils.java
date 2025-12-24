@@ -140,6 +140,8 @@ public class FileUtils {
 
     /**
      * 删除文件夹
+     *
+     * @param dirPath 文件夹路径
      */
     public static void deleteDirectory(String dirPath) {
         File dir = new File(dirPath);
@@ -149,6 +151,27 @@ public class FileUtils {
             } catch (IOException e) {
                 throw new RuntimeException("Delete directory error:" + e.getMessage(), e);
             }
+        }
+    }
+
+    /**
+     * 删除文件夹
+     *
+     * @param directory 文件夹
+     */
+    public static void deleteDirectory(File directory) {
+        if (directory.exists()) {
+            File[] files = directory.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    if (file.isDirectory()) {
+                        deleteDirectory(file);
+                    } else {
+                        file.delete();
+                    }
+                }
+            }
+            directory.delete();
         }
     }
 
