@@ -42,36 +42,42 @@ public class BatchRunner {
             return Collections.emptyList();
         }
 
+        // 获取线程池
         ThreadPoolExecutor pool = ThreadPoolManager.get(poolName);
         int oldCore = pool.getCorePoolSize();
         int oldMax = pool.getMaximumPoolSize();
 
-        // 1. 先扩大 maximum，再调整 core
+        // 先扩大 maximum，再调整 core
         ThreadPoolManager.resize(poolName, threadNum, Math.max(threadNum, oldMax));
 
-        List<CompletableFuture<R>> futures = data.stream()
-                .map(item -> CompletableFuture.supplyAsync(() -> task.apply(item), pool))
-                .collect(Collectors.toList());
-
+        List<CompletableFuture<R>> futures = null;
         try {
+            // 提交任务
+            futures = data.stream()
+                    .map(item -> CompletableFuture.supplyAsync(() -> task.apply(item), pool))
+                    .collect(Collectors.toList());
+
+            // 等待所有任务完成
             CompletableFuture<Void> all = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
-            // Java8 没有 orTimeout，可以用 get(timeout, unit) 实现
             all.get(timeoutComputer.applyAsLong(data.size()), TimeUnit.SECONDS);
 
+            // 获取结果
             return futures.stream()
                     .map(f -> {
                         try {
                             return f.get();
                         } catch (Exception e) {
-                            log.error("Future get error", e);
+                            log.error("[BatchRunner] Get future result failed, poolName: {}, error: {}", poolName, e.getMessage(), e);
                             return null;
                         }
                     })
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
-        } catch (Exception ex) {
-            futures.forEach(f -> f.cancel(true));
-            log.error("Batch runner error", ex);
+        } catch (Exception e) {
+            if (futures != null) {
+                log.error("[BatchRunner] Batch run task failed, poolName: {}, error: {}", poolName, e.getMessage(), e);
+                futures.forEach(f -> f.cancel(true));
+            }
             return null;
         } finally {
             // 还原线程池
