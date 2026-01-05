@@ -7,6 +7,7 @@ import com.evalkit.framework.eval.exception.EvalException;
 import com.evalkit.framework.eval.model.InputData;
 import com.evalkit.framework.eval.node.dataloader.config.DataLoaderConfig;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +30,7 @@ public abstract class JsonDataLoader extends DataLoader {
     /**
      * 准备要要加载的json数据
      */
-    public abstract String prepareJson();
+    public abstract String prepareJson() throws IOException;
 
     protected List<InputData> parseJson(String json, String jsonPath) {
         List<InputData> inputDataList = new ArrayList<>();
