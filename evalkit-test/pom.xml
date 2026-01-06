@@ -1,0 +1,58 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.github.zendodx</groupId>
+        <artifactId>evalkit-parent</artifactId>
+        <version>${revision}</version>
+        <relativePath>../evalkit-parent/pom.xml</relativePath>
+    </parent>
+
+    <artifactId>evalkit-test</artifactId>
+    <packaging>jar</packaging>
+
+    <name>evalkit-test</name>
+    <description>evalkit test project</description>
+    <url>https://github.com/zendodx/evalkit-framework.git</url>
+
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>zendodx</name>
+            <email>zendodx@hotmail.com</email>
+            <roles>
+                <role>Project Manager</role>
+                <role>Architect</role>
+            </roles>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>https://github.com/zendodx/evalkit-framework.git</connection>
+        <developerConnection>scm:git@github.com:zendodx/evalkit-framework.git</developerConnection>
+        <url>https://github.com/zendodx/evalkit-framework</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.github.zendodx</groupId>
+            <artifactId>evalkit-eval</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.zendodx</groupId>
+            <artifactId>evalkit-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

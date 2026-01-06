@@ -19,7 +19,9 @@ import com.evalkit.framework.eval.node.dataloader.injector.DataInjector;
 import com.evalkit.framework.eval.node.scorer.strategy.SumScoreStrategy;
 import com.evalkit.framework.infra.server.mq.ActiveMQEmbeddedServer;
 import com.evalkit.framework.infra.server.sql.SQLiteEmbeddedServer;
+import com.evalkit.framework.workflow.TaskExecutor;
 import com.evalkit.framework.workflow.Workflow;
+import com.evalkit.framework.workflow.WorkflowContextHolder;
 import com.evalkit.framework.workflow.exception.WorkflowException;
 import com.evalkit.framework.workflow.model.WorkflowContext;
 import lombok.Data;
@@ -136,6 +138,7 @@ public class DeltaEvalFacade extends EvalFacade {
             initEvalTask();
             // 加载评测数据
             loadDataWrapper();
+            // 消费MQ并评测
             CompletableFuture<Void> consumeFuture = eval();
             // 周期性上报最新评测结果
             report();
@@ -205,39 +208,68 @@ public class DeltaEvalFacade extends EvalFacade {
             log.error("Count dataItem error: {}", e.getMessage(), e);
             return;
         }
+        // 已经加载过数据,不需要重复加载
         if (queueSize > 0 || (queueSize == 0 && count > 0)) {
             log.info("Data already loaded to MQ, queue size: {}", queueSize);
             return;
         }
         // 加载输入数据
         DataLoader dataLoader = config.getDataLoader();
-        List<InputData> inputDataList = dataLoader.loadWrapper();
-        if (CollectionUtils.isEmpty(inputDataList)) {
-            return;
-        }
-        // 构建dataItem
-        List<DataItem> dataItems = new CopyOnWriteArrayList<>();
-        inputDataList.forEach(inputData -> {
-            DataItem dataItem = new DataItem();
-            dataItem.setDataIndex(inputData.getDataIndex());
-            dataItem.setInputData(inputData);
-            dataItems.add(dataItem);
-        });
-        // 数据加载器开启数据注入后需要将inputData中的已有数据注入到dataItem
         DataLoaderConfig dataLoaderConfig = dataLoader.getConfig();
-        boolean openInjectData = dataLoaderConfig.isOpenInjectData();
-        if (openInjectData) {
-            DataInjector.batchInject(dataItems, dataLoaderConfig.isInjectDataIndex(), dataLoaderConfig.isInjectInputData(),
-                    dataLoaderConfig.isInjectApiCompletionResult(), dataLoaderConfig.isInjectEvalResult(),
-                    dataLoaderConfig.isInjectExtra());
-        }
-        // MQ存储dataItems
-        if (CollectionUtils.isNotEmpty(dataItems)) {
-            List<String> messages = dataItems.stream()
-                    .map(JsonUtils::toJson)
-                    .collect(Collectors.toList());
-            activeMQEmbeddedServer.batchSendTextMessageToQueue(taskNameUuid, messages);
-        }
+        int limit = dataLoaderConfig.getLimit();
+        int offset = dataLoaderConfig.getOffset();
+        int curLimit = limit;
+        int curOffset = offset;
+        int batchSize = 100;
+        long loadedCount = 0;
+        do {
+            // 分页加载数据
+            dataLoaderConfig.setOffset(curOffset);
+            if (curLimit == -1) {
+                dataLoaderConfig.setLimit(batchSize);
+            } else {
+                if (curOffset + batchSize > curLimit) {
+                    dataLoaderConfig.setLimit(curLimit - curOffset);
+                }
+            }
+            List<InputData> inputDataList = dataLoader.loadWrapper();
+            if (CollectionUtils.isEmpty(inputDataList)) break;
+            // 更新评测数据索引
+            long startIndex = loadedCount;
+            for (InputData inputData : inputDataList) {
+                inputData.setDataIndex(startIndex);
+                startIndex++;
+            }
+            loadedCount += inputDataList.size();
+            curOffset += batchSize;
+
+            // inputData集合转dataItem集合
+            List<DataItem> dataItems = inputDataList.stream().map(inputData -> {
+                DataItem dataItem = new DataItem();
+                dataItem.setDataIndex(inputData.getDataIndex());
+                dataItem.setInputData(inputData);
+                return dataItem;
+            }).collect(Collectors.toList());
+
+            // 数据加载器开启数据注入后需要将inputData中的已有数据注入到dataItem
+            boolean openInjectData = dataLoaderConfig.isOpenInjectData();
+            if (openInjectData) {
+                DataInjector.batchInject(dataItems, dataLoaderConfig.isInjectDataIndex(), dataLoaderConfig.isInjectInputData(),
+                        dataLoaderConfig.isInjectApiCompletionResult(), dataLoaderConfig.isInjectEvalResult(),
+                        dataLoaderConfig.isInjectExtra());
+            }
+            // MQ存储dataItems
+            if (CollectionUtils.isNotEmpty(dataItems)) {
+                List<String> messages = dataItems.stream()
+                        .map(JsonUtils::toJson)
+                        .collect(Collectors.toList());
+                activeMQEmbeddedServer.batchSendTextMessageToQueue(taskNameUuid, messages);
+            }
+            // 清空dataItems
+            dataItems.clear();
+            inputDataList.clear();
+        } while (curLimit == -1 || (curLimit >= 0 && loadedCount < curLimit));
+        // 数据库更新任务数量
         try {
             evalTaskMapper.updateAllCount(taskNameUuid, activeMQEmbeddedServer.getQueueMessageCount(taskNameUuid));
             evalTaskMapper.updateStatus(taskNameUuid, EvalTaskStatus.PROCESSING);
@@ -260,7 +292,7 @@ public class DeltaEvalFacade extends EvalFacade {
         AtomicLong consumed = new AtomicLong(0);
         CountDownLatch latch = new CountDownLatch(1);
         long total = getRemainDataCount();
-        for (int i = 0; i < threadNum; i++) {
+        for (int i = 0; i < threadNum && total > 0; i++) {
             pool.submit(() -> {
                 do {
                     activeMQEmbeddedServer.batchReceiveInTx(taskNameUuid, batchSize, mqReceiveTimeout, (batch, session) -> {
@@ -312,20 +344,36 @@ public class DeltaEvalFacade extends EvalFacade {
         // 构建DataItem
         List<DataItem> dataItems = new CopyOnWriteArrayList<>();
         dataItems.add(dataItem);
-        // 克隆工作流
-        Workflow evalWorkflow = config.getEvalWorkflow().clone();
-        // 禁用自动关闭线程池
-        evalWorkflow.setAutoShutdown(false);
-        // 构建上下文
-        WorkflowContext ctx = new WorkflowContext();
-        WorkflowContextOps.setDataItems(ctx, dataItems);
-        evalWorkflow.setWorkflowContext(ctx);
-        // 执行评测
-        evalWorkflow.execute();
-        // 执行后结果落库
-        Optional<DataItem> result = WorkflowContextOps.getDataItems(ctx).stream().findFirst();
-        if (result.isPresent()) {
-            dataItemMapper.insert(result.get());
+        Workflow evalWorkflow = null;
+        try {
+            // 克隆工作流
+            evalWorkflow = config.getEvalWorkflow().clone();
+            // 禁用自动关闭线程池
+            evalWorkflow.setAutoShutdown(false);
+            // 构建上下文
+            WorkflowContext ctx = new WorkflowContext();
+            WorkflowContextOps.setDataItems(ctx, dataItems);
+            evalWorkflow.setWorkflowContext(ctx);
+            // 执行评测
+            evalWorkflow.execute();
+            // 执行后结果落库
+            Optional<DataItem> result = WorkflowContextOps.getDataItems(ctx).stream().findFirst();
+            if (result.isPresent()) {
+                dataItemMapper.insert(result.get());
+            }
+        } catch (Exception e) {
+            log.error("[DeltaEvalFacade] Eval data consume and eval failed, error: {}", e.getMessage(), e);
+            throw e;
+        } finally {
+            if (evalWorkflow != null) {
+                // 上文设置禁用自动关闭线程池,此处需要手动关闭,避免线程池资源泄露
+                TaskExecutor taskExecutor = evalWorkflow.getTaskExecutor();
+                if (taskExecutor != null) {
+                    taskExecutor.shutdown();
+                }
+                // 清空上下文,避免内存泄漏
+                WorkflowContextHolder.clear();
+            }
         }
     }
 

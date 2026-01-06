@@ -18,7 +18,7 @@ public class DataGeneratorConfig {
     protected boolean enableOutputFile = false;
     /* 导出文件路径 */
     @Builder.Default
-    protected String outputFilePath = "attaches";
+    protected String outputFilePath = "attachments";
     /* 导出文件名 */
     @Builder.Default
     protected String outputFileName = "gendata_" + DateUtils.nowToString("yyyyMMddHHmmss");

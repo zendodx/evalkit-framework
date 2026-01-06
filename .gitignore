@@ -57,6 +57,8 @@ cache_data
 delta_eval_cache_data
 eval_cache_data
 testMQ
+test_report
 
 # mvn flatten
 .flattened-pom.xml
+.dump

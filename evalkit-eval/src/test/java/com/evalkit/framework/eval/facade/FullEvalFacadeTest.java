@@ -55,7 +55,7 @@ class FullEvalFacadeTest {
         @Override
         protected void afterExecute() {
             log.info("===>Finish consume and eval, remain data size:{}, processed data size:{}", getRemainDataCount(), getProcessedDataCount());
-            List<File> files = FileUtils.listFiles("attaches/");
+            List<File> files = FileUtils.listFiles("attachments/");
             List<String> collect = files.stream().map(File::getName).collect(Collectors.toList());
             log.info("===>attaches files:{}", collect);
         }
@@ -138,12 +138,12 @@ class FullEvalFacadeTest {
         };
 
         // 评测结果上报
-        String fileName = "full_eval_test_" + DateUtils.nowToString();
+        String fileName = "FullEvalTest" + DateUtils.nowToString();
         BasicCounter basicCounter = new BasicCounter();
-        HtmlReporter htmlReporter = new HtmlReporter(fileName, fileName);
-        JsonReporter jsonReporter = new JsonReporter(fileName, fileName);
-        ExcelReporter excelReporter = new ExcelReporter(fileName, fileName);
-        CsvReporter csvReporter = new CsvReporter(fileName, fileName);
+        HtmlReporter htmlReporter = new HtmlReporter(fileName);
+        JsonReporter jsonReporter = new JsonReporter(fileName);
+        ExcelReporter excelReporter = new ExcelReporter(fileName);
+        CsvReporter csvReporter = new CsvReporter(fileName);
 
         List<Scorer> scorers = ListUtils.of(scorer1, scorer2, scorer3);
 

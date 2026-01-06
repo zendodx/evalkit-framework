@@ -22,18 +22,26 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public abstract class FileReporter extends Reporter {
+    /* 默认文件输出文件夹为attachments */
+    protected static String DEFAULT_PARENT_DIR = "attachments";
     /* 输出文件名 */
     protected String fileName;
     /* 输出文件夹 */
-    protected String parentDir = "attachments";
+    protected String parentDir;
 
-    private FileReporter() {
-        this.fileName = DateUtils.nowToString();
+    public FileReporter() {
+        this(DateUtils.nowToString(), DEFAULT_PARENT_DIR);
+    }
+
+    public FileReporter(String fileName) {
+        this(fileName, DEFAULT_PARENT_DIR);
     }
 
     public FileReporter(String fileName, String parentDir) {
         this.fileName = fileName;
-        if (StringUtils.isNotEmpty(parentDir)) {
+        if (StringUtils.isEmpty(parentDir)) {
+            this.parentDir = DEFAULT_PARENT_DIR;
+        } else {
             this.parentDir = parentDir;
         }
     }
@@ -41,7 +49,6 @@ public abstract class FileReporter extends Reporter {
     @Override
     protected void beforeReport(ReportData reportData) {
         super.beforeReport(reportData);
-        // 如果没有attach/附件文件夹则创建
         Path attach = Paths.get(parentDir + "/");
         if (!attach.toFile().exists()) {
             attach.toFile().mkdirs();

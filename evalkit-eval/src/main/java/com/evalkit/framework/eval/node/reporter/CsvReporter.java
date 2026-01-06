@@ -33,7 +33,6 @@ public class CsvReporter extends FileReporter {
     public CsvReporter(String filename, String delimiter, String parentDir) {
         super(filename, parentDir);
         this.delimiter = delimiter;
-        this.parentDir = parentDir;
     }
 
     @Override

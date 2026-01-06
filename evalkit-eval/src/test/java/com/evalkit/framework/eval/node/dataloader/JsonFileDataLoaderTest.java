@@ -21,6 +21,7 @@ class JsonFileDataLoaderTest {
 
     private String jsonObjectFilePath;
     private String jsonArrayFilePath;
+    private String jsonArrayFilePath2;
 
     /**
      * 构造Json临时文件
@@ -29,13 +30,17 @@ class JsonFileDataLoaderTest {
     public void setUp() throws IOException {
         String j1 = "{\"code\":0,\"success\":true,\"data\":{\t\"query\":\"hello\",\"type\":\"test\"}}";
         String j2 = "{\"code\":0,\"success\":true,\"data\":[{\"query\":\"hello\",\"type\":\"test\"},{\"query\":\"hi\",\"type\":\"test\"}]}";
+        String j3 = "[{\"query\":\"hello\",\"type\":\"test\"},{\"query\":\"hi\",\"type\":\"test\"}]";
 
         Path jsonObjectTempFile = Files.createTempFile("temp", ".json");
         jsonObjectFilePath = jsonObjectTempFile.toString();
         Path jsonArrayTempFile = Files.createTempFile("temp", ".json");
         jsonArrayFilePath = jsonArrayTempFile.toString();
+        Path jsonArrayTempFile2 = Files.createTempFile("temp", ".json");
+        jsonArrayFilePath2 = jsonArrayTempFile2.toString();
         JsonUtils.writeJsonFile(jsonObjectFilePath, JsonUtils.fromJson(j1, Map.class));
         JsonUtils.writeJsonFile(jsonArrayFilePath, JsonUtils.fromJson(j2, Map.class));
+        JsonUtils.writeJsonFile(jsonArrayFilePath2, JsonUtils.fromJson(j3, List.class));
     }
 
     /**
@@ -79,6 +84,18 @@ class JsonFileDataLoaderTest {
                 JsonFileDataLoaderConfig.builder()
                         .jsonPath("$.data")
                         .filePath(jsonArrayFilePath)
+                        .build()
+        );
+        List<InputData> inputData = dataLoader.prepareDataList();
+        log.info("Json File DataLoader: {}", inputData);
+        Assertions.assertEquals(2, inputData.size());
+    }
+
+    @Test
+    public void testLoadJsonArray2() throws Exception {
+        JsonFileDataLoader dataLoader = new JsonFileDataLoader(
+                JsonFileDataLoaderConfig.builder()
+                        .filePath(jsonArrayFilePath2)
                         .build()
         );
         List<InputData> inputData = dataLoader.prepareDataList();

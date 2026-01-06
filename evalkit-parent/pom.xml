@@ -12,7 +12,7 @@
     <packaging>pom</packaging>
 
     <name>evalkit-parent</name>
-    <description>eval fox project parent</description>
+    <description>evalkit project parent</description>
     <url>https://github.com/zendodx/evalkit-framework.git</url>
 
     <licenses>

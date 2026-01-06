@@ -42,11 +42,12 @@
         <module>evalkit-workflow</module>
         <module>evalkit-infra</module>
         <module>evalkit-eval</module>
+        <module>evalkit-test</module>
     </modules>
 
     <properties>
         <!-- 项目版本 -->
-        <revision>0.9.5</revision>
+        <revision>1.0.0</revision>
         <!-- 统一编码 -->
         <encoding>UTF-8</encoding>
         <!-- jdk版本 -->
