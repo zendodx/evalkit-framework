@@ -18,6 +18,7 @@ import java.util.List;
  */
 @Slf4j
 public abstract class Counter extends WorkflowNode {
+    protected String counterType = "defaultCounter";
     public Counter() {
         super(WorkflowUtils.generateNodeId(NodeNamePrefix.COUNTER));
     }

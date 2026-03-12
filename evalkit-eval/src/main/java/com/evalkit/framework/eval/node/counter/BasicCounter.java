@@ -15,6 +15,10 @@ import static com.evalkit.framework.common.utils.math.MathUtils.*;
  */
 public class BasicCounter extends Counter {
 
+    public BasicCounter() {
+        super.counterType = "basicCounter";
+    }
+
     /**
      * 统计方法实现
      */

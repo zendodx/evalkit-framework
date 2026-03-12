@@ -8,10 +8,7 @@ import com.evalkit.framework.eval.model.*;
 import com.evalkit.framework.eval.node.api.ApiCompletion;
 import com.evalkit.framework.eval.node.begin.Begin;
 import com.evalkit.framework.eval.node.begin.config.BeginConfig;
-import com.evalkit.framework.eval.node.counter.AttributeCounter;
-import com.evalkit.framework.eval.node.counter.AttributeCounterV2;
-import com.evalkit.framework.eval.node.counter.BasicCounter;
-import com.evalkit.framework.eval.node.counter.Counter;
+import com.evalkit.framework.eval.node.counter.*;
 import com.evalkit.framework.eval.node.dataloader.DataLoader;
 import com.evalkit.framework.eval.node.dataloader.config.DataLoaderConfig;
 import com.evalkit.framework.eval.node.dataloader_wrapper.DataLoaderWrapper;
@@ -62,6 +59,7 @@ public class CoreTest {
     BasicCounter basicCounter;
     AttributeCounter attributeCounter;
     AttributeCounterV2 attributeCounterV2;
+    MetricCounter metricCounter;
     Reporter reporter;
     HtmlReporter htmlReporter;
     CsvReporter csvReporter;
@@ -181,6 +179,24 @@ public class CoreTest {
         basicCounter = new BasicCounter();
         attributeCounter = new AttributeCounter(llmService);
         attributeCounterV2 = new AttributeCounterV2(llmService);
+        metricCounter = new MetricCounter() {
+            @Override
+            public List<MetricItem> buildMetricItems(List<DataItem> dataItems) {
+                List<MetricItem> metricItems = new ArrayList<>();
+                for (DataItem dataItem : dataItems) {
+                    Long dataIndex = dataItem.getDataIndex();
+                    EvalResult evalResult = dataItem.getEvalResult();
+                    List<ScorerResult> scorerResults = evalResult.getScorerResults();
+                    for (ScorerResult sc : scorerResults) {
+                        String metricName = sc.getMetric();
+                        double score = sc.getScore();
+                        double threshold = sc.getThreshold();
+                        metricItems.add(new MetricItem(dataIndex, metricName, score, threshold));
+                    }
+                }
+                return metricItems;
+            }
+        };
 
         reporter = new Reporter() {
             @Override
@@ -213,8 +229,9 @@ public class CoreTest {
     public void simpleTest() {
         List<Scorer> scorers = ListUtils.of(scorer1, scorer2, scorer3);
         List<Reporter> reporters = ListUtils.of(reporter, htmlReporter, csvReporter, excelReporter, jsonReporter);
+        List<Counter> counters = ListUtils.of(basicCounter, metricCounter);
         new WorkflowBuilder()
-                .link(begin, dataLoader, dataLoaderWrapper, apiCompletion, scorers, basicCounter, reporters, end)
+                .link(begin, dataLoader, dataLoaderWrapper, apiCompletion, scorers, counters, reporters, end)
                 .build()
                 .execute();
     }

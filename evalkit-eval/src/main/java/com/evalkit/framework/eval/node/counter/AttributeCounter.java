@@ -36,6 +36,7 @@ public class AttributeCounter extends Counter {
 
     public AttributeCounter(LLMService llmService) {
         this.llmService = llmService;
+        super.counterType = "attributeCounter";
     }
 
     @Override
