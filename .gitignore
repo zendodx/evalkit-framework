@@ -51,13 +51,14 @@ activemq-data
 # other
 *.xlsx
 *.json
-*.html
+#*.html
 *.csv
 cache_data
 delta_eval_cache_data
 eval_cache_data
 testMQ
 test_report
+attachments
 
 # mvn flatten
 .flattened-pom.xml

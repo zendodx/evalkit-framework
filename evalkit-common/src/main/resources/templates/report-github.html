@@ -3,16 +3,30 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>核心链路测试</title>
+    <title th:text="${reportName}">评测报告</title>
 
-    <!-- CDN -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/json-viewer-js@1.0.8/dist/json-viewer.css"/>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/json-viewer-js@1.0.8/dist/json-viewer.min.js"></script>
-    <script src="https://pfau-software.de/json-viewer/dist/iife/index.js"></script>
+    <!-- 外部库（CDN）-->
+    <th:block th:with="cdnDomain=${#strings.isEmpty(cdn) ? 'cdn.jsdelivr.net' : cdn}">
+        <link rel="stylesheet"
+              th:href="@{https://{domain}/npm/json-viewer-js@1.0.8/dist/json-viewer.css(domain=${cdnDomain})}"/>
+        <script th:src="@{https://{domain}/npm/chart.js@4.4.0/dist/chart.umd.min.js(domain=${cdnDomain})}"></script>
+        <script th:src="@{https://{domain}/npm/json-viewer-js@1.0.8/dist/json-viewer.min.js(domain=${cdnDomain})}"></script>
+        <script src="https://pfau-software.de/json-viewer/dist/iife/index.js"></script>
+    </th:block>
 
-    <!-- 本页 -->
-    <link rel="stylesheet" href="css/style.css"/>
+    <!-- 本页样式资源 - 按功能模块导入 -->
+    <!-- 1. 基础布局和颜色系统 -->
+    <th:block th:replace="~{github/fragments/css/layout :: layout}"/>
+    <!-- 2. 侧边栏相关样式 -->
+    <th:block th:replace="~{github/fragments/css/sidebar :: sidebar}"/>
+    <!-- 3. 总览面板样式 -->
+    <th:block th:replace="~{github/fragments/css/overview :: overview}"/>
+    <!-- 4. 详情面板样式 -->
+    <th:block th:replace="~{github/fragments/css/detail :: detail}"/>
+    <!-- 5. 归因面板样式 -->
+    <th:block th:replace="~{github/fragments/css/attribution :: attribution}"/>
+    <!-- 6. 指标统计面板样式 -->
+    <th:block th:replace="~{github/fragments/css/metric :: metric}"/>
 </head>
 <body>
 <!-- 侧边栏 -->
@@ -22,10 +36,12 @@
         <div class="filter-section">
             <div class="filter-btn-group">
                 <div class="attr-select">
-                    <button class="filter-btn" id="attrTrigger" onclick="toggleAttrMenu()">展开▼</button>
+                    <button class="filter-btn" id="attrTrigger" onclick="toggleAttrMenu()">更多▼</button>
                     <div class="attr-menu" id="attrMenu">
                         <div class="attr-item" onclick="chooseAttr('old')">归因</div>
                         <div class="attr-item" onclick="chooseAttr('v2')">归因V2</div>
+                        <!-- 评估指标统计面板 -->
+                        <div class="attr-item metric-panel" onclick="renderMetricCount()">指标统计</div>
                     </div>
                 </div>
                 <button class="filter-btn" id="overviewBtn" onclick="renderOverview()">总览</button>
@@ -43,6 +59,12 @@
             </div>
         </div>
 
+        <!-- 指标筛选状态提示 -->
+        <div class="metric-filter-notice" id="metricFilterNotice" style="display:none;">
+            <span id="metricFilterText"></span>
+            <button class="metric-filter-clear-btn" onclick="clearMetricFilter()" title="清除筛选">✕</button>
+        </div>
+
         <!-- 用例列表 -->
         <div class="case-list" id="caseList"></div>
 
@@ -57,9 +79,9 @@
             </div>
             <div class="tip-body">
                 <p><code>#99</code> 序号含 99</p>
-                <p><code>超时 & 错误</code> 同时出现“超时”和“错误”</p>
-                <p><code>超时 | 错误</code> 出现“超时”或“错误”</p>
-                <p><code>!通过</code> 不含“通过”</p>
+                <p><code>超时 & 错误</code> 同时出现"超时"和"错误"</p>
+                <p><code>超时 | 错误</code> 出现"超时"或"错误"</p>
+                <p><code>!通过</code> 不含"通过"</p>
                 <p><code>(超时 | 错误) & #123</code> 括号组合</p>
             </div>
         </div>
@@ -71,7 +93,7 @@
     <!-- 总览 -->
     <div id="overviewContent" class="overview">
         <div class="overview-left">
-            <div class="report-name">核心链路测试_2025-11-27T19:02:00</div>
+            <div class="report-name" th:text="${reportName}">评测报告</div>
             <div class="metric-name">基础指标</div>
             <div class="metrics-grid" id="basicMetricsGrid"></div>
             <div class="metric-name">接口调用指标</div>
@@ -97,7 +119,7 @@
         </div>
     </div>
 
-    <!-- 详情 / 归因 / V2 归因 -->
+    <!-- 详情 / 归因 / V2 归因 / 指标统计 -->
     <div id="detailContent" class="detail-panel">
         <div class="empty-state">选择左侧评测项查看详情</div>
     </div>
@@ -107,17 +129,47 @@
     <div id="attributeV2Panel" style="display:none;">
         <div id="attributeV2Content">选择归因查看详情</div>
     </div>
+    <div id="metricCountPanel" style="display:none;">
+        <div id="metricCountContent">暂无指标数据</div>
+    </div>
 </div>
 
 <!-- 复制提示 -->
 <div id="copyTip" class="copy-bubble">已复制</div>
-
 </body>
 
-<script src="js/data/data.js"></script>
-<script src="js/app.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', initializeApp);
+<!-- 业务脚本 - 后端数据注入 -->
+<script th:inline="javascript">
+    /* ========================================
+       后端数据注入
+       ======================================== */
+    /* 评估数据列表 */
+    const evaluationData = /*[[${evaluationData}]]*/ [];
+    /* 基础统计数据 */
+    const basicCountResult = /*[[${basicCountResult}]]*/ {};
+    /* 归因结果V1统计数据 */
+    const attributeCountResult = /*[[${attributeCountResult}]]*/ {};
+    /* 归因结果V2统计数据 */
+    const attributeCountResultV2 = /*[[${attributeCountResultV2}]]*/ {};
+    /* 评估指标统计数据 */
+    const metricCountResult = /*[[${metricCountResult}]]*/ {};
 </script>
+
+<!-- 业务脚本资源 - 按功能模块导入 -->
+<!-- 1. 核心状态管理和初始化 -->
+<th:block th:replace="~{default/fragments/js/core :: core}"/>
+<!-- 2. 工具函数库 -->
+<th:block th:replace="~{default/fragments/js/utils :: utils}"/>
+<!-- 3. 搜索和过滤逻辑 -->
+<th:block th:replace="~{default/fragments/js/search :: search}"/>
+<!-- 4. 总览面板渲染 -->
+<th:block th:replace="~{default/fragments/js/render-overview :: renderOverview}"/>
+<!-- 5. 详情面板渲染 -->
+<th:block th:replace="~{default/fragments/js/render-detail :: renderDetail}"/>
+<!-- 6. 归因面板渲染 -->
+<th:block th:replace="~{default/fragments/js/render-attribution :: renderAttribution}"/>
+<!-- 7. 指标统计面板渲染 -->
+<th:block th:replace="~{default/fragments/js/render-metric :: renderMetric}"/>
 </body>
 </html>
+

@@ -1,0 +1,375 @@
+<!-- 归因面板样式 - V1归因、V2归因卡片、表格、图表 -->
+<style th:fragment="attribution">
+    /* ========================================
+       归因面板主体（旧版V1）
+       ======================================== */
+    .attribute-content {
+        flex: 1;
+        padding: 3px;
+        overflow-y: auto;
+    }
+
+    .attribution-header {
+        display: flex;
+        align-items: center;
+        margin: 3px 3px;
+        flex: 1;
+    }
+
+    .attribution-stat {
+        font-size: 13px;
+        color: #666;
+        margin-left: 10px;
+    }
+
+    /* ========================================
+       V1 归因卡片
+       ======================================== */
+    .attribution-cards {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin: 3px 3px;
+        border-radius: 3px;
+    }
+
+    .attribution-card {
+        flex: 0 0 250px;
+        border: 1px solid #e5e7eb;
+        background: #fff;
+        transition: all .2s;
+    }
+
+    .attribution-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
+    }
+
+    .attribution-card-header {
+        padding: 12px 16px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .attribution-card-header .badge {
+        background: #f2f3f5;
+        color: #333;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 12px;
+    }
+
+    .attribution-card-body {
+        padding: 0 16px 16px;
+        display: none;
+    }
+
+    .attribution-card.expanded .attribution-card-body {
+        display: block;
+    }
+
+    .attribute-case-list {
+        max-height: 160px;
+        overflow: auto;
+        border: 1px solid #e5e7eb;
+        border-radius: 4px;
+        padding: 6px;
+        background: #fafafa;
+        font-size: 13px;
+    }
+
+    .attribute-case-list li {
+        margin: 2px 0;
+        word-break: break-all;
+    }
+
+    .attribute-copy-btn {
+        margin-top: 6px;
+        font-size: 12px;
+        padding: 4px 8px;
+        border: 1px solid #bbb;
+        border-radius: 4px;
+        background: #fff;
+        cursor: pointer;
+    }
+
+    .attribute-copy-btn:hover {
+        background: #f2f3f5;
+    }
+
+    .case-link {
+        cursor: pointer;
+        color: #409eff;
+        margin: 4px 0;
+    }
+
+    .case-link:hover {
+        text-decoration: underline;
+    }
+
+    .attribution-chart {
+        margin: 3px 3px;
+    }
+
+    /* ========================================
+       V2 归因面板
+       ======================================== */
+    #attributeV2Panel {
+        padding: 3px;
+        background: #fafafa;
+    }
+
+    /* V2 表格与图表布局 */
+    .attr-table-chart {
+        display: flex;
+        gap: 5px;
+        align-items: stretch;
+        justify-content: center;
+        margin-bottom: 15px;
+    }
+
+    /* 左侧表格 */
+    .attr-table {
+        flex: 1 1 360px;
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+        border: 1px solid #e4e7ed;
+        border-radius: 4px;
+        padding: 12px;
+        height: 100%;
+    }
+
+    .stat-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        text-align: left;
+    }
+
+    .stat-table th,
+    .stat-table td {
+        padding: 6px 8px;
+        border: 1px solid #e4e7ed;
+    }
+
+    .stat-table th {
+        background: #f5f7fa;
+        font-weight: 600;
+    }
+
+    .stat-table tbody {
+        display: block;
+        max-height: 320px;
+        overflow-y: auto;
+    }
+
+    .stat-table tbody tr:nth-child(even) {
+        background: #fafafa;
+    }
+
+    .stat-table thead,
+    .stat-table tbody tr {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+    }
+
+    /* 右侧图表 */
+    .attr-chart-group {
+        flex: 2 1 0;
+        display: flex;
+        gap: 5px;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .attr-chart {
+        flex: 1 1 220px;
+        background: #fff;
+        border: 1px solid #e4e7ed;
+        border-radius: 4px;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .attr-chart canvas {
+        width: 100% !important;
+        height: auto !important;
+        max-height: 240px;
+    }
+
+    /* ========================================
+       V2 工具栏
+       ======================================== */
+    .attr-toolbar {
+        margin-bottom: 12px;
+    }
+
+    /* 下拉选择框 */
+    .category-select {
+        width: 100%;
+        height: 30px;
+        max-width: 300px;
+        padding: 6px 10px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        margin-top: 5px;
+        outline: none;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    /* 搜索框 */
+    .attr-search {
+        width: 100%;
+        max-width: 300px;
+        height: 30px;
+        padding: 6px 10px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        margin-top: 5px;
+        outline: none;
+    }
+
+    .attr-search:focus {
+        border-color: #ccc;
+    }
+
+    .issue-count {
+        margin-left: 10px;
+    }
+
+    /* ========================================
+       V2 卡片
+       ======================================== */
+    .attr-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .attr-card {
+        border: 1px solid #e4e4e4;
+        border-radius: 6px;
+        background: #fff;
+        overflow: hidden;
+    }
+
+    .attr-card-head {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .attr-card-head:hover {
+        background: #f0f0f0;
+    }
+
+    .attr-issue {
+        flex: 1;
+        font-weight: 500;
+    }
+
+    .attr-cate {
+        margin: 0 8px;
+        padding: 2px 6px;
+        font-size: 12px;
+        color: #2db7f7;
+        border: 1px solid #2db7f7;
+        border-radius: 3px;
+    }
+
+    .attr-badge {
+        background: #ff4d4f;
+        color: #fff;
+        padding: 2px 6px;
+        border-radius: 10px;
+        font-size: 12px;
+    }
+
+    /* 卡片内容 */
+    .attr-card-body {
+        max-height: 0;
+        overflow: hidden;
+        padding: 0 12px;
+    }
+
+    .attr-card.expanded .attr-card-body {
+        max-height: 500px;
+        padding: 8px 12px;
+    }
+
+    .attr-desc {
+        color: #666;
+        font-size: 13px;
+        margin-bottom: 8px;
+    }
+
+    .attr-case-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 0;
+        margin: 0 0 8px 0;
+        list-style: none;
+    }
+
+    .attr-case-list .case-link {
+        padding: 2px 6px;
+        background: #f0f0f0;
+        border-radius: 3px;
+        font-size: 12px;
+        cursor: pointer;
+        margin: 0;
+    }
+
+    .attr-case-list .case-link:hover {
+        background: #d6d6d6;
+    }
+
+    .attr-copy-btn {
+        padding: 4px 8px;
+        font-size: 12px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        background: #fff;
+        cursor: pointer;
+    }
+
+    .attr-copy-btn:hover {
+        border-color: #2db7f7;
+        color: #2db7f7;
+    }
+
+    /* 复制提示 */
+    .copy-tip {
+        position: fixed;
+        top: 20%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 6px 12px;
+        background: rgba(0, 0, 0, .75);
+        color: #fff;
+        border-radius: 4px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .3s;
+    }
+
+    .copy-tip.show {
+        opacity: 1;
+    }
+
+    .no-data {
+        text-align: center;
+        color: #999;
+        padding: 40px 0;
+    }
+</style>
+

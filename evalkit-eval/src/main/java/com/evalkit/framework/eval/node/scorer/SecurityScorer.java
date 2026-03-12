@@ -29,6 +29,7 @@ public abstract class SecurityScorer extends PromptBasedScorer {
         if (StringUtils.isEmpty(config.getSysPrompt())) {
             config.setSysPrompt(DEFAULT_SYS_PROMPT);
         }
+        super.scorerType = "securityScorer";
     }
 
     @Override

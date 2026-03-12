@@ -14,8 +14,19 @@
         <script src="https://pfau-software.de/json-viewer/dist/iife/index.js"></script>
     </th:block>
 
-    <!-- 本页资源 -->
-    <th:block th:replace="~{fragments/css/report-default-style :: style}"/>
+    <!-- 本页样式资源 - 按功能模块导入 -->
+    <!-- 1. 基础布局和颜色系统 -->
+    <th:block th:replace="~{default/fragments/css/layout :: layout}"/>
+    <!-- 2. 侧边栏相关样式 -->
+    <th:block th:replace="~{default/fragments/css/sidebar :: sidebar}"/>
+    <!-- 3. 总览面板样式 -->
+    <th:block th:replace="~{default/fragments/css/overview :: overview}"/>
+    <!-- 4. 详情面板样式 -->
+    <th:block th:replace="~{default/fragments/css/detail :: detail}"/>
+    <!-- 5. 归因面板样式 -->
+    <th:block th:replace="~{default/fragments/css/attribution :: attribution}"/>
+    <!-- 6. 指标统计面板样式 -->
+    <th:block th:replace="~{default/fragments/css/metric :: metric}"/>
 </head>
 <body>
 <!-- 侧边栏 -->
@@ -25,10 +36,12 @@
         <div class="filter-section">
             <div class="filter-btn-group">
                 <div class="attr-select">
-                    <button class="filter-btn" id="attrTrigger" onclick="toggleAttrMenu()">展开▼</button>
+                    <button class="filter-btn" id="attrTrigger" onclick="toggleAttrMenu()">更多▼</button>
                     <div class="attr-menu" id="attrMenu">
                         <div class="attr-item" onclick="chooseAttr('old')">归因</div>
                         <div class="attr-item" onclick="chooseAttr('v2')">归因V2</div>
+                        <!-- 评估指标统计面板 -->
+                        <div class="attr-item metric-panel" onclick="renderMetricCount()">指标统计</div>
                     </div>
                 </div>
                 <button class="filter-btn" id="overviewBtn" onclick="renderOverview()">总览</button>
@@ -44,6 +57,12 @@
                 </div>
                 <button class="search-tip-btn" id="searchTipBtn" title="搜索语法">?</button>
             </div>
+        </div>
+
+        <!-- 指标筛选状态提示 -->
+        <div class="metric-filter-notice" id="metricFilterNotice" style="display:none;">
+            <span id="metricFilterText"></span>
+            <button class="metric-filter-clear-btn" onclick="clearMetricFilter()" title="清除筛选">✕</button>
         </div>
 
         <!-- 用例列表 -->
@@ -100,7 +119,7 @@
         </div>
     </div>
 
-    <!-- 详情 / 归因 / V2 归因 -->
+    <!-- 详情 / 归因 / V2 归因 / 指标统计 -->
     <div id="detailContent" class="detail-panel">
         <div class="empty-state">选择左侧评测项查看详情</div>
     </div>
@@ -110,21 +129,46 @@
     <div id="attributeV2Panel" style="display:none;">
         <div id="attributeV2Content">选择归因查看详情</div>
     </div>
+    <div id="metricCountPanel" style="display:none;">
+        <div id="metricCountContent">暂无指标数据</div>
+    </div>
 </div>
 
 <!-- 复制提示 -->
 <div id="copyTip" class="copy-bubble">已复制</div>
 </body>
 
-<!-- 业务脚本 -->
+<!-- 业务脚本 - 后端数据注入 -->
 <script th:inline="javascript">
+    /* ========================================
+       后端数据注入
+       ======================================== */
+    /* 评估数据列表 */
     const evaluationData = /*[[${evaluationData}]]*/ [];
-    const metricsData = /*[[${metricsData}]]*/ {};
+    /* 基础统计数据 */
+    const basicCountResult = /*[[${basicCountResult}]]*/ {};
+    /* 归因结果V1统计数据 */
     const attributeCountResult = /*[[${attributeCountResult}]]*/ {};
+    /* 归因结果V2统计数据 */
     const attributeCountResultV2 = /*[[${attributeCountResultV2}]]*/ {};
-    // Initialize the application when DOM is loaded
-    document.addEventListener('DOMContentLoaded', initializeApp);
+    /* 评估指标统计数据 */
+    const metricCountResult = /*[[${metricCountResult}]]*/ {};
 </script>
-<th:block th:replace="~{fragments/js/report-default-app :: app}"/>
+
+<!-- 业务脚本资源 - 按功能模块导入 -->
+<!-- 1. 核心状态管理和初始化 -->
+<th:block th:replace="~{default/fragments/js/core :: core}"/>
+<!-- 2. 工具函数库 -->
+<th:block th:replace="~{default/fragments/js/utils :: utils}"/>
+<!-- 3. 搜索和过滤逻辑 -->
+<th:block th:replace="~{default/fragments/js/search :: search}"/>
+<!-- 4. 总览面板渲染 -->
+<th:block th:replace="~{default/fragments/js/render-overview :: renderOverview}"/>
+<!-- 5. 详情面板渲染 -->
+<th:block th:replace="~{default/fragments/js/render-detail :: renderDetail}"/>
+<!-- 6. 归因面板渲染 -->
+<th:block th:replace="~{default/fragments/js/render-attribution :: renderAttribution}"/>
+<!-- 7. 指标统计面板渲染 -->
+<th:block th:replace="~{default/fragments/js/render-metric :: renderMetric}"/>
 </body>
 </html>

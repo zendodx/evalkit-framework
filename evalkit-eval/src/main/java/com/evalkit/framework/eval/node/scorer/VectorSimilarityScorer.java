@@ -26,6 +26,7 @@ public abstract class VectorSimilarityScorer extends Scorer {
     public VectorSimilarityScorer(VectorSimilarityScorerConfig config) {
         super(config);
         this.config = config;
+        super.scorerType = "vectorSimilarityScorer";
     }
 
     protected void validConfig(VectorSimilarityScorerConfig config) {

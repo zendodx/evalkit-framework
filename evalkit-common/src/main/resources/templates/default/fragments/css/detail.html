@@ -1,0 +1,184 @@
+<!-- 详情面板样式 - 详情头部、内容区、JSON展示 -->
+<style th:fragment="detail">
+    /* ========================================
+       详情面板头部
+       ======================================== */
+    .detail-header {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        padding: 4px 12px;
+        border-bottom: 1px solid #e4e7ed;
+        background: #fafafa;
+        font-size: 13px;
+        gap: 8px;
+    }
+
+    .datail-dataindex {
+        font-weight: 600;
+    }
+
+    .detail-strategy {
+        font-size: 11px;
+        color: #909399;
+    }
+
+    /* 快速跳转按钮 */
+    .header-jumps {
+        display: flex;
+        gap: 8px;
+        margin-left: auto;
+    }
+
+    .jump-btn {
+        font-size: 12px;
+        padding: 2px 8px;
+        border: 1px solid #d9ecff;
+        background: #ecf5ff;
+        color: #409eff;
+        border-radius: 3px;
+        text-decoration: none;
+        transition: all .2s;
+    }
+
+    .jump-btn:hover {
+        background: #409eff;
+        color: #fff;
+    }
+
+    /* 分享按钮 */
+    .share-btn {
+        margin-left: auto;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        opacity: .8;
+        transition: opacity .2s;
+    }
+
+    .share-btn:hover {
+        opacity: 1;
+    }
+
+    .share-icon {
+        width: 18px;
+        height: 18px;
+        fill: #606266;
+    }
+
+    .share-btn:hover .share-icon {
+        fill: #409eff;
+    }
+
+    /* ========================================
+       详情内容区
+       ======================================== */
+    .detail-content-scroll {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        padding: 3px;
+    }
+
+    /* 详情分组 */
+    .detail-section {
+        border: 1px solid #e4e7f1;
+        border-radius: 3px;
+        margin-bottom: 3px;
+    }
+
+    .detail-section-header {
+        padding: 6px 8px;
+        background: #f5f7fa;
+        font-size: 12px;
+        font-weight: 600;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .detail-section-content {
+        padding: 6px 8px;
+        font-size: 12px;
+    }
+
+    /* ========================================
+       详情行项目
+       ======================================== */
+    .detail-row {
+        display: flex;
+        padding: 2px 0;
+    }
+
+    .detail-label {
+        width: 100px;
+        color: #909399;
+        flex-shrink: 0;
+    }
+
+    .detail-value {
+        flex: 1;
+        color: #606266;
+    }
+
+    /* ========================================
+       指标徽章
+       ======================================== */
+    .metric-badge {
+        display: inline-block;
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-size: 11px;
+        margin-left: 4px;
+    }
+
+    .metric-badge.pass {
+        background: #e1f3d8;
+        color: #67c23a;
+    }
+
+    .metric-badge.fail {
+        background: #fde2e2;
+        color: #f56c6c;
+    }
+
+    .metric-badge.evalerror {
+        background: #ede1ad;
+        color: #ff8010;
+    }
+
+    /* ========================================
+       JSON 查看器
+       ======================================== */
+    pre.json-viewer {
+        max-height: 300px;
+        overflow: auto;
+        margin: 0;
+        padding: 4px;
+        font-size: 11px;
+        white-space: pre-wrap;
+    }
+
+    /* ========================================
+       复制提示气泡
+       ======================================== */
+    .copy-bubble {
+        position: fixed;
+        top: 20%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 6px 12px;
+        background: rgba(0, 0, 0, 0.75);
+        color: #fff;
+        font-size: 13px;
+        border-radius: 4px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s;
+        z-index: 9999;
+    }
+
+    .copy-bubble.show {
+        opacity: 1;
+    }
+</style>
+

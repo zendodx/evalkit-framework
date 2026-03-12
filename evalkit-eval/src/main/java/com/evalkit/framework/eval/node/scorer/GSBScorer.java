@@ -36,6 +36,7 @@ public abstract class GSBScorer extends PromptBasedScorer {
 
     public GSBScorer(PromptBasedScorerConfig config) {
         super(config);
+        super.scorerType="GSBScorer";
     }
 
     /**

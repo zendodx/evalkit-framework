@@ -1,0 +1,252 @@
+<!-- 搜索和过滤逻辑 - 用例列表渲染、搜索匹配 -->
+<script th:fragment="search">
+    /* ========================================
+       用例列表渲染
+       ======================================== */
+    function renderCaseList() {
+        const {caseList, caseCount} = AppState.elements;
+
+        // 根据过滤条件和搜索条件过滤数据
+        const filteredData = filterCaseData();
+
+        // 更新用例计数
+        caseCount.textContent = filteredData.length || 0;
+
+        // 更新指标筛选提示
+        updateMetricFilterNotice();
+
+        // 无匹配用例提示
+        if (filteredData.length === 0) {
+            caseList.innerHTML = '<div style="padding:12px;font-size:13px;color:#909399">无匹配用例</div>';
+            return;
+        }
+
+        // 生成并渲染用例列表 HTML
+        caseList.innerHTML = generateCaseListHTML(filteredData);
+    }
+
+    /* ========================================
+       指标筛选提示更新
+       ======================================== */
+    function updateMetricFilterNotice() {
+        const noticeDiv = document.getElementById('metricFilterNotice');
+        if (!noticeDiv) return;
+
+        if (AppState.metricFilter.metricName && AppState.metricFilter.filterCaseIds.length > 0) {
+            const statusText = AppState.metricFilter.metricStatus === 'pass' ? '通过' : '失败';
+            const filterText = document.getElementById('metricFilterText');
+            if (filterText) {
+                filterText.textContent = `${AppState.metricFilter.metricName} - ${statusText}`;
+            }
+            noticeDiv.style.display = 'flex';
+        } else {
+            noticeDiv.style.display = 'none';
+        }
+    }
+
+    /* ========================================
+       过滤用例数据
+       ======================================== */
+    function filterCaseData() {
+        let filteredData = evaluationData;
+
+        // 1. 优先应用指标筛选（如有）
+        if (AppState.metricFilter.metricName && AppState.metricFilter.filterCaseIds.length > 0) {
+            filteredData = evaluationData.filter(item =>
+                AppState.metricFilter.filterCaseIds.includes(item.dataIndex)
+            );
+        } else {
+            // 2. 应用状态过滤（通过/未通过/全部）
+            filteredData = AppState.currentFilter === 'all'
+                ? evaluationData
+                : evaluationData.filter(item =>
+                    item.evalResult && item.evalResult.pass === (AppState.currentFilter === 'pass')
+                );
+        }
+
+        // 3. 应用搜索过滤
+        if (AppState.search.keyword) {
+            const searchMatcher = createSearchMatcher(AppState.search.keyword);
+            filteredData = filteredData.filter(searchMatcher);
+        }
+
+        return filteredData;
+    }
+
+    /* ========================================
+       生成用例列表 HTML
+       ======================================== */
+    function generateCaseListHTML(data) {
+        const {keyword} = AppState.search;
+        const {selectedCase} = AppState;
+
+        return data.map(item => {
+            const evalResult = item.evalResult || {};
+            const statusInfo = getStatusInfo(evalResult);
+            const score = formatNumber(evalResult.score);
+
+            const isSelected = selectedCase?.dataIndex === item.dataIndex;
+            const highlightedIndex = highlightText(`#${item.inputData.dataIndex}`, keyword);
+
+            return `
+          <div class="case-item ${isSelected ? 'active' : ''}"
+               onclick="selectCase(${item.dataIndex})">
+            <div class="case-title">${highlightedIndex}</div>
+            <div class="case-status">
+              <span class="status-dot ${statusInfo.class}"></span>
+              <span>${statusInfo.text}</span>
+              <span class="metric-value ${statusInfo.metricClass}">${score}</span>
+            </div>
+          </div>`;
+        }).join('');
+    }
+
+    /* ========================================
+       获取用例状态信息
+       ======================================== */
+    function getStatusInfo(evalResult) {
+        if (evalResult.pass === true) {
+            return {class: 'pass', text: '通过', metricClass: 'good'};
+        } else if (evalResult.success === true) {
+            return {class: 'fail', text: '未通过', metricClass: 'bad'};
+        } else {
+            return {class: 'evalerror', text: '评测出错', metricClass: 'evalerror'};
+        }
+    }
+
+    /* ========================================
+       搜索表达式解析与匹配
+       ======================================== */
+    function createSearchMatcher(keyword) {
+        if (!keyword) return () => true;
+
+        const searchString = keyword.toLowerCase();
+
+        // 检查是否包含复杂搜索表达式（&, |, !, 括号）
+        if (searchString.includes('&') || searchString.includes('|') || searchString.includes('!') || searchString.includes('(')) {
+            return createComplexMatcher(keyword);
+        }
+
+        // 简单关键词匹配
+        return (item) => {
+            const searchContent = [
+                `#${item.inputData.dataIndex}`,
+                JSON.stringify(item.inputData?.inputItem || ''),
+                JSON.stringify(item.apiCompletionResult?.resultItem || ''),
+                item.evalResult?.reason || '',
+                JSON.stringify(item.evalResult?.scorerResults || '')
+            ].join(' ').toLowerCase();
+
+            return searchContent.includes(searchString);
+        };
+    }
+
+    /* ========================================
+       复杂搜索表达式匹配
+       ======================================== */
+    function createComplexMatcher(keyword) {
+        try {
+            const tokens = tokenizeSearchExpression(keyword);
+            const ast = parseSearchExpression(tokens);
+            return (item) => evaluateSearchAST(ast, item);
+        } catch (e) {
+            // 出错时降级到简单匹配
+            const simpleKeyword = keyword.toLowerCase();
+            return (item) => {
+                const searchContent = [
+                    `#${item.inputData.dataIndex}`,
+                    JSON.stringify(item.inputData?.inputItem || ''),
+                    JSON.stringify(item.apiCompletionResult?.resultItem || ''),
+                    item.evalResult?.reason || ''
+                ].join(' ').toLowerCase();
+
+                return searchContent.includes(simpleKeyword);
+            };
+        }
+    }
+
+    /* 搜索表达式词法分析 */
+    function tokenizeSearchExpression(expression) {
+        return expression
+            .replace(/\(/g, ' ( ')
+            .replace(/\)/g, ' ) ')
+            .split(/\s+/)
+            .filter(Boolean)
+            .map(token => token.toLowerCase());
+    }
+
+    /* 搜索表达式语法分析（递归下降）*/
+    function parseSearchExpression(tokens) {
+        let index = 0;
+
+        const peek = () => tokens[index];
+        const consume = () => tokens[index++];
+
+        const parseExpression = () => {
+            let left = parseTerm();
+            while (peek() === '|') {
+                consume();
+                left = {type: 'OR', left, right: parseTerm()};
+            }
+            return left;
+        };
+
+        const parseTerm = () => {
+            let left = parseFactor();
+            while (peek() === '&') {
+                consume();
+                left = {type: 'AND', left, right: parseFactor()};
+            }
+            return left;
+        };
+
+        const parseFactor = () => {
+            if (peek() === '!') {
+                consume();
+                return {type: 'NOT', operand: parseFactor()};
+            }
+            if (peek() === '(') {
+                consume();
+                const expr = parseExpression();
+                consume(); // 消费 ')'
+                return expr;
+            }
+            return {type: 'TERM', value: consume()};
+        };
+
+        return parseExpression();
+    }
+
+    /* 搜索 AST 评估 */
+    function evaluateSearchAST(node, item) {
+        const searchContent = [
+            `#${item.inputData.dataIndex}`,
+            JSON.stringify(item.inputData?.inputItem || ''),
+            JSON.stringify(item.apiCompletionResult?.resultItem || ''),
+            item.evalResult?.reason || ''
+        ].join(' ').toLowerCase();
+
+        switch (node.type) {
+            case 'TERM':
+                return searchContent.includes(node.value);
+            case 'AND':
+                return evaluateSearchAST(node.left, item) && evaluateSearchAST(node.right, item);
+            case 'OR':
+                return evaluateSearchAST(node.left, item) || evaluateSearchAST(node.right, item);
+            case 'NOT':
+                return !evaluateSearchAST(node.operand, item);
+            default:
+                return false;
+        }
+    }
+
+    /* ========================================
+       过滤功能接口
+       ======================================== */
+    function filterCases(filterType) {
+        AppState.currentFilter = filterType;
+        setActiveButton(filterType);
+        renderCaseList();
+    }
+</script>
+

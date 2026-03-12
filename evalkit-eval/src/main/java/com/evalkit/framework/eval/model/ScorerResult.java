@@ -42,6 +42,8 @@ public class ScorerResult {
     private double threshold;
     /* 是否为必过评估器,如果该评估器没过,则直接忽略其他评估器结果,设置最终结果为不通过 */
     private boolean star;
+    /* 评估器类型 */
+    private String scorerType;
 
     public ScorerResult() {
     }

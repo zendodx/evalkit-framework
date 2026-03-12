@@ -1,0 +1,233 @@
+<!-- 总览面板渲染 - 指标、图表 -->
+<script th:fragment="renderOverview">
+    /* ========================================
+       总览面板主渲染入口
+       ======================================== */
+    function renderOverview() {
+        setActiveButton('overviewBtn');
+        showPanel('overview');
+
+        const metrics = basicCountResult || {};
+
+        // 渲染各类指标卡片
+        renderBasicMetrics(metrics);
+        renderCompletionMetrics(metrics);
+        renderEvaluationMetrics(metrics);
+        renderLLMMetrics(metrics);
+
+        // 渲染图表
+        renderOverviewCharts();
+    }
+
+    /* ========================================
+       基础指标渲染
+       ======================================== */
+    function renderBasicMetrics(metrics) {
+        const basicMetrics = [
+            {label: '通过率', value: formatPercentage(metrics.passRate), class: 'good'},
+            {label: '未通过率', value: formatPercentage(metrics.unPassRate), class: 'bad'},
+            {label: '通过数', value: metrics.passCount, class: 'good'},
+            {label: '未通过数', value: metrics.unPassCount, class: 'bad'},
+            {label: '总数', value: metrics.totalCount, class: 'default'}
+        ];
+
+        renderMetricGrid('basicMetricsGrid', basicMetrics);
+    }
+
+    /* ========================================
+       完成度指标渲染
+       ======================================== */
+    function renderCompletionMetrics(metrics) {
+        const completionMetrics = [
+            {label: '成功率', value: formatPercentage(metrics.completionSuccessRate), class: 'good'},
+            {label: '错误率', value: formatPercentage(metrics.completionErrorRate), class: 'bad'},
+            {label: '平均耗时', value: formatTime(metrics.completionAvgTimeCost), class: 'default'},
+            {label: '最小耗时', value: formatTime(metrics.completionMinTimeCost), class: 'default'},
+            {label: '最大耗时', value: formatTime(metrics.completionMaxTimeCost), class: 'default'},
+            {label: 'TP99', value: formatTime(metrics.completionTP99TimeCost), class: 'default'},
+            {label: 'TP95', value: formatTime(metrics.completionTP95TimeCost), class: 'default'},
+            {label: 'TP90', value: formatTime(metrics.completionTP90TimeCost), class: 'default'},
+            {label: 'TP80', value: formatTime(metrics.completionTP80TimeCost), class: 'default'},
+            {label: 'TP70', value: formatTime(metrics.completionTP70TimeCost), class: 'default'},
+            {label: 'TP60', value: formatTime(metrics.completionTP60TimeCost), class: 'default'},
+            {label: 'TP50', value: formatTime(metrics.completionTP50TimeCost), class: 'default'}
+        ];
+
+        renderMetricGrid('completionMetricsGrid', completionMetrics);
+    }
+
+    /* ========================================
+       评测指标渲染
+       ======================================== */
+    function renderEvaluationMetrics(metrics) {
+        const evaluationMetrics = [
+            {label: '成功率', value: formatPercentage(metrics.evalSuccessRate), class: 'good'},
+            {label: '错误率', value: formatPercentage(metrics.evalErrorRate), class: 'bad'},
+            {label: '平均耗时', value: formatTime(metrics.evalAvgTimeCost), class: 'default'},
+            {label: '最小耗时', value: formatTime(metrics.evalMinTimeCost), class: 'default'},
+            {label: '最大耗时', value: formatTime(metrics.evalMaxTimeCost), class: 'default'},
+            {label: '最小分数', value: formatNumber(metrics.minScore), class: 'default'},
+            {label: '最大分数', value: formatNumber(metrics.maxScore), class: 'default'},
+            {label: '平均分数', value: formatNumber(metrics.avgScore), class: 'default'},
+            {label: '分数标准差', value: formatNumber(metrics.scoreStdDev), class: 'default'},
+            {label: 'TP99', value: formatNumber(metrics.tp99Score), class: 'default'},
+            {label: 'TP95', value: formatNumber(metrics.tp95Score), class: 'default'},
+            {label: 'TP90', value: formatNumber(metrics.tp90Score), class: 'default'},
+            {label: 'TP80', value: formatNumber(metrics.tp80Score), class: 'default'},
+            {label: 'TP70', value: formatNumber(metrics.tp70Score), class: 'default'},
+            {label: 'TP60', value: formatNumber(metrics.tp60Score), class: 'default'},
+            {label: 'TP50', value: formatNumber(metrics.tp50Score), class: 'default'}
+        ];
+
+        renderMetricGrid('evalMetricsGrid', evaluationMetrics);
+    }
+
+    /* ========================================
+       LLM 资源指标渲染
+       ======================================== */
+    function renderLLMMetrics(metrics) {
+        const llmMetrics = [];
+
+        metrics?.llmTokenCounts?.forEach(model => {
+            llmMetrics.push(
+                {label: `${model.model}输入token`, value: model.inToken, class: 'default'},
+                {label: `${model.model}输出token`, value: model.outToken, class: 'default'},
+                {label: `${model.model}总token`, value: model.totalToken, class: 'default'},
+                {label: `${model.model}输入token费用`, value: formatPrice(model.inTokenPrice), class: 'default'},
+                {label: `${model.model}输出token费用`, value: formatPrice(model.outTokenPrice), class: 'default'},
+                {label: `${model.model}总token费用`, value: formatPrice(model.totalTokenPrice), class: 'default'}
+            );
+        });
+
+        renderMetricGrid('LLMMetricsGrid', llmMetrics);
+    }
+
+    /* ========================================
+       指标卡片网格通用渲染
+       ======================================== */
+    function renderMetricGrid(elementId, metrics) {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+
+        element.innerHTML = metrics.map(metric => `
+      <div class="metric-card">
+        <div class="metric-label">${metric.label}</div>
+        <div class="metric-value ${metric.class}">${metric.value}</div>
+      </div>`).join('');
+    }
+
+    /* ========================================
+       图表渲染入口
+       ======================================== */
+    function renderOverviewCharts() {
+        renderPassRateTrendChart();
+        renderDistributionChart();
+        renderTPMetricsChart();
+    }
+
+    /* ========================================
+       通过率趋势图表
+       ======================================== */
+    function renderPassRateTrendChart() {
+        const step = Math.ceil(evaluationData.length / 10);
+        const labels = [];
+        const passRates = [];
+
+        for (let i = 0; i < evaluationData.length; i += step) {
+            const slice = evaluationData.slice(i, i + step);
+            const passCount = slice.filter(d => d.evalResult && d.evalResult.pass === true).length;
+            const passRate = slice.length ? (passCount / slice.length * 100) : 0;
+
+            labels.push(`${i + 1}-${Math.min(i + step, evaluationData.length)}`);
+            passRates.push(formatNumber(passRate));
+        }
+
+        const config = {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: '通过率%',
+                    data: passRates,
+                    borderColor: '#67c23a',
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {legend: {display: false}}
+            }
+        };
+
+        destroyChart('passChart');
+        AppState.charts.passChart = new Chart(document.getElementById('passTrendChart'), config);
+    }
+
+    /* ========================================
+       通过率分布饼图
+       ======================================== */
+    function renderDistributionChart() {
+        const metrics = basicCountResult || {};
+        const config = {
+            type: 'pie',
+            data: {
+                labels: ['通过', '未通过'],
+                datasets: [{
+                    data: [
+                        typeof metrics.passCount === 'number' ? metrics.passCount : 0,
+                        typeof metrics.unPassCount === 'number' ? metrics.unPassCount : 0
+                    ],
+                    backgroundColor: ['#67c23a', '#f56c6c']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {legend: {position: 'bottom'}}
+            }
+        };
+
+        destroyChart('distChart');
+        AppState.charts.distChart = new Chart(document.getElementById('distChart'), config);
+    }
+
+    /* ========================================
+       TP 指标线图
+       ======================================== */
+    function renderTPMetricsChart() {
+        const metrics = basicCountResult || {};
+        const tpLabels = ['TP50', 'TP60', 'TP70', 'TP80', 'TP90', 'TP95', 'TP99'];
+        const tpValues = [
+            metrics.completionTP50TimeCost || 0,
+            metrics.completionTP60TimeCost || 0,
+            metrics.completionTP70TimeCost || 0,
+            metrics.completionTP80TimeCost || 0,
+            metrics.completionTP90TimeCost || 0,
+            metrics.completionTP95TimeCost || 0,
+            metrics.completionTP99TimeCost || 0
+        ];
+
+        const config = {
+            type: 'line',
+            data: {
+                labels: tpLabels,
+                datasets: [{
+                    label: '耗时(ms)',
+                    data: tpValues,
+                    borderColor: '#67c23a',
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {legend: {display: false}}
+            }
+        };
+
+        destroyChart('tpChart');
+        AppState.charts.tpChart = new Chart(document.getElementById('tpChart'), config);
+    }
+</script>
+

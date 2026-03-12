@@ -68,17 +68,20 @@ public class HtmlReporter extends FileReporter {
         ctx.setVariable("reportName", this.fileName);
         // cdn
         ctx.setVariable("cdn", this.cdn);
-        // 基础统计结果统计结果
-        ctx.setVariable("metricsData", convertJsonToMap(countResultMap.getOrDefault("basicCountResult", null)));
-        // 归因结果
-        ctx.setVariable("attributeCountResult", convertJsonToMap(countResultMap.getOrDefault("attributeCountResult", null)));
-        // 归因结果V2
-        ctx.setVariable("attributeCountResultV2", convertJsonToMap(countResultMap.getOrDefault("attributeCountResultV2", null)));
         // 评测数据
         ctx.setVariable("evaluationData", dataItems);
+        // 动态添加统计数据
+        for (Map.Entry<String, String> entry : countResultMap.entrySet()) {
+            String counterName = entry.getKey();
+            String counterValue = entry.getValue();
+            ctx.setVariable(counterName, convertJsonToMap(counterValue));
+        }
+        // 基础统计结果统计结果
         String templateName = "report-default";
         if (style == HtmlReportStyle.DEFAULT) {
             templateName = "report-default";
+        } else if (style == HtmlReportStyle.GITHUB) {
+            templateName = "report-github";
         }
         String outputFileName = StringUtils.isNotBlank(this.fileName) ? this.fileName : generateDefaultOutputFileName();
         try (FileWriter writer = new FileWriter(String.format("%s/%s.html", this.parentDir, outputFileName))) {

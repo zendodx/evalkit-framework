@@ -1,5 +1,19 @@
 # ChangeLog
 
+## [1.1.0] - 2026-03-12
+
+### Added
+
+- 评估器增加评估器类型字段scorerType
+- 增加评估指标统计器
+- html报告增加评估指标统计展示面板
+- 增加类似github风格的html评测报告
+
+### Fixed
+
+- 重构html报告
+- 修改html报告基础统计数据对象名称为basicCountResult
+
 ## [1.0.0] - 2026-01-04
 
 ### Added

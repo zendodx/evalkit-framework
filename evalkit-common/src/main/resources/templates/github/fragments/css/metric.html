@@ -1,0 +1,221 @@
+<!-- 指标统计面板样式 - GitHub风格表格、卡片、柱形图 -->
+<style th:fragment="metric">
+    /* ========================================
+       指标统计面板主体（GitHub风格）
+       ======================================== */
+    #metricCountPanel {
+        flex: 1;
+        padding: 6px;
+        overflow-y: auto;
+        background: #f6f8fa;
+    }
+
+    .metric-count-container {
+        padding: 16px;
+    }
+
+    /* ========================================
+       头部（GitHub风格）
+       ======================================== */
+    .metric-count-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+        flex: 1;
+    }
+
+    .metric-count-header h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--color-text-primary);
+    }
+
+    .metric-count-stat {
+        font-size: 13px;
+        color: var(--color-text-placeholder);
+        margin-left: 16px;
+    }
+
+    /* ========================================
+       指标统计表格（GitHub风格）
+       ======================================== */
+    .metric-count-table-wrapper {
+        background: var(--color-bg-primary);
+        border: 1px solid var(--color-border);
+        border-radius: var(--border-radius-base);
+        padding: 12px;
+        margin-bottom: 20px;
+        overflow-x: auto;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .metric-count-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        text-align: left;
+    }
+
+    .metric-count-table th,
+    .metric-count-table td {
+        padding: 12px;
+        border: 1px solid var(--color-border);
+    }
+
+    .metric-count-table th {
+        background: var(--color-bg-secondary);
+        font-weight: 600;
+        color: var(--color-text-primary);
+    }
+
+    .metric-count-table tbody tr:nth-child(even) {
+        background: var(--color-bg-secondary);
+    }
+
+    .metric-count-table tbody tr:hover {
+        background: #f0f6fc;
+    }
+
+    .metric-count-table td {
+        color: var(--color-text-primary);
+    }
+
+    /* ========================================
+       指标卡片组（GitHub风格）
+       ======================================== */
+    .metric-cards-group {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 16px;
+    }
+
+    .metric-card-group {
+        background: var(--color-bg-primary);
+        border: 1px solid var(--color-border);
+        border-radius: var(--border-radius-base);
+        overflow: hidden;
+        transition: all .2s;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .metric-card-group:hover {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.1);
+    }
+
+    .metric-card-group-header {
+        padding: 12px 16px;
+        background: var(--color-bg-secondary);
+        font-weight: 600;
+        font-size: 13px;
+        color: var(--color-text-primary);
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    .metric-card-group-content {
+        padding: 12px 16px;
+    }
+
+    /* ========================================
+       指标统计行（GitHub风格）
+       ======================================== */
+    .metric-stat-row {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .metric-stat-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .metric-stat-item {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .metric-stat-label {
+        font-size: 11px;
+        color: var(--color-text-placeholder);
+        margin-bottom: 4px;
+    }
+
+    .metric-stat-value {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--color-text-primary);
+    }
+
+    .metric-stat-value.good {
+        color: #1a7f37;
+    }
+
+    .metric-stat-value.warning {
+        color: #9e6a03;
+    }
+
+    .metric-stat-value.bad {
+        color: #cf222e;
+    }
+
+    /* ========================================
+       指标柱形图部分（GitHub风格）
+       ======================================== */
+    .metric-charts-section {
+        margin-top: 32px;
+        padding: 0;
+    }
+
+    .metric-charts-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        padding: 0 0;
+        color: var(--color-text-primary);
+    }
+
+    /* 图表容器网格 */
+    .metric-charts-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+        gap: 16px;
+    }
+
+    /* 单个图表卡片 */
+    .metric-chart-item {
+        background: var(--color-bg-primary);
+        border: 1px solid var(--color-border);
+        border-radius: var(--border-radius-base);
+        padding: 12px;
+        min-height: 200px;
+        display: flex;
+        flex-direction: column;
+        transition: all .2s;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .metric-chart-item:hover {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.1);
+    }
+
+    /* 图表名称 */
+    .metric-chart-name {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--color-text-primary);
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    /* 图表画布 */
+    .metric-chart-item canvas {
+        width: 100% !important;
+        height: auto !important;
+        flex: 1;
+        min-height: 140px;
+    }
+</style>
+

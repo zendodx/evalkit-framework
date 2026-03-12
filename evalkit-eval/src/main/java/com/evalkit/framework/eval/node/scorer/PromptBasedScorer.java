@@ -25,6 +25,7 @@ public abstract class PromptBasedScorer extends Scorer {
         super(config);
         validConfig(config);
         this.config = config;
+        super.scorerType = "promptBasedScorer";
     }
 
     protected void validConfig(PromptBasedScorerConfig config) {

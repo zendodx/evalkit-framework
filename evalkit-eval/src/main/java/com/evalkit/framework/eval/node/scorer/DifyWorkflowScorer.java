@@ -34,6 +34,7 @@ public abstract class DifyWorkflowScorer extends Scorer {
         validConfig(config);
         this.config = config;
         this.client = DifyClientFactory.createWorkflowClient(config.getBaseUrl(), config.getApiKey());
+        super.scorerType = "difyWorkflowScorer";
     }
 
     protected void validConfig(DifyWorkflowScorerConfig config) {
