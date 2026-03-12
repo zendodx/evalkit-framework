@@ -1,0 +1,151 @@
+<!-- 核心状态管理和应用初始化 -->
+<script th:fragment="core">
+    /* ========================================
+       全局状态管理对象
+       ======================================== */
+    const AppState = {
+        // 当前活跃的过滤器状态
+        currentFilter: 'all',
+        // 选中的用例
+        selectedCase: null,
+        // 图表实例管理
+        charts: {
+            passChart: null,
+            distChart: null,
+            tpChart: null,
+            attributionChart: null
+        },
+        // 应用配置
+        config: {
+            decimalPlaces: 2,
+            priceDecimalPlaces: 6,
+            chartColors: [
+                '#67c23a', '#f56c6c', '#909399', '#409eff',
+                '#e6a23c', '#7232d6', '#ff6032'
+            ]
+        },
+        // 缓存的 DOM 元素
+        elements: {},
+        // 搜索功能状态
+        search: {
+            input: null,
+            clearBtn: null,
+            keyword: '',
+            debounceTimer: null
+        },
+        // 指标筛选状态
+        metricFilter: {
+            metricName: null,      // 筛选的指标名称
+            metricStatus: null,    // 'pass' 或 'fail'
+            filterCaseIds: []      // 对应的用例ID列表
+        }
+    };
+
+    /* ========================================
+       应用初始化入口
+       ======================================== */
+    function initializeApp() {
+        // 1. 缓存 DOM 元素
+        cacheDOMElements();
+
+        // 2. 初始化事件监听器
+        setupEventListeners();
+
+        // 3. 首次渲染
+        renderCaseList();
+        renderOverview();
+
+        // 4. 处理 URL 参数导航（延迟以确保 JSON viewer 就绪）
+        setTimeout(() => {
+            handleUrlNavigation();
+        }, 50);
+    }
+
+    /* ========================================
+       DOM 元素缓存
+       ======================================== */
+    function cacheDOMElements() {
+        AppState.elements = {
+            caseSearch: document.getElementById('caseSearch'),
+            clearSearch: document.getElementById('clearSearch'),
+            caseList: document.getElementById('caseList'),
+            caseCount: document.getElementById('caseCount'),
+            overviewContent: document.getElementById('overviewContent'),
+            detailContent: document.getElementById('detailContent'),
+            attributeContent: document.getElementById('attributeContent'),
+            attributeV2Panel: document.getElementById('attributeV2Panel'),
+            copyTip: document.getElementById('copyTip')
+        };
+
+        // 搜索相关元素
+        AppState.search.input = AppState.elements.caseSearch;
+        AppState.search.clearBtn = AppState.elements.clearSearch;
+    }
+
+    /* ========================================
+       事件监听器初始化
+       ======================================== */
+    function setupEventListeners() {
+        // 搜索输入框（带防抖）
+        AppState.search.input.addEventListener('input', debounce((e) => {
+            AppState.search.keyword = e.target.value.trim();
+            renderCaseList();
+        }, 300));
+
+        // 清空搜索按钮
+        AppState.search.clearBtn.addEventListener('click', clearSearch);
+
+        // 搜索提示功能
+        const tipBtn = document.getElementById('searchTipBtn');
+        const tipPop = document.getElementById('searchTipPop');
+        const tipClose = document.getElementById('tipClose');
+
+        if (tipBtn && tipPop && tipClose) {
+            tipBtn.onclick = () => tipPop.classList.toggle('show');
+            tipClose.onclick = () => tipPop.classList.remove('show');
+
+            document.addEventListener('click', (e) => {
+                if (!tipPop.contains(e.target) && e.target !== tipBtn) {
+                    tipPop.classList.remove('show');
+                }
+            });
+        }
+
+        // 归因菜单功能
+        setupAttributeMenu();
+    }
+
+    /* ========================================
+       归因菜单设置
+       ======================================== */
+    function setupAttributeMenu() {
+        const attrTrigger = document.getElementById('attrTrigger');
+        const attrMenu = document.getElementById('attrMenu');
+
+        if (attrTrigger && attrMenu) {
+            attrTrigger.onclick = function () {
+                attrMenu.style.display = attrMenu.style.display === 'block' ? 'none' : 'block';
+            };
+
+            // 点击外部关闭菜单
+            document.addEventListener('click', function (e) {
+                if (!attrTrigger.contains(e.target) && !attrMenu.contains(e.target)) {
+                    attrMenu.style.display = 'none';
+                }
+            });
+        }
+    }
+
+    /* ========================================
+       DOM 就绪后初始化应用
+       ======================================== */
+    document.addEventListener('DOMContentLoaded', initializeApp);
+
+    // 如果已经加载，直接执行
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    } else {
+        initializeApp();
+    }
+</script>
+

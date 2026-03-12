@@ -1,0 +1,118 @@
+<!-- 布局相关样式 - 基础结构、颜色变量、排版 -->
+<style th:fragment="layout">
+    /* ========================================
+       CSS 变量定义 & 全局基础样式
+       ======================================== */
+    :root {
+        /* 颜色系统 */
+        --color-primary: #409eff;
+        --color-success: #67c23a;
+        --color-error: #f56c6c;
+        --color-warning: #ff8010;
+        --color-info: #909399;
+        --color-text-primary: #333;
+        --color-text-secondary: #606266;
+        --color-text-placeholder: #909399;
+        --color-bg-primary: #fff;
+        --color-bg-secondary: #f5f7fa;
+        --color-bg-tertiary: #fafafa;
+        --color-border: #e4e7f1;
+        --color-border-light: #dcdfe6;
+
+        /* 字体系统 */
+        --font-size-xs: 11px;
+        --font-size-sm: 12px;
+        --font-size-base: 13px;
+        --font-size-lg: 15px;
+        --font-weight-normal: 400;
+        --font-weight-medium: 500;
+        --font-weight-semibold: 600;
+
+        /* 间距系统 */
+        --spacing-xs: 2px;
+        --spacing-sm: 4px;
+        --spacing-md: 6px;
+        --spacing-lg: 8px;
+        --spacing-xl: 12px;
+        --spacing-2xl: 16px;
+
+        /* 圆角系统 */
+        --border-radius-sm: 2px;
+        --border-radius-base: 3px;
+        --border-radius-lg: 4px;
+        --border-radius-full: 50%;
+
+        /* 阴影系统 */
+        --shadow-sm: 0 2px 8px rgba(0, 0, 0, .15);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, .15);
+
+        /* 过渡动画 */
+        --transition-fast: .2s;
+        --transition-normal: .3s;
+    }
+
+    /* 全局重置 */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        overscroll-behavior: none;
+    }
+
+    * + * {
+        border-radius: var(--border-radius-base);
+    }
+
+    /* 页面基础样式 */
+    body {
+        font: var(--font-size-sm)/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+        color: var(--color-text-primary);
+        background: var(--color-bg-secondary);
+        display: flex;
+        min-height: 100vh;
+    }
+
+    .scroll-wrapper {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        padding: 0;
+        min-height: 0;
+    }
+
+    /* ========================================
+       主布局容器
+       ======================================== */
+    .sidebar {
+        width: 240px;
+        background: var(--color-bg-primary);
+        border-right: 1px solid var(--color-border);
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        position: relative;
+    }
+
+    .main-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+        overflow: auto;
+        height: 100vh;
+    }
+
+    .detail-panel {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #909399;
+        font-size: 12px;
+    }
+</style>
+

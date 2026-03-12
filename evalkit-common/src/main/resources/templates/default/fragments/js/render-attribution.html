@@ -1,0 +1,390 @@
+<!-- 归因面板渲染 - V1归因、V2归因、图表 -->
+<script th:fragment="renderAttribution">
+    /* ========================================
+       V1 归因渲染入口
+       ======================================== */
+    function renderAttribute() {
+        setActiveButton('attrTrigger');
+        showPanel('attribute');
+        const box = document.getElementById('attributeContent');
+        if (!attributeCountResult || !attributeCountResult.overallAttribution?.length) {
+            box.innerHTML = '<div>暂无归因数据</div>';
+            return;
+        }
+
+        // 初始渲染
+        function render(list) {
+            const total = list.reduce((s, v) => s + v.caseIds.length, 0);
+
+            // 生成归因卡片
+            const cards = list.map(attr => `
+              <div class="attribution-card">
+                <div class="attribution-card-header" onclick="this.parentNode.classList.toggle('expanded')">
+                  <span>${attr.issueName}</span>
+                  <span class="badge">${attr.caseIds.length}</span>
+                </div>
+                <div class="attribution-card-body">
+                  <ul class="attribute-case-list">
+                    ${attr.caseIds.map(id => `
+                      <li class="case-link" onclick="jumpToCase(${id})" title="查看详情">
+                        #${id}
+                      </li>`).join('')}
+                  </ul>
+                  <button class="attribute-copy-btn" onclick="copyCases('${attr.issueName}',${JSON.stringify(attr.caseIds)})">复制全部</button>
+                </div>
+              </div>`).join('');
+
+            // 生成归因面板 HTML
+            box.innerHTML = `
+              <div class="attribution-header">
+                <h3>问题归因</h3>
+                <div>
+                  <span class="attribution-stat">共 ${total} 个 Case</span>
+                </div>
+              </div>
+               <!-- 归因图表 -->
+              <div class="attribution-chart">
+                <canvas id="attributionChart" height="240"></canvas>
+              </div>
+              <!-- 归因卡片 -->
+              <div class="attribution-cards">${cards}</div>`;
+
+            // 渲染图表
+            renderAttributionChart(list);
+        }
+
+        // 搜索过滤
+        window.filterAttr = () => {
+            const kw = document.getElementById('attrSearch').value.trim().toLowerCase();
+            const filtered = attributeCountResult.overallAttribution.filter(
+                v => v.issueName.toLowerCase().includes(kw)
+            );
+            render(filtered);
+        };
+
+        // 复制用例
+        window.copyCases = (name, arr) => {
+            const t = arr.join(',');
+            navigator.clipboard.writeText(t).then(() => {
+                const tip = document.getElementById('copyTip');
+                tip.classList.add('show');
+                setTimeout(() => tip.classList.remove('show'), 1500);
+            });
+        };
+
+        // 首次渲染
+        render(attributeCountResult.overallAttribution);
+    }
+
+    /* ========================================
+       V1 归因图表渲染
+       ======================================== */
+    let attributionChart = null;
+
+    function renderAttributionChart(list) {
+        const canvas = document.getElementById('attributionChart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        // 数据准备
+        const issueNames = list.map(l => l.issueName);
+        const issueCounts = list.map(l => l.caseIds.length);
+
+        // 销毁旧图表
+        if (attributionChart) {
+            attributionChart.destroy();
+            attributionChart = null;
+        }
+
+        // 创建新图表
+        attributionChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: issueNames,
+                datasets: [{
+                    data: issueCounts,
+                    backgroundColor: [
+                        '#67c23a', '#f56c6c', '#909399', '#409eff',
+                        '#e6a23c', '#7232d6', '#ff6032'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {position: 'bottom'},
+                    title: {
+                        display: true,
+                        text: '问题数量占比',
+                        font: {size: 13},
+                        padding: {bottom: 10}
+                    }
+                }
+            }
+        });
+    }
+
+    /* ========================================
+       V2 归因渲染入口
+       ======================================== */
+    function renderAttributeV2() {
+        setActiveButton('attrTrigger');
+        showPanel('attributeV2Panel');
+        const box = document.getElementById('attributeV2Content');
+        const data = attributeCountResultV2;
+
+        if (!data || (!data.categories?.length)) {
+            box.innerHTML = '<div class="no-data">暂无归因数据</div>';
+            return;
+        }
+
+        // 数据结构兼容处理
+        const {categories} = data;
+        const list = flattenCategories(categories);
+        const total = list.reduce((s, v) => s + v.caseIds.length, 0);
+
+        // 渲染主体
+        box.innerHTML = `
+            <div class="attribution-header">
+              <h3>问题归因</h3>
+              <span class="attribution-stat">共 ${total} 个 Case</span>
+            </div>
+            <div class="attr-table-chart">
+                 <!-- 表格统计异常分类和问题 -->
+                <div class="attr-table">
+                  <table class="stat-table">
+                    <thead>
+                      <tr><th>异常类别</th><th>问题描述</th><th>问题数</th><th>占比</th></tr>
+                    </thead>
+                    <tbody id="statTableBody"></tbody>
+                  </table>
+                </div>
+                <!-- 图表异常分类和issue占比-->
+                <div class="attr-chart-group">
+                    <div class="attr-chart">
+                        <canvas id="attrChartV2Category" height="240"></canvas>
+                    </div>
+                    <div class="attr-chart">
+                        <canvas id="attrChartV2Issue" height="240"></canvas>
+                    </div>
+                </div>
+            </div>
+            <!-- 工具栏 -->
+            <div class="attr-toolbar">
+              <input id="attrSearchV2" class="attr-search" placeholder="搜索issue/类别" oninput="filterAttrV2()" />
+              <select id="categorySelect"  class="category-select" onchange="selectCategory()">
+              </select>
+              <span id="issueCount" class="issue-count"> - </span>
+            </div>
+            <!-- 卡片列表 -->
+            <div id="attrCardsV2" class="attr-cards"></div>
+            <div id="copyTipV2" class="copy-tip">已复制</div>`;
+
+        // 渲染各部分
+        renderCategorySelectOptions(list);
+        renderCards(list);
+        renderAttributionChartV2Category(list);
+        renderAttributionChartV2Issue(list);
+
+        // 动态绑定过滤函数
+        let selectedCategory = '';
+
+        window.selectCategory = () => {
+            selectedCategory = document.getElementById('categorySelect').value.trim().toLowerCase();
+            applyFilter();
+        };
+
+        window.filterAttrV2 = () => {
+            applyFilter();
+        };
+
+        function applyFilter() {
+            const kw = document.getElementById('attrSearchV2').value.trim().toLowerCase();
+            const filtered = list.filter(item => {
+                const catOk = !selectedCategory || (item.categoryName && item.categoryName.toLowerCase() === selectedCategory);
+                const keyOk = !kw || item.issueName.toLowerCase().includes(kw) || (item.categoryName && item.categoryName.toLowerCase().includes(kw));
+                return catOk && keyOk;
+            });
+            renderCards(filtered);
+        }
+
+        window.copyCasesV2 = (name, arr) => {
+            navigator.clipboard.writeText(arr.join(',')).then(() => {
+                const tip = document.getElementById('copyTipV2');
+                tip.classList.add('show');
+                setTimeout(() => tip.classList.remove('show'), 1500);
+            });
+        };
+
+        // 渲染表格
+        const flatRows = categories.flatMap(c =>
+            c.issues.map((i, idx) => ({
+                category: idx === 0 ? c.categoryName : '',
+                issue: i.issueName,
+                count: i.caseIds.length,
+                percent: (i.caseIds.length / total * 100).toFixed(1)
+            }))
+        );
+
+        document.querySelector('#statTableBody').innerHTML = flatRows.map(r => `
+      <tr>
+        <td>${r.category}</td>
+        <td>${r.issue}</td>
+        <td>${r.count}</td>
+        <td>${r.percent}%</td>
+      </tr>`).join('');
+    }
+
+    /* ========================================
+       V2 归因工具函数
+       ======================================== */
+    function flattenCategories(categories) {
+        return categories.flatMap(cat =>
+            cat.issues.map(iss => ({
+                categoryName: cat.categoryName,
+                issueName: iss.issueName,
+                caseIds: iss.caseIds,
+                confidence: iss.confidence,
+                sentiment: iss.sentiment,
+                representative: iss.representative
+            }))
+        );
+    }
+
+    function renderCards(list) {
+        const cards = list.map((item, idx) => `
+        <div class="attr-card">
+          <div class="attr-card-head" onclick="this.parentNode.classList.toggle('expanded')">
+            <span class="attr-issue">${item.issueName}</span>
+            ${item.categoryName ? `<span class="attr-cate">${item.categoryName}</span>` : ''}
+            <span class="attr-badge">${item.caseIds.length}</span>
+          </div>
+          <div class="attr-card-body">
+            ${item.representative ? `<div class="attr-desc">${item.representative}</div>` : ''}
+            <ul class="attr-case-list">
+              ${item.caseIds.map(id => `
+                <li class="case-link" onclick="jumpToCase(${id})" title="查看详情">#${id}</li>
+              `).join('')}
+            </ul>
+            <button class="attr-copy-btn" onclick="copyCasesV2('${item.issueName}',${JSON.stringify(item.caseIds)})">
+              复制全部
+            </button>
+          </div>
+        </div>`).join('');
+        document.getElementById('attrCardsV2').innerHTML = cards;
+
+        const caseCount = list.reduce((sum, item) => sum + item.caseIds.length, 0);
+        document.getElementById("issueCount").innerHTML = `共包含 ${list.length} 个问题 | ${caseCount} 个用例`
+    }
+
+    function renderCategorySelectOptions(list) {
+        const issueMap = new Map();
+        for (const {categoryName} of list) {
+            issueMap.set(categoryName, (issueMap.get(categoryName) || 0) + 1);
+        }
+        const caseMap = new Map();
+        for (const {categoryName, caseIds} of list) {
+            caseMap.set(categoryName, (caseMap.get(categoryName) || 0) + caseIds.length);
+        }
+
+        const sorted = [...issueMap.entries()].sort((a, b) =>
+            a[0].localeCompare(b[0], 'zh-CN')
+        );
+
+        const options = ['<option value="">全部类别</option>']
+            .concat(
+                sorted.map(([name, count]) =>
+                    `<option value="${name}">${name}（问题数量:${count} | 用例数量:${caseMap.get(name) || 0}）</option>`
+                )
+            )
+            .join('');
+        document.getElementById('categorySelect').innerHTML = options;
+    }
+
+    /* ========================================
+       V2 归因图表
+       ======================================== */
+    let attributionChartV2Issue = null;
+    let attributionChartV2Category = null;
+
+    function renderAttributionChartV2Category(list) {
+        const canvas = document.getElementById('attrChartV2Category');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const categoryMap = list.reduce((m, {categoryName, caseIds}) => {
+            m.set(categoryName, (m.get(categoryName) || 0) + caseIds.length);
+            return m;
+        }, new Map());
+
+        const [categoryNames, categoryCounts] = [Array.from(categoryMap.keys()), Array.from(categoryMap.values())];
+
+        if (attributionChartV2Category) {
+            attributionChartV2Category.destroy();
+            attributionChartV2Category = null;
+        }
+
+        attributionChartV2Category = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: categoryNames,
+                datasets: [{
+                    data: categoryCounts,
+                    backgroundColor: ['#67c23a', '#f56c6c', '#909399', '#409eff', '#e6a23c', '#7232d6', '#ff6032'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {position: 'bottom'},
+                    title: {display: true, text: '异常类别占比', font: {size: 13}, padding: {bottom: 10}}
+                }
+            }
+        });
+    }
+
+    function renderAttributionChartV2Issue(list) {
+        const canvas = document.getElementById('attrChartV2Issue');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const issueNames = list.map(l => l.issueName);
+        const issueCounts = list.map(l => l.caseIds.length);
+
+        if (attributionChartV2Issue) {
+            attributionChartV2Issue.destroy();
+            attributionChartV2Issue = null;
+        }
+
+        attributionChartV2Issue = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: issueNames,
+                datasets: [{
+                    data: issueCounts,
+                    backgroundColor: ['#67c23a', '#f56c6c', '#909399', '#409eff', '#e6a23c', '#7232d6', '#ff6032'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {position: 'bottom'},
+                    title: {display: true, text: '问题数量占比', font: {size: 13}, padding: {bottom: 10}}
+                }
+            }
+        });
+    }
+</script>
+

@@ -1,0 +1,176 @@
+<!-- 工具函数库 - 格式化、时间、HTML转义、防抖等 -->
+<script th:fragment="utils">
+    /* ========================================
+       数字/时间格式化工具
+       ======================================== */
+    function formatNumber(value, decimals = AppState.config.decimalPlaces) {
+        return typeof value === 'number' ? value.toFixed(decimals) : '-';
+    }
+
+    function formatPrice(value) {
+        return formatNumber(value, AppState.config.priceDecimalPlaces);
+    }
+
+    function formatTime(ms) {
+        return typeof ms === 'number' ? `${formatNumber(ms)}ms` : '-';
+    }
+
+    function formatPercentage(value) {
+        return typeof value === 'number' ? `${formatNumber(value * 100)}%` : '-';
+    }
+
+    /* ========================================
+       时间戳格式化
+       ======================================== */
+    function fmt(ts) {
+        if (!ts) return '-';
+        const d = new Date(ts);
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+
+    function pad(n) {
+        return n < 10 ? '0' + n : n;
+    }
+
+    /* ========================================
+       HTML转义和文本处理
+       ======================================== */
+    function escapeHtml(str) {
+        return str
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function highlightText(text, keyword) {
+        if (!keyword) return text;
+        return text.replace(new RegExp(`(${keyword})`, 'gi'), '<span class="highlight">$1</span>');
+    }
+
+    /* ========================================
+       防抖函数
+       ======================================== */
+    function debounce(func, wait) {
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(AppState.search.debounceTimer);
+                func(...args);
+            };
+            clearTimeout(AppState.search.debounceTimer);
+            AppState.search.debounceTimer = setTimeout(later, wait);
+        };
+    }
+
+    /* ========================================
+       搜索清除和筛选提示
+       ======================================== */
+    function clearSearch() {
+        AppState.search.keyword = '';
+        AppState.search.input.value = '';
+        renderCaseList();
+    }
+
+    function showMetricFilterNotice(metricName, status, caseCount) {
+        const tip = document.getElementById('copyTip');
+        const statusText = status === 'pass' ? '通过' : '失败';
+        tip.textContent = `已筛选: ${metricName} - ${statusText} (${caseCount}个用例)`;
+        tip.classList.add('show');
+        setTimeout(() => tip.classList.remove('show'), 3000);
+    }
+
+    function clearMetricFilter() {
+        AppState.metricFilter.metricName = null;
+        AppState.metricFilter.metricStatus = null;
+        AppState.metricFilter.filterCaseIds = [];
+        renderCaseList();
+    }
+
+    /* ========================================
+       面板显示/隐藏控制
+       ======================================== */
+    function showPanel(name) {
+        document.getElementById('overviewContent').style.display = name === 'overview' ? 'flex' : 'none';
+        document.getElementById('detailContent').style.display = name === 'detail' ? '' : 'none';
+        document.getElementById('attributeContent').style.display = name === 'attribute' ? '' : 'none';
+        document.getElementById('attributeV2Panel').style.display = name === 'attributeV2Panel' ? '' : 'none';
+        document.getElementById('metricCountPanel').style.display = name === 'metricCountPanel' ? '' : 'none';
+    }
+
+    /* ========================================
+       图表销毁
+       ======================================== */
+    function destroyChart(chartName) {
+        if (AppState.charts[chartName]) {
+            AppState.charts[chartName].destroy();
+            AppState.charts[chartName] = null;
+        }
+    }
+
+    function destroyAllMetricCharts() {
+        Object.values(metricCharts).forEach(chart => {
+            if (chart && typeof chart.destroy === 'function') {
+                chart.destroy();
+            }
+        });
+        metricCharts = {};
+    }
+
+    /* ========================================
+       按钮激活状态管理
+       ======================================== */
+    function setActiveButton(buttonId) {
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+
+        let targetButton;
+        switch (buttonId) {
+            case 'all':
+            case 'pass':
+            case 'fail':
+                targetButton = document.querySelector(`[onclick="filterCases('${buttonId}')"]`);
+                break;
+            case 'overviewBtn':
+                targetButton = document.getElementById('overviewBtn');
+                break;
+            case 'attrTrigger':
+                targetButton = document.getElementById('attrTrigger');
+                break;
+            default:
+                return;
+        }
+
+        if (targetButton) {
+            targetButton.classList.add('active');
+        }
+    }
+
+    /* ========================================
+       URL 导航工具
+       ======================================== */
+    function updateUrlWithCurrentCase() {
+        if (!AppState.selectedCase) return;
+
+        const url = new URL(location.href);
+        url.searchParams.set('dataIndex', AppState.selectedCase.inputData.dataIndex);
+        window.history.replaceState(null, '', url);
+    }
+
+    function toggleAttrMenu() {
+        const menu = document.getElementById('attrMenu');
+        menu.classList.toggle('show');
+    }
+
+    function chooseAttr(version) {
+        // 关闭菜单
+        document.getElementById('attrMenu').classList.remove('show');
+        // 清除所有按钮的激活状态
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('attrTrigger').classList.add('active');
+
+        // 执行对应的渲染函数
+        if (version === 'old') renderAttribute();
+        if (version === 'v2') renderAttributeV2();
+    }
+</script>
+

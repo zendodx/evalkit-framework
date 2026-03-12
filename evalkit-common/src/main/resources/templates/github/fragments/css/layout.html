@@ -1,0 +1,118 @@
+<!-- 布局相关样式 - GitHub风格基础结构、颜色变量、排版 -->
+<style th:fragment="layout">
+    /* ========================================
+       CSS 变量定义 & 全局基础样式（GitHub风格）
+       ======================================== */
+    :root {
+        /* GitHub 颜色系统 */
+        --color-primary: #0969da;
+        --color-success: #1a7f37;
+        --color-error: #cf222e;
+        --color-warning: #9e6a03;
+        --color-info: #57606a;
+        --color-text-primary: #24292f;
+        --color-text-secondary: #57606a;
+        --color-text-placeholder: #8c959f;
+        --color-bg-primary: #ffffff;
+        --color-bg-secondary: #f6f8fa;
+        --color-bg-tertiary: #eaeef2;
+        --color-border: #d0d7de;
+        --color-border-light: #e5e7eb;
+
+        /* 字体系统 */
+        --font-size-xs: 11px;
+        --font-size-sm: 12px;
+        --font-size-base: 13px;
+        --font-size-lg: 15px;
+        --font-weight-normal: 400;
+        --font-weight-medium: 500;
+        --font-weight-semibold: 600;
+
+        /* 间距系统 */
+        --spacing-xs: 2px;
+        --spacing-sm: 4px;
+        --spacing-md: 6px;
+        --spacing-lg: 8px;
+        --spacing-xl: 12px;
+        --spacing-2xl: 16px;
+
+        /* 圆角系统 */
+        --border-radius-sm: 3px;
+        --border-radius-base: 6px;
+        --border-radius-lg: 8px;
+        --border-radius-full: 50%;
+
+        /* 阴影系统 */
+        --shadow-sm: 0 0 0 1px rgba(31,35,40,.06),0 2px 4px rgba(31,35,40,.12);
+        --shadow-md: 0 0 0 1px rgba(31,35,40,.06),0 8px 16px rgba(31,35,40,.12);
+
+        /* 过渡动画 */
+        --transition-fast: .15s;
+        --transition-normal: .3s;
+    }
+
+    /* 全局重置 */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        overscroll-behavior: none;
+    }
+
+    * + * {
+        border-radius: var(--border-radius-sm);
+    }
+
+    /* 页面基础样式 */
+    body {
+        font: var(--font-size-sm)/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+        color: var(--color-text-primary);
+        background: #f6f8fa;
+        display: flex;
+        min-height: 100vh;
+    }
+
+    .scroll-wrapper {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        padding: 0;
+        min-height: 0;
+    }
+
+    /* ========================================
+       主布局容器
+       ======================================== */
+    .sidebar {
+        width: 256px;
+        background: var(--color-bg-primary);
+        border-right: 1px solid var(--color-border);
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        position: relative;
+    }
+
+    .main-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+        overflow: auto;
+        height: 100vh;
+    }
+
+    .detail-panel {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 40px;
+        color: var(--color-text-placeholder);
+        font-size: 13px;
+    }
+</style>
+

@@ -1,0 +1,102 @@
+<!-- 总览面板样式 - 指标卡片、图表 -->
+<style th:fragment="overview">
+    /* ========================================
+       总览面板主体布局
+       ======================================== */
+    .overview {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+    }
+
+    .overview-left {
+        width: 50%;
+        padding: 8px 12px;
+        overflow-y: auto;
+    }
+
+    .overview-right {
+        width: 50%;
+        padding: 8px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .report-name {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    /* ========================================
+       指标卡片组
+       ======================================== */
+    .metric-name {
+        font-size: 13px;
+        font-weight: 600;
+        margin: 8px 0 4px 0;
+        padding-left: 4px;
+        border-left: 3px solid #409eff;
+    }
+
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 6px;
+    }
+
+    .metric-card {
+        padding: 8px;
+        border: 1px solid #e4e7f1;
+        border-radius: 3px;
+        background: #fafbfc;
+    }
+
+    .metric-label {
+        font-size: 11px;
+        color: #909399;
+    }
+
+    .metric-value {
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .metric-value.good {
+        color: #67c23a;
+    }
+
+    .metric-value.bad {
+        color: #f56c6c;
+    }
+
+    .metric-value.evalerror {
+        color: #ff8010;
+    }
+
+    /* ========================================
+       图表样式
+       ======================================== */
+    .chart-box {
+        flex: 1;
+        background: #fafbfc;
+        border: 1px solid #e4e7f1;
+        border-radius: 3px;
+        padding: 8px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chart-title {
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 6px;
+        text-align: center;
+    }
+
+    canvas {
+        max-height: 180px;
+    }
+</style>
+
