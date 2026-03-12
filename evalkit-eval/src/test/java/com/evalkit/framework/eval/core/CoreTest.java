@@ -83,14 +83,12 @@ public class CoreTest {
         dataLoader = new DataLoader(
                 DataLoaderConfig.builder()
                         .shuffle(true)
-                        .offset(0)
-                        .limit(1)
                         .build()
         ) {
             @Override
             public List<InputData> prepareDataList() {
                 List<InputData> inputDatas = new ArrayList<>();
-                for (int i = 0; i < 1; i++) {
+                for (int i = 0; i < 100; i++) {
                     inputDatas.add(new InputData(1L, JsonUtils.fromJson("{\t\"query\":\"hello, {{holiday}}\",\"type\":\"1\"}", new TypeReference<Map<String, Object>>() {
                     })));
                 }
@@ -240,7 +238,7 @@ public class CoreTest {
     public void fullTest() {
         List<Scorer> scorers = ListUtils.of(scorer1, scorer2, scorer3);
         List<Reporter> reporters = ListUtils.of(reporter, htmlReporter, csvReporter, excelReporter, jsonReporter);
-        List<Counter> counters = ListUtils.of(basicCounter, attributeCounter, attributeCounterV2);
+        List<Counter> counters = ListUtils.of(basicCounter, metricCounter, attributeCounter, attributeCounterV2);
         new WorkflowBuilder()
                 .link(begin, dataLoader, dataLoaderWrapper, apiCompletion, scorers, counters, reporters, end)
                 .build()
