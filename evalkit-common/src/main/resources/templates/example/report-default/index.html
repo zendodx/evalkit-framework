@@ -26,6 +26,7 @@
                     <div class="attr-menu" id="attrMenu">
                         <div class="attr-item" onclick="chooseAttr('old')">归因</div>
                         <div class="attr-item" onclick="chooseAttr('v2')">归因V2</div>
+                        <div class="attr-item metric-panel" onclick="renderMetricCount()">指标统计</div>
                     </div>
                 </div>
                 <button class="filter-btn" id="overviewBtn" onclick="renderOverview()">总览</button>
@@ -41,6 +42,12 @@
                 </div>
                 <button class="search-tip-btn" id="searchTipBtn" title="搜索语法">?</button>
             </div>
+        </div>
+
+        <!-- 指标筛选状态提示 -->
+        <div class="metric-filter-notice" id="metricFilterNotice" style="display:none;">
+            <span id="metricFilterText"></span>
+            <button class="metric-filter-clear-btn" onclick="clearMetricFilter()" title="清除筛选">✕</button>
         </div>
 
         <!-- 用例列表 -->
@@ -97,7 +104,7 @@
         </div>
     </div>
 
-    <!-- 详情 / 归因 / V2 归因 -->
+    <!-- 详情 / 归因 / V2 归因 / 指标统计 -->
     <div id="detailContent" class="detail-panel">
         <div class="empty-state">选择左侧评测项查看详情</div>
     </div>
@@ -106,6 +113,9 @@
     </div>
     <div id="attributeV2Panel" style="display:none;">
         <div id="attributeV2Content">选择归因查看详情</div>
+    </div>
+    <div id="metricCountPanel" style="display:none;">
+        <div id="metricCountContent">暂无指标数据</div>
     </div>
 </div>
 

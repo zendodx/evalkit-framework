@@ -74,6 +74,8 @@ public class HtmlReporter extends FileReporter {
         ctx.setVariable("attributeCountResult", convertJsonToMap(countResultMap.getOrDefault("attributeCountResult", null)));
         // 归因结果V2
         ctx.setVariable("attributeCountResultV2", convertJsonToMap(countResultMap.getOrDefault("attributeCountResultV2", null)));
+        // 评估指标统计结果
+        ctx.setVariable("metricCountResult", convertJsonToMap(countResultMap.getOrDefault("metricCountResult", null)));
         // 评测数据
         ctx.setVariable("evaluationData", dataItems);
         String templateName = "report-default";

@@ -26,6 +26,12 @@
             clearBtn: null,
             keyword: '',
             debounceTimer: null
+        },
+        // 指标筛选状态
+        metricFilter: {
+            metricName: null,      // 筛选的指标名称
+            metricStatus: null,    // 'pass' 或 'fail'
+            filterCaseIds: []      // 对应的用例ID列表
         }
     };
 
@@ -127,6 +133,23 @@
     function clearSearch() {
         AppState.search.keyword = '';
         AppState.search.input.value = '';
+        renderCaseList();
+    }
+
+    // 显示指标筛选提示框
+    function showMetricFilterNotice(metricName, status, caseCount) {
+        const tip = document.getElementById('copyTip');
+        const statusText = status === 'pass' ? '通过' : '失败';
+        tip.textContent = `已筛选: ${metricName} - ${statusText} (${caseCount}个用例)`;
+        tip.classList.add('show');
+        setTimeout(() => tip.classList.remove('show'), 3000);
+    }
+
+    // 清除指标筛选
+    function clearMetricFilter() {
+        AppState.metricFilter.metricName = null;
+        AppState.metricFilter.metricStatus = null;
+        AppState.metricFilter.filterCaseIds = [];
         renderCaseList();
     }
 
@@ -274,6 +297,9 @@
         // Update case count
         caseCount.textContent = filteredData.length || 0;
 
+        // 更新指标筛选通知
+        updateMetricFilterNotice();
+
         if (filteredData.length === 0) {
             caseList.innerHTML = '<div style="padding:12px;font-size:13px;color:#909399">无匹配用例</div>';
             return;
@@ -283,13 +309,39 @@
         caseList.innerHTML = generateCaseListHTML(filteredData);
     }
 
+    function updateMetricFilterNotice() {
+        const noticeDiv = document.getElementById('metricFilterNotice');
+        if (!noticeDiv) return;
+
+        if (AppState.metricFilter.metricName && AppState.metricFilter.filterCaseIds.length > 0) {
+            const statusText = AppState.metricFilter.metricStatus === 'pass' ? '通过' : '失败';
+            const filterText = document.getElementById('metricFilterText');
+            if (filterText) {
+                filterText.textContent = `${AppState.metricFilter.metricName} - ${statusText}`;
+            }
+            noticeDiv.style.display = 'flex';
+        } else {
+            noticeDiv.style.display = 'none';
+        }
+    }
+
     function filterCaseData() {
-        // Apply status filter
-        let filteredData = AppState.currentFilter === 'all'
-            ? evaluationData
-            : evaluationData.filter(item =>
-                item.evalResult && item.evalResult.pass === (AppState.currentFilter === 'pass')
+        // Apply metric filter first (if any)
+        let filteredData = evaluationData;
+
+        if (AppState.metricFilter.metricName && AppState.metricFilter.filterCaseIds.length > 0) {
+            // 如果有指标筛选，只返回指定的用例
+            filteredData = evaluationData.filter(item =>
+                AppState.metricFilter.filterCaseIds.includes(item.dataIndex)
             );
+        } else {
+            // Apply status filter
+            filteredData = AppState.currentFilter === 'all'
+                ? evaluationData
+                : evaluationData.filter(item =>
+                    item.evalResult && item.evalResult.pass === (AppState.currentFilter === 'pass')
+                );
+        }
 
         // Apply search filter
         if (AppState.search.keyword) {
@@ -1270,6 +1322,7 @@
         document.getElementById('detailContent').style.display = name === 'detail' ? '' : 'none';
         document.getElementById('attributeContent').style.display = name === 'attribute' ? '' : 'none';
         document.getElementById('attributeV2Panel').style.display = name === 'attributeV2Panel' ? '' : 'none';
+        document.getElementById('metricCountPanel').style.display = name === 'metricCountPanel' ? '' : 'none';
     }
 
     function fmt(ts) {
@@ -1351,7 +1404,294 @@
         if (version === 'v2') renderAttributeV2();
     }
 
-    /* 点击页面其他地方关闭菜单 */
+    // 指标统计图表管理
+    let metricCharts = {};
+
+    /* ---------- 指标统计渲染 ---------- */
+    function renderMetricCount() {
+        setActiveButton('attrTrigger');
+        showPanel('metricCountPanel');
+        const box = document.getElementById('metricCountContent');
+        const data = metricCountResult;
+
+        if (!data || !data.metricGroups || data.metricGroups.length === 0) {
+            box.innerHTML = '<div class="no-data">暂无指标统计数据</div>';
+            return;
+        }
+
+        const metricGroups = data.metricGroups;
+
+        // 销毁旧的图表
+        destroyAllMetricCharts();
+
+        // 渲染指标统计主体
+        box.innerHTML = `
+            <div class="metric-count-container">
+                <div class="metric-count-header">
+                    <h3>指标统计</h3>
+                    <span class="metric-count-stat">共 ${metricGroups.length} 项指标</span>
+                </div>
+
+                <!-- 指标表格 -->
+                <div class="metric-count-table-wrapper">
+                    <table class="metric-count-table">
+                        <thead>
+                            <tr>
+                                <th>指标名称</th>
+                                <th>最小值</th>
+                                <th>最大值</th>
+                                <th>平均值</th>
+                                <th>通过数</th>
+                                <th>失败数</th>
+                                <th>通过率</th>
+                                <th>失败率</th>
+                            </tr>
+                        </thead>
+                        <tbody id="metricTableBody"></tbody>
+                    </table>
+                </div>
+
+                <!-- 指标统计卡片 -->
+                <div class="metric-cards-group" id="metricCardsGroup"></div>
+
+                <!-- 指标柱形图 -->
+                <div class="metric-charts-section">
+                    <div class="metric-charts-title">指标占比分析</div>
+                    <div class="metric-charts-container" id="metricChartsContainer"></div>
+                </div>
+            </div>`;
+
+        // 渲染表格数据
+        renderMetricCountTable(metricGroups);
+        // 渲染统计卡片
+        renderMetricCountCards(metricGroups);
+        // 渲染柱形图
+        renderMetricCharts(metricGroups);
+    }
+
+    function destroyAllMetricCharts() {
+        Object.values(metricCharts).forEach(chart => {
+            if (chart && typeof chart.destroy === 'function') {
+                chart.destroy();
+            }
+        });
+        metricCharts = {};
+    }
+
+    function renderMetricCountTable(metricGroups) {
+        const tbody = document.getElementById('metricTableBody');
+        if (!tbody) return;
+
+        const rows = metricGroups.map(group => `
+            <tr>
+                <td><strong>${group.metricName || '-'}</strong></td>
+                <td>${formatNumber(group.minValue)}</td>
+                <td>${formatNumber(group.maxValue)}</td>
+                <td>${formatNumber(group.avgValue)}</td>
+                <td>${group.passCount || 0}</td>
+                <td>${group.failCount || 0}</td>
+                <td>${formatPercentage(group.passRate)}</td>
+                <td>${formatPercentage(group.failRate)}</td>
+            </tr>`).join('');
+
+        tbody.innerHTML = rows;
+    }
+
+    function renderMetricCountCards(metricGroups) {
+        const cardsGroup = document.getElementById('metricCardsGroup');
+        if (!cardsGroup) return;
+
+        const cards = metricGroups.map(group => {
+            const passRate = (group.passRate || 0) * 100;
+            const passRateClass = passRate >= 80 ? 'good' : passRate >= 50 ? 'warning' : 'bad';
+
+            return `
+                <div class="metric-card-group">
+                    <div class="metric-card-group-header">${group.metricName}</div>
+                    <div class="metric-card-group-content">
+                        <div class="metric-stat-row">
+                            <div class="metric-stat-item">
+                                <div class="metric-stat-label">通过率</div>
+                                <div class="metric-stat-value ${passRateClass}">${formatPercentage(group.passRate)}</div>
+                            </div>
+                            <div class="metric-stat-item">
+                                <div class="metric-stat-label">通过数</div>
+                                <div class="metric-stat-value">${group.passCount || 0}</div>
+                            </div>
+                            <div class="metric-stat-item">
+                                <div class="metric-stat-label">失败数</div>
+                                <div class="metric-stat-value">${group.failCount || 0}</div>
+                            </div>
+                        </div>
+                        <div class="metric-stat-row">
+                            <div class="metric-stat-item">
+                                <div class="metric-stat-label">平均值</div>
+                                <div class="metric-stat-value">${formatNumber(group.avgValue)}</div>
+                            </div>
+                            <div class="metric-stat-item">
+                                <div class="metric-stat-label">最小值</div>
+                                <div class="metric-stat-value">${formatNumber(group.minValue)}</div>
+                            </div>
+                            <div class="metric-stat-item">
+                                <div class="metric-stat-label">最大值</div>
+                                <div class="metric-stat-value">${formatNumber(group.maxValue)}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+        }).join('');
+
+         cardsGroup.innerHTML = cards;
+     }
+
+     function renderMetricCharts(metricGroups) {
+         const container = document.getElementById('metricChartsContainer');
+         if (!container) return;
+
+         // 为每个指标创建一个图表容器
+         const chartsHTML = metricGroups.map((group, index) => `
+             <div class="metric-chart-item">
+                 <div class="metric-chart-name">${group.metricName}</div>
+                 <canvas id="metricChart_${index}" height="120"></canvas>
+             </div>`).join('');
+
+         container.innerHTML = chartsHTML;
+
+         // 为每个指标创建柱形图
+         metricGroups.forEach((group, index) => {
+             const canvasId = `metricChart_${index}`;
+             setTimeout(() => {
+                 const canvas = document.getElementById(canvasId);
+                 if (canvas) {
+                     renderSingleMetricChart(canvas, group, index);
+                 }
+             }, 50);
+         });
+     }
+
+     function renderSingleMetricChart(canvas, metricGroup, index) {
+         if (!canvas) return;
+
+         const ctx = canvas.getContext('2d');
+         if (!ctx) return;
+
+         // 计算占比百分比
+         const total = (metricGroup.passCount || 0) + (metricGroup.failCount || 0);
+         const passPercentage = total > 0 ? ((metricGroup.passCount || 0) / total * 100) : 0;
+         const failPercentage = total > 0 ? ((metricGroup.failCount || 0) / total * 100) : 0;
+
+         // 创建悬停提示内容
+         const tooltipCallback = {
+             title: () => metricGroup.metricName,
+             label: (context) => {
+                 const label = context.label || '';
+                 const value = formatNumber(context.parsed.y);
+                 const percentage = context.parsed.y.toFixed(1);
+                 if (label === '通过') {
+                     return `通过数: ${metricGroup.passCount} | 占比: ${percentage}%`;
+                 } else {
+                     return `失败数: ${metricGroup.failCount} | 占比: ${percentage}%`;
+                 }
+             },
+             afterLabel: (context) => {
+                 if (context.label === '通过') {
+                     return `通过率: ${formatPercentage(metricGroup.passRate)}`;
+                 } else {
+                     return `失败率: ${formatPercentage(metricGroup.failRate)}`;
+                 }
+             },
+             backgroundColor: 'rgba(0, 0, 0, 0.8)',
+             padding: 12,
+             titleFont: {size: 13, weight: 'bold'},
+             bodyFont: {size: 12},
+             cornerRadius: 4,
+             displayColors: true
+         };
+
+         const chartKey = `metric_${index}`;
+         if (metricCharts[chartKey]) {
+             metricCharts[chartKey].destroy();
+         }
+
+          metricCharts[chartKey] = new Chart(ctx, {
+              type: 'bar',
+              data: {
+                  labels: ['通过', '失败'],
+                  datasets: [{
+                      label: '占比 (%)',
+                      data: [passPercentage, failPercentage],
+                      backgroundColor: ['#67c23a', '#f56c6c'],
+                      borderColor: ['#67c23a', '#f56c6c'],
+                      borderWidth: 1,
+                      borderRadius: 3
+                  }]
+              },
+              options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  indexAxis: 'y',
+                  onClick: (event, elements) => {
+                      if (elements && elements.length > 0) {
+                          const element = elements[0];
+                          const label = metricCharts[chartKey].data.labels[element.index];
+                          const status = label === '通过' ? 'pass' : 'fail';
+
+                          // 获取对应的用例列表
+                          const caseIds = status === 'pass'
+                              ? (metricGroup.passMetricItems || []).map(item => item.dataIndex)
+                              : (metricGroup.failMetricItems || []).map(item => item.dataIndex);
+
+                          // 更新筛选状态
+                          AppState.metricFilter.metricName = metricGroup.metricName;
+                          AppState.metricFilter.metricStatus = status;
+                          AppState.metricFilter.filterCaseIds = caseIds;
+
+                          // 切换到详情面板并筛选用例
+                          showPanel('detail');
+                          renderCaseList();
+
+                          // 显示筛选提示
+                          showMetricFilterNotice(metricGroup.metricName, status, caseIds.length);
+                      }
+                  },
+                  plugins: {
+                      legend: {
+                          display: true,
+                          position: 'top',
+                          labels: {
+                              font: {size: 11},
+                              padding: 8,
+                              usePointStyle: true
+                          }
+                      },
+                      tooltip: tooltipCallback
+                  },
+                  scales: {
+                      x: {
+                          beginAtZero: true,
+                          max: 100,
+                          ticks: {
+                              font: {size: 11},
+                              callback: (value) => value + '%'
+                          },
+                          grid: {
+                              color: 'rgba(0, 0, 0, 0.05)'
+                          }
+                      },
+                      y: {
+                          ticks: {
+                              font: {size: 11}
+                          },
+                          grid: {
+                              display: false
+                          }
+                      }
+                  }
+              }
+          });
+      }
+
+     /* 点击页面其他地方关闭菜单 */
     document.addEventListener('click', e => {
         const menu = document.getElementById('attrMenu');
         const trigger = document.getElementById('attrTrigger');

@@ -776,7 +776,69 @@ const attributeCountResultV2 = {
     }]
 };
 
+// 指标统计数据
+const metricCountResult = {
+    "counterName": "metricCountResult",
+    "metricGroups": [
+        {
+            "metricName": "回复长度检查",
+            "minValue": 0.0,
+            "maxValue": 1.0,
+            "avgValue": 0.85,
+            "passCount": 8,
+            "failCount": 2,
+            "passRate": 0.8,
+            "failRate": 0.2,
+            "passMetricItems": [
+                {"dataIndex": 0, "metricName": "回复长度检查", "metricValue": 1.0, "metricThreshold": 0.0},
+                {"dataIndex": 1, "metricName": "回复长度检查", "metricValue": 1.0, "metricThreshold": 0.0}
+            ],
+            "failMetricItems": [
+                {"dataIndex": 8, "metricName": "回复长度检查", "metricValue": 0.0, "metricThreshold": 0.0},
+                {"dataIndex": 9, "metricName": "回复长度检查", "metricValue": 0.5, "metricThreshold": 0.0}
+            ]
+        },
+        {
+            "metricName": "异常测试",
+            "minValue": 0.0,
+            "maxValue": 1.0,
+            "avgValue": 0.6,
+            "passCount": 6,
+            "failCount": 4,
+            "passRate": 0.6,
+            "failRate": 0.4,
+            "passMetricItems": [
+                {"dataIndex": 0, "metricName": "异常测试", "metricValue": 1.0, "metricThreshold": 0.0},
+                {"dataIndex": 2, "metricName": "异常测试", "metricValue": 1.0, "metricThreshold": 0.0}
+            ],
+            "failMetricItems": [
+                {"dataIndex": 3, "metricName": "异常测试", "metricValue": 0.0, "metricThreshold": 0.0},
+                {"dataIndex": 5, "metricName": "异常测试", "metricValue": 0.0, "metricThreshold": 0.0}
+            ]
+        },
+        {
+            "metricName": "相似度检查level1",
+            "minValue": 0.0,
+            "maxValue": 1.0,
+            "avgValue": 0.72,
+            "passCount": 7,
+            "failCount": 3,
+            "passRate": 0.7,
+            "failRate": 0.3,
+            "passMetricItems": [
+                {"dataIndex": 0, "metricName": "相似度检查level1", "metricValue": 1.0, "metricThreshold": 0.0},
+                {"dataIndex": 1, "metricName": "相似度检查level1", "metricValue": 1.0, "metricThreshold": 0.0}
+            ],
+            "failMetricItems": [
+                {"dataIndex": 7, "metricName": "相似度检查level1", "metricValue": 0.0, "metricThreshold": 0.0},
+                {"dataIndex": 8, "metricName": "相似度检查level1", "metricValue": 0.0, "metricThreshold": 0.0}
+            ]
+        }
+    ]
+};
+
 window.evaluationData = evaluationData;
 window.metricsData = metricsData;
 window.attributeCountResult = attributeCountResult
 window.attributeCountResultV2 = attributeCountResultV2
+window.metricCountResult = metricCountResult
