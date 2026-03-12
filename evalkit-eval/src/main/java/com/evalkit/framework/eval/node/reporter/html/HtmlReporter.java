@@ -80,6 +80,8 @@ public class HtmlReporter extends FileReporter {
         String templateName = "report-default";
         if (style == HtmlReportStyle.DEFAULT) {
             templateName = "report-default";
+        } else if (style == HtmlReportStyle.GITHUB) {
+            templateName = "report-github";
         }
         String outputFileName = StringUtils.isNotBlank(this.fileName) ? this.fileName : generateDefaultOutputFileName();
         try (FileWriter writer = new FileWriter(String.format("%s/%s.html", this.parentDir, outputFileName))) {

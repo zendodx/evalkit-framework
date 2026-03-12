@@ -19,6 +19,7 @@ import com.evalkit.framework.eval.node.reporter.ExcelReporter;
 import com.evalkit.framework.eval.node.reporter.JsonReporter;
 import com.evalkit.framework.eval.node.reporter.Reporter;
 import com.evalkit.framework.eval.node.reporter.html.HtmlReporter;
+import com.evalkit.framework.eval.node.reporter.html.enums.HtmlReportStyle;
 import com.evalkit.framework.eval.node.scorer.Scorer;
 import com.evalkit.framework.eval.node.scorer.VectorSimilarityScorer;
 import com.evalkit.framework.eval.node.scorer.config.ScorerConfig;
@@ -207,7 +208,7 @@ public class CoreTest {
         };
 
         String fileName = "核心链路测试_" + DateUtils.nowToString();
-        htmlReporter = new HtmlReporter(fileName);
+        htmlReporter = new HtmlReporter(fileName, HtmlReportStyle.GITHUB);
         csvReporter = new CsvReporter(fileName);
         excelReporter = new ExcelReporter(fileName);
         jsonReporter = new JsonReporter(fileName);
