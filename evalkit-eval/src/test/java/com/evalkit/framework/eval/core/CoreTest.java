@@ -208,7 +208,7 @@ public class CoreTest {
         };
 
         String fileName = "核心链路测试_" + DateUtils.nowToString();
-        htmlReporter = new HtmlReporter(fileName, HtmlReportStyle.DEFAULT);
+        htmlReporter = new HtmlReporter(fileName, HtmlReportStyle.GITHUB);
         csvReporter = new CsvReporter(fileName);
         excelReporter = new ExcelReporter(fileName);
         jsonReporter = new JsonReporter(fileName);

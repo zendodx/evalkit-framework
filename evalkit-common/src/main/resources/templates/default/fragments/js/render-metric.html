@@ -181,22 +181,24 @@
 
         // 创建悬停提示内容
         const tooltipCallback = {
-            title: () => metricGroup.metricName,
-            label: (context) => {
-                const label = context.label || '';
-                const value = formatNumber(context.parsed.y);
-                const percentage = context.parsed.y.toFixed(1);
-                if (label === '通过') {
-                    return `通过数: ${metricGroup.passCount} | 占比: ${percentage}%`;
-                } else {
-                    return `失败数: ${metricGroup.failCount} | 占比: ${percentage}%`;
-                }
-            },
-            afterLabel: (context) => {
-                if (context.label === '通过') {
-                    return `通过率: ${formatPercentage(metricGroup.passRate)}`;
-                } else {
-                    return `失败率: ${formatPercentage(metricGroup.failRate)}`;
+            callbacks: {
+                title: () => metricGroup.metricName,
+                label: (context) => {
+                    const label = context.label || '';
+                    const value = formatNumber(context.parsed.y);
+                    const allCount = (metricGroup.passCount || 0) + (metricGroup.failCount || 0);
+                    if (label === '通过') {
+                        return `通过数: ${metricGroup.passCount} | 占比: ${metricGroup.passCount}/${allCount}`;
+                    } else {
+                        return `失败数: ${metricGroup.failCount} | 占比: ${metricGroup.failCount}/${allCount}`;
+                    }
+                },
+                afterLabel: (context) => {
+                    if (context.label === '通过') {
+                        return `通过率: ${formatPercentage(metricGroup.passRate)}`;
+                    } else {
+                        return `失败率: ${formatPercentage(metricGroup.failRate)}`;
+                    }
                 }
             },
             backgroundColor: 'rgba(0, 0, 0, 0.8)',
@@ -255,8 +257,8 @@
                 },
                 plugins: {
                     legend: {
-                        display: true,
-                        position: 'top',
+                        display: false,
+                        position: 'bottom',
                         labels: {
                             font: {size: 11},
                             padding: 8,
