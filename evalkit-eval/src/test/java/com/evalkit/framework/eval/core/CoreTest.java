@@ -239,7 +239,7 @@ public class CoreTest {
     public void fullTest() {
         List<Scorer> scorers = ListUtils.of(scorer1, scorer2, scorer3);
         List<Reporter> reporters = ListUtils.of(reporter, htmlReporter, csvReporter, excelReporter, jsonReporter);
-        List<Counter> counters = ListUtils.of(basicCounter, metricCounter, attributeCounter, attributeCounterV2);
+        List<Counter> counters = ListUtils.of(attributeCounter, attributeCounterV2, basicCounter, metricCounter);
         new WorkflowBuilder()
                 .link(begin, dataLoader, dataLoaderWrapper, apiCompletion, scorers, counters, reporters, end)
                 .build()
