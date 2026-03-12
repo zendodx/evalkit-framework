@@ -425,7 +425,7 @@
         setActiveButton('overviewBtn');
         showPanel('overview');
 
-        const metrics = metricsData || {};
+        const metrics = basicCountResult || {};
 
         // Render metric grids
         renderBasicMetrics(metrics);
@@ -562,7 +562,7 @@
     }
 
     function renderDistributionChart() {
-        const metrics = metricsData || {};
+        const metrics = basicCountResult || {};
         const config = {
             type: 'pie',
             data: {
@@ -587,7 +587,7 @@
     }
 
     function renderTPMetricsChart() {
-        const metrics = metricsData || {};
+        const metrics = basicCountResult || {};
         const tpLabels = ['TP50', 'TP60', 'TP70', 'TP80', 'TP90', 'TP95', 'TP99'];
         const tpValues = [
             metrics.completionTP50TimeCost || 0,

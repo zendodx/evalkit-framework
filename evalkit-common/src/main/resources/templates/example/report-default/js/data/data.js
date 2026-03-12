@@ -699,7 +699,7 @@ const evaluationData = [{
     },
     "extra": null
 }];
-const metricsData = {
+const basicCountResult = {
     "counterName": "basicCountResult",
     "type": 0,
     "typeName": "\u57FA\u7840\u7EDF\u8BA1",

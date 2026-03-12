@@ -129,9 +129,13 @@
 
 <!-- 业务脚本 -->
 <script th:inline="javascript">
+    /* 评估数据列表 */
     const evaluationData = /*[[${evaluationData}]]*/ [];
-    const metricsData = /*[[${metricsData}]]*/ {};
+    /* 基础统计数据 */
+    const basicCountResult = /*[[${basicCountResult}]]*/ {};
+    /* 归因结果V1统计数据 */
     const attributeCountResult = /*[[${attributeCountResult}]]*/ {};
+    /* 归因结果V2统计数据 */
     const attributeCountResultV2 = /*[[${attributeCountResultV2}]]*/ {};
     /* 评估指标统计数据 */
     const metricCountResult = /*[[${metricCountResult}]]*/ {};
