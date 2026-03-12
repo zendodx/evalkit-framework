@@ -4,6 +4,7 @@ import com.evalkit.framework.eval.model.CountResult;
 import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.model.MetricCountResult;
 import com.evalkit.framework.eval.model.MetricItem;
+import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +30,9 @@ public abstract class MetricCounter extends Counter {
         for (Map.Entry<String, List<MetricItem>> entry : metricItemMap.entrySet()) {
             String metricName = entry.getKey();
             List<MetricItem> metricItems = entry.getValue();
+            if (CollectionUtils.isEmpty(metricItems)) {
+                continue;
+            }
             // 计算指标最值,平均值,通过率
             List<Double> metricValues = metricItems.stream().map(MetricItem::getMetricValue).collect(Collectors.toList());
             double min = metricValues.stream().min(Double::compareTo).orElse(0.0);
