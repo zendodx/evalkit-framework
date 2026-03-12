@@ -11,6 +11,7 @@ import com.evalkit.framework.eval.node.begin.config.BeginConfig;
 import com.evalkit.framework.eval.node.counter.AttributeCounter;
 import com.evalkit.framework.eval.node.counter.AttributeCounterV2;
 import com.evalkit.framework.eval.node.counter.BasicCounter;
+import com.evalkit.framework.eval.node.counter.Counter;
 import com.evalkit.framework.eval.node.dataloader.DataLoader;
 import com.evalkit.framework.eval.node.dataloader.config.DataLoaderConfig;
 import com.evalkit.framework.eval.node.dataloader_wrapper.DataLoaderWrapper;
@@ -26,7 +27,6 @@ import com.evalkit.framework.eval.node.scorer.VectorSimilarityScorer;
 import com.evalkit.framework.eval.node.scorer.config.ScorerConfig;
 import com.evalkit.framework.eval.node.scorer.config.VectorSimilarityScorerConfig;
 import com.evalkit.framework.eval.node.scorer.strategy.JsonEvalReasonStrategy;
-import com.evalkit.framework.eval.node.scorer.strategy.LLMSummaryEvalReasonStrategy;
 import com.evalkit.framework.eval.node.scorer.strategy.MaxScoreRateStrategy;
 import com.evalkit.framework.infra.service.llm.LLMService;
 import com.evalkit.framework.infra.service.llm.LLMTokenMetrics;
@@ -77,12 +77,18 @@ public class CoreTest {
                 BeginConfig.builder()
                         .scoreStrategy(new MaxScoreRateStrategy())
                         .threshold(1)
-                        .evalReasonStrategy(new LLMSummaryEvalReasonStrategy(llmService))
-//                        .evalReasonStrategy(new JsonEvalReasonStrategy())
+//                        .evalReasonStrategy(new LLMSummaryEvalReasonStrategy(llmService))
+                        .evalReasonStrategy(new JsonEvalReasonStrategy())
                         .build()
         );
 
-        dataLoader = new DataLoader(DataLoaderConfig.builder().shuffle(true).build()) {
+        dataLoader = new DataLoader(
+                DataLoaderConfig.builder()
+                        .shuffle(true)
+                        .offset(0)
+                        .limit(1)
+                        .build()
+        ) {
             @Override
             public List<InputData> prepareDataList() {
                 List<InputData> inputDatas = new ArrayList<>();
@@ -187,16 +193,15 @@ public class CoreTest {
         };
 
         String fileName = "核心链路测试_" + DateUtils.nowToString();
-        String parentDir = "attaches/核心链路测试";
-        htmlReporter = new HtmlReporter(fileName, parentDir);
-        csvReporter = new CsvReporter(fileName, parentDir);
-        excelReporter = new ExcelReporter(fileName, parentDir);
-        jsonReporter = new JsonReporter(fileName, parentDir);
+        htmlReporter = new HtmlReporter(fileName);
+        csvReporter = new CsvReporter(fileName);
+        excelReporter = new ExcelReporter(fileName);
+        jsonReporter = new JsonReporter(fileName);
 
         end = new End() {
             @Override
             public void process(WorkflowContext ctx) {
-                List<File> attaches = FileUtils.listFiles(parentDir);
+                List<File> attaches = FileUtils.listFiles("attachments");
                 List<String> fileNames = attaches.stream().map(File::getName).collect(Collectors.toList());
                 String llmCountReport = LLMTokenMetrics.report();
                 log.info("llmCountReport: {}, attaches: {}", llmCountReport, fileNames);
@@ -205,16 +210,22 @@ public class CoreTest {
     }
 
     @Test
-    public void test() {
+    public void simpleTest() {
         List<Scorer> scorers = ListUtils.of(scorer1, scorer2, scorer3);
         List<Reporter> reporters = ListUtils.of(reporter, htmlReporter, csvReporter, excelReporter, jsonReporter);
         new WorkflowBuilder()
-                .link(begin, dataLoader, dataLoaderWrapper, apiCompletion)
-                .link(apiCompletion, scorers)
-                .link(scorers, attributeCounter)
-                .link(attributeCounter, attributeCounterV2, basicCounter)
-                .link(basicCounter, reporters)
-                .link(reporters, end)
+                .link(begin, dataLoader, dataLoaderWrapper, apiCompletion, scorers, basicCounter, reporters, end)
+                .build()
+                .execute();
+    }
+
+    @Test
+    public void fullTest() {
+        List<Scorer> scorers = ListUtils.of(scorer1, scorer2, scorer3);
+        List<Reporter> reporters = ListUtils.of(reporter, htmlReporter, csvReporter, excelReporter, jsonReporter);
+        List<Counter> counters = ListUtils.of(basicCounter, attributeCounter, attributeCounterV2);
+        new WorkflowBuilder()
+                .link(begin, dataLoader, dataLoaderWrapper, apiCompletion, scorers, counters, reporters, end)
                 .build()
                 .execute();
     }

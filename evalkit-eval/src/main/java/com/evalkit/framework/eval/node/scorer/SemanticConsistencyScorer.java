@@ -23,6 +23,7 @@ public abstract class SemanticConsistencyScorer extends PromptBasedScorer {
         if (StringUtils.isEmpty(config.getSysPrompt())) {
             config.setSysPrompt(DEFAULT_SYS_PROMPT);
         }
+        super.scorerType = "semanticConsistencyScorer";
     }
 
     @Override

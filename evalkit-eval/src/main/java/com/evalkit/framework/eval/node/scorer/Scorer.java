@@ -31,6 +31,7 @@ import java.util.Objects;
 @Slf4j
 @Data
 public abstract class Scorer extends WorkflowNode {
+    protected String scorerType = "defaultScorer";
     protected ScorerConfig config;
 
     public Scorer() {
@@ -133,6 +134,7 @@ public abstract class Scorer extends WorkflowNode {
                 .timeCost(end - start)
                 .scoreRate(scoreRate)
                 .pass(pass)
+                .scorerType(this.scorerType)
                 .build();
     }
 
@@ -155,6 +157,7 @@ public abstract class Scorer extends WorkflowNode {
                 .star(config.isStar())
                 .pass(false)
                 .scoreRate(0)
+                .scorerType(this.scorerType)
                 .build();
     }
 

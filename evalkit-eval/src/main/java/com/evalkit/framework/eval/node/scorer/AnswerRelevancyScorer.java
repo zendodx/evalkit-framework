@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 public abstract class AnswerRelevancyScorer extends PromptBasedScorer {
     public AnswerRelevancyScorer(PromptBasedScorerConfig config) {
         super(config);
+        super.scorerType = "answerRelevancy";
     }
 
     @Override

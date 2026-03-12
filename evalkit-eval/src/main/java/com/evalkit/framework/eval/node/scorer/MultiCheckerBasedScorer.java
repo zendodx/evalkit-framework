@@ -34,6 +34,7 @@ public abstract class MultiCheckerBasedScorer extends Scorer {
         super(config);
         validConfig(config);
         this.config = config;
+        super.scorerType = "multiCheckerBasedScorer";
     }
 
     protected void validConfig(MultiCheckerBasedScorerConfig config) {
