@@ -1,6 +1,6 @@
-package com.evalkit.framework.eval.node.dataloader.datagen.config;
+package com.evalkit.framework.eval.node.dataloader.data_generator.config;
 
-import com.evalkit.framework.eval.node.dataloader.datagen.querygen.QueryGenerator;
+import com.evalkit.framework.eval.node.querygen.QueryGenerator;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

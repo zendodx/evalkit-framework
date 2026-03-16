@@ -1,10 +1,10 @@
-package com.evalkit.framework.eval.node.dataloader.datagen;
+package com.evalkit.framework.eval.node.dataloader.data_generator;
 
 import com.evalkit.framework.common.thread.BatchRunner;
 import com.evalkit.framework.common.thread.PoolName;
 import com.evalkit.framework.eval.model.InputData;
 import com.evalkit.framework.eval.node.dataloader.DataLoader;
-import com.evalkit.framework.eval.node.dataloader.datagen.querygen.config.LoaderBasedDataGeneratorConfig;
+import com.evalkit.framework.eval.node.querygen.config.LoaderBasedDataGeneratorConfig;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.Collections;

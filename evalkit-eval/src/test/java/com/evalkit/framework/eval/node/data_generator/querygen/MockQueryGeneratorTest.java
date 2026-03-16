@@ -1,6 +1,7 @@
-package com.evalkit.framework.eval.node.dataloader.datagen.querygen;
+package com.evalkit.framework.eval.node.data_generator.querygen;
 
-import com.evalkit.framework.eval.node.dataloader.datagen.querygen.config.MockerQueryGeneratorConfig;
+import com.evalkit.framework.eval.node.querygen.MockQueryGenerator;
+import com.evalkit.framework.eval.node.querygen.config.MockerQueryGeneratorConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 

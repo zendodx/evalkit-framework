@@ -1,6 +1,6 @@
-package com.evalkit.framework.eval.node.dataloader.datagen.querygen;
+package com.evalkit.framework.eval.node.querygen;
 
-import com.evalkit.framework.eval.node.dataloader.datagen.querygen.config.PromptBasedQueryGeneratorConfig;
+import com.evalkit.framework.eval.node.querygen.config.PromptBasedQueryGeneratorConfig;
 import com.evalkit.framework.infra.service.llm.LLMService;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;

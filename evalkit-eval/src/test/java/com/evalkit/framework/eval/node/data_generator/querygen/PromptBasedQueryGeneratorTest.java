@@ -1,7 +1,8 @@
-package com.evalkit.framework.eval.node.dataloader.datagen.querygen;
+package com.evalkit.framework.eval.node.data_generator.querygen;
 
 import com.evalkit.framework.common.utils.runtime.RuntimeEnvUtils;
-import com.evalkit.framework.eval.node.dataloader.datagen.querygen.config.PromptBasedQueryGeneratorConfig;
+import com.evalkit.framework.eval.node.querygen.PromptBasedQueryGenerator;
+import com.evalkit.framework.eval.node.querygen.config.PromptBasedQueryGeneratorConfig;
 import com.evalkit.framework.infra.service.llm.LLMService;
 import com.evalkit.framework.infra.service.llm.LLMServiceFactory;
 import com.evalkit.framework.infra.service.llm.config.DeepseekLLMServiceConfig;

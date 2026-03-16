@@ -1,8 +1,8 @@
-package com.evalkit.framework.eval.node.dataloader.datagen.querygen;
+package com.evalkit.framework.eval.node.querygen;
 
 import com.evalkit.framework.eval.mock.engine.MockRuleEngine;
 import com.evalkit.framework.eval.mock.engine.SpelMockRuleEngine;
-import com.evalkit.framework.eval.node.dataloader.datagen.querygen.config.MockerQueryGeneratorConfig;
+import com.evalkit.framework.eval.node.querygen.config.MockerQueryGeneratorConfig;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 

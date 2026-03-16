@@ -1,4 +1,4 @@
-package com.evalkit.framework.eval.node.dataloader.datagen;
+package com.evalkit.framework.eval.node.data_generator;
 
 import com.evalkit.framework.common.utils.convert.TypeConvertUtils;
 import com.evalkit.framework.common.utils.list.ListUtils;
@@ -6,7 +6,8 @@ import com.evalkit.framework.common.utils.map.MapUtils;
 import com.evalkit.framework.common.utils.random.UuidUtils;
 import com.evalkit.framework.eval.model.InputData;
 import com.evalkit.framework.eval.node.dataloader.DataLoader;
-import com.evalkit.framework.eval.node.dataloader.datagen.querygen.config.LoaderBasedDataGeneratorConfig;
+import com.evalkit.framework.eval.node.dataloader.data_generator.LoaderBasedDataGenerator;
+import com.evalkit.framework.eval.node.querygen.config.LoaderBasedDataGeneratorConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -40,7 +41,7 @@ class LoaderBasedDataGeneratorTest {
 
 
     @Test
-    public void test() {
+    public void test() throws Exception {
         // 数据生成器, 将原始数据变成多轮对话, 每行是一个Query
         LoaderBasedDataGenerator generator = new LoaderBasedDataGenerator(
                 LoaderBasedDataGeneratorConfig.builder()
@@ -73,14 +74,14 @@ class LoaderBasedDataGeneratorTest {
 
         // 验证
         log.info("raw input data: {}", dataLoader.loadWrapper());
-        List<InputData> generateDataList = generator.loadWrapper();
+        List<InputData> generateDataList = generator.prepareDataList();
         log.info("generated data: {}", generateDataList);
         Assertions.assertTrue(CollectionUtils.isNotEmpty(generateDataList));
         Assertions.assertEquals(5, generateDataList.size());
     }
 
     @Test
-    public void testBadProcess() {
+    public void testBadProcess() throws Exception {
         // 数据生成器, 将原始数据变成多轮对话, 每行是一个Query
         LoaderBasedDataGenerator generator = new LoaderBasedDataGenerator(
                 LoaderBasedDataGeneratorConfig.builder()
@@ -97,7 +98,7 @@ class LoaderBasedDataGeneratorTest {
 
         // 验证
         log.info("raw input data: {}", dataLoader.loadWrapper());
-        List<InputData> generateDataList = generator.loadWrapper();
+        List<InputData> generateDataList = generator.prepareDataList();
         log.info("generated data: {}", generateDataList);
         Assertions.assertTrue(CollectionUtils.isEmpty(generateDataList));
     }

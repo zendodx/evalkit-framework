@@ -1,4 +1,4 @@
-package com.evalkit.framework.eval.node.dataloader.datagen.querygen;
+package com.evalkit.framework.eval.node.querygen;
 
 import java.util.List;
 

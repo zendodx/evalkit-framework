@@ -1,4 +1,4 @@
-package com.evalkit.framework.eval.node.dataloader.datagen.querygen.config;
+package com.evalkit.framework.eval.node.querygen.config;
 
 import com.evalkit.framework.infra.service.llm.LLMService;
 import lombok.Builder;
