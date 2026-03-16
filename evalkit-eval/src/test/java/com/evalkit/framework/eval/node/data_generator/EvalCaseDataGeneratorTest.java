@@ -1,7 +1,6 @@
 package com.evalkit.framework.eval.node.data_generator;
 
-import com.evalkit.framework.eval.node.dataloader.data_generator.EvalCaseDataGenerator;
-import com.evalkit.framework.eval.node.dataloader.data_generator.config.EvalCaseDataGeneratorConfig;
+import com.evalkit.framework.eval.node.data_generator.config.EvalCaseDataGeneratorConfig;
 import com.evalkit.framework.eval.node.querygen.MockQueryGenerator;
 import org.junit.jupiter.api.Test;
 

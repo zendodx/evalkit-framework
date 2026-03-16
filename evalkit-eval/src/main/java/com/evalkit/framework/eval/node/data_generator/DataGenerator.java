@@ -1,12 +1,12 @@
-package com.evalkit.framework.eval.node.dataloader.data_generator;
+package com.evalkit.framework.eval.node.data_generator;
 
 import com.evalkit.framework.eval.context.WorkflowContextOps;
 import com.evalkit.framework.eval.exception.EvalException;
 import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.model.EvalResult;
 import com.evalkit.framework.eval.model.InputData;
-import com.evalkit.framework.eval.node.dataloader.data_generator.config.DataGeneratorConfig;
-import com.evalkit.framework.eval.node.dataloader.data_generator.exporter.GenDataExporter;
+import com.evalkit.framework.eval.node.data_generator.config.DataGeneratorConfig;
+import com.evalkit.framework.eval.node.data_generator.exporter.GenDataExporter;
 import com.evalkit.framework.eval.node.scorer.strategy.EvalReasonStrategy;
 import com.evalkit.framework.eval.node.scorer.strategy.ScoreStrategy;
 import com.evalkit.framework.workflow.model.WorkflowContext;
@@ -58,6 +58,7 @@ public abstract class DataGenerator extends WorkflowNode {
             inputDataList = prepareDataList();
             return afterGenerate(inputDataList);
         } catch (Throwable e) {
+            log.error("Generate eval data error:{}", e.getMessage(), e);
             onGenerateError(inputDataList, e);
             return null;
         }

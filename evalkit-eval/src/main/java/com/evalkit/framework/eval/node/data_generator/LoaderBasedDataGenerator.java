@@ -1,4 +1,4 @@
-package com.evalkit.framework.eval.node.dataloader.data_generator;
+package com.evalkit.framework.eval.node.data_generator;
 
 import com.evalkit.framework.common.thread.BatchRunner;
 import com.evalkit.framework.common.thread.PoolName;

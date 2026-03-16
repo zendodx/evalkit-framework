@@ -1,4 +1,4 @@
-package com.evalkit.framework.eval.node.dataloader.data_generator.config;
+package com.evalkit.framework.eval.node.data_generator.config;
 
 import com.evalkit.framework.eval.node.querygen.QueryGenerator;
 import lombok.Builder;
@@ -24,9 +24,6 @@ public class EvalCaseDataGeneratorConfig extends DataGeneratorConfig {
     protected boolean randomRound = false;
     /* Query生成器 */
     protected QueryGenerator queryGenerator;
-    /* 并发生成数量 */
-    @Builder.Default
-    protected int threadNum = 1;
     /* 默认字段值 */
     @Builder.Default
     protected String sessionFieldKey = "sessionId";

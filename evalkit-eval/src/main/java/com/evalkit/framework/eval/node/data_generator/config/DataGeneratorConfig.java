@@ -1,9 +1,9 @@
-package com.evalkit.framework.eval.node.dataloader.data_generator.config;
+package com.evalkit.framework.eval.node.data_generator.config;
 
 import com.evalkit.framework.common.utils.list.ListUtils;
 import com.evalkit.framework.common.utils.time.DateUtils;
-import com.evalkit.framework.eval.node.dataloader.data_generator.exporter.ExcelGenDataExporter;
-import com.evalkit.framework.eval.node.dataloader.data_generator.exporter.GenDataExporter;
+import com.evalkit.framework.eval.node.data_generator.exporter.ExcelGenDataExporter;
+import com.evalkit.framework.eval.node.data_generator.exporter.GenDataExporter;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.SuperBuilder;
@@ -25,4 +25,7 @@ public class DataGeneratorConfig {
     /* 文件导出器列表 */
     @Builder.Default
     protected List<GenDataExporter> genDataExporterList = ListUtils.of(new ExcelGenDataExporter());
+    /* 生成并发数 */
+    @Builder.Default
+    protected Integer threadNum = 1;
 }

@@ -6,7 +6,6 @@ import com.evalkit.framework.common.utils.map.MapUtils;
 import com.evalkit.framework.common.utils.random.UuidUtils;
 import com.evalkit.framework.eval.model.InputData;
 import com.evalkit.framework.eval.node.dataloader.DataLoader;
-import com.evalkit.framework.eval.node.dataloader.data_generator.LoaderBasedDataGenerator;
 import com.evalkit.framework.eval.node.querygen.config.LoaderBasedDataGeneratorConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;

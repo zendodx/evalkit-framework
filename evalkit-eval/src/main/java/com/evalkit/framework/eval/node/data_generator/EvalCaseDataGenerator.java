@@ -1,11 +1,11 @@
-package com.evalkit.framework.eval.node.dataloader.data_generator;
+package com.evalkit.framework.eval.node.data_generator;
 
 import com.evalkit.framework.common.thread.BatchRunner;
 import com.evalkit.framework.common.thread.PoolName;
 import com.evalkit.framework.common.utils.map.MapUtils;
 import com.evalkit.framework.common.utils.math.MathUtils;
 import com.evalkit.framework.common.utils.random.UuidUtils;
-import com.evalkit.framework.eval.node.dataloader.data_generator.config.EvalCaseDataGeneratorConfig;
+import com.evalkit.framework.eval.node.data_generator.config.EvalCaseDataGeneratorConfig;
 import com.evalkit.framework.eval.node.querygen.QueryGenerator;
 import org.apache.commons.collections4.CollectionUtils;
 
