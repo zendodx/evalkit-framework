@@ -1,0 +1,27 @@
+PREFIX travel: <http://travel.evalkit.com/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?depCityName ?destCityName ?transportType ?transportNo ?hotelName ?roomName ?attractionName
+WHERE {
+  ?depCity rdfs:label ?depCityName .
+
+  ?destCity rdfs:label ?destCityName .
+
+  ?transport travel:departure ?depCity ;
+             travel:destination ?destCity ;
+             travel:transportType ?transportType ;
+             travel:transportNo ?transportNo .
+
+  ?hotel travel:locatedIn ?destCity ;
+         travel:hotelName ?hotelName .
+
+  ?room travel:roomType ?roomType ;
+        travel:roomName ?roomName .
+
+  ?attr travel:locatedIn ?destCity ;
+        travel:attractionName ?attractionName .
+
+  FILTER(?depCity != ?destCity)
+
+  FILTER(?depCityName != "上海")
+}

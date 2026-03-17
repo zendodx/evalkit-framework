@@ -1,0 +1,2 @@
+transport_no,transport_type,dep_city_id,dest_city_id,price
+G321,高铁,C002 (上海),C001 (成都),860

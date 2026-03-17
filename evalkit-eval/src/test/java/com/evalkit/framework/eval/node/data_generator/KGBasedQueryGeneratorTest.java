@@ -14,8 +14,8 @@ class KGBasedQueryGeneratorTest {
 
     @Test
     public void test() throws Exception {
-        String kgFilePath = "travel.ttl";
-        String scenarioConfigFilePath = "scenario_itinerary_to_booking.json";
+        String kgFilePath = "travel_demo/travel_kg.ttl";
+        String scenarioConfigFilePath = "travel_demo/scenario_config.json";
         LLMService llmService = DebugUtils.buildLLMService();
 
         KGBasedQueryGenerator generator = new KGBasedQueryGenerator(
@@ -24,8 +24,8 @@ class KGBasedQueryGeneratorTest {
                         .kgFilePath(kgFilePath)
                         .llmService(llmService)
                         .enableOutputFile(true)
-                        .generateCount(2)
-                        .threadNum(2)
+                        .generateCount(1)
+                        .threadNum(1)
                         .build()
         );
 

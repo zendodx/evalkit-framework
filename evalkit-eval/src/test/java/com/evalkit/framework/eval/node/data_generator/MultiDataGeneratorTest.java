@@ -10,12 +10,16 @@ import org.junit.jupiter.api.Test;
 class MultiDataGeneratorTest {
     @Test
     public void test() {
+        String kgFilePath = "travel_demo/travel_kg.ttl";
+        String scenarioConfigFilePath = "travel_demo/scenario_config.json";
+        String scenario2ConfigFilePath = "travel_demo/scenario2_config.json";
+
         LLMService llmService = DebugUtils.buildLLMService();
 
         KGBasedQueryGenerator generator1 = new KGBasedQueryGenerator(
                 KGBasedQueryGeneratorConfig.builder()
-                        .scenarioConfigFilePath("scenario_itinerary_to_booking.json")
-                        .kgFilePath("travel.ttl")
+                        .scenarioConfigFilePath(scenarioConfigFilePath)
+                        .kgFilePath(kgFilePath)
                         .llmService(llmService)
                         .enableOutputFile(true)
                         .generateCount(1)
@@ -24,8 +28,8 @@ class MultiDataGeneratorTest {
 
         KGBasedQueryGenerator generator2 = new KGBasedQueryGenerator(
                 KGBasedQueryGeneratorConfig.builder()
-                        .scenarioConfigFilePath("scenario_cross_domain_booking.json")
-                        .kgFilePath("jene_test.ttl")
+                        .scenarioConfigFilePath(scenario2ConfigFilePath)
+                        .kgFilePath(kgFilePath)
                         .llmService(llmService)
                         .enableOutputFile(true)
                         .generateCount(1)
