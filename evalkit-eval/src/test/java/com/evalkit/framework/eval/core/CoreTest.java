@@ -9,6 +9,9 @@ import com.evalkit.framework.eval.node.api.ApiCompletion;
 import com.evalkit.framework.eval.node.begin.Begin;
 import com.evalkit.framework.eval.node.begin.config.BeginConfig;
 import com.evalkit.framework.eval.node.counter.*;
+import com.evalkit.framework.eval.node.data_generator.DataGenerator;
+import com.evalkit.framework.eval.node.data_generator.KGBasedQueryGenerator;
+import com.evalkit.framework.eval.node.data_generator.config.KGBasedQueryGeneratorConfig;
 import com.evalkit.framework.eval.node.dataloader.DataLoader;
 import com.evalkit.framework.eval.node.dataloader.config.DataLoaderConfig;
 import com.evalkit.framework.eval.node.dataloader_wrapper.DataLoaderWrapper;
@@ -51,6 +54,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class CoreTest {
     Begin begin;
+    DataGenerator dataGenerator;
     DataLoader dataLoader;
     DataLoaderWrapper dataLoaderWrapper;
     ApiCompletion apiCompletion;
@@ -78,6 +82,17 @@ public class CoreTest {
                         .threshold(1)
 //                        .evalReasonStrategy(new LLMSummaryEvalReasonStrategy(llmService))
                         .evalReasonStrategy(new JsonEvalReasonStrategy())
+                        .build()
+        );
+
+        dataGenerator = new KGBasedQueryGenerator(
+                KGBasedQueryGeneratorConfig.builder()
+                        .scenarioConfigFilePath("travel_demo/scenario_config.json")
+                        .kgFilePath("travel_demo/travel_kg_v2.ttl")
+                        .llmService(llmService)
+                        .enableOutputFile(true)
+                        .generateCount(1)
+                        .threadNum(1)
                         .build()
         );
 
@@ -242,6 +257,17 @@ public class CoreTest {
         List<Counter> counters = ListUtils.of(attributeCounter, attributeCounterV2, basicCounter, metricCounter);
         new WorkflowBuilder()
                 .link(begin, dataLoader, dataLoaderWrapper, apiCompletion, scorers, counters, reporters, end)
+                .build()
+                .execute();
+    }
+
+    @Test
+    public void dataGeneratorTest() {
+        List<Scorer> scorers = ListUtils.of(scorer1, scorer2, scorer3);
+        List<Reporter> reporters = ListUtils.of(reporter, htmlReporter, csvReporter, excelReporter, jsonReporter);
+        List<Counter> counters = ListUtils.of(basicCounter, metricCounter);
+        new WorkflowBuilder()
+                .link(begin, dataGenerator, apiCompletion, scorers, counters, reporters, end)
                 .build()
                 .execute();
     }

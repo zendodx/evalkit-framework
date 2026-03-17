@@ -35,7 +35,10 @@ public abstract class DataGenerator extends WorkflowNode {
     protected void doExecute() {
         try {
             long start = System.currentTimeMillis();
+            // 生成数据
             List<InputData> inputDataList = generateWrapper();
+            // 给生成后的数据添加索引
+            addDataIndex(inputDataList);
             if (CollectionUtils.isEmpty(inputDataList)) {
                 throw new EvalException("Generate input data list is empty");
             }
@@ -128,5 +131,18 @@ public abstract class DataGenerator extends WorkflowNode {
         evalResult.setEvalReasonStrategyName(evalReasonStrategy.getStrategyName());
         dataItem.setEvalResult(evalResult);
         return dataItem;
+    }
+
+    /**
+     * 评测数据加索引
+     */
+    protected void addDataIndex(List<InputData> inputDataList) {
+        if (CollectionUtils.isEmpty(inputDataList)) {
+            return;
+        }
+        long index = 0L;
+        for (InputData inputData : inputDataList) {
+            inputData.setDataIndex(index++);
+        }
     }
 }
