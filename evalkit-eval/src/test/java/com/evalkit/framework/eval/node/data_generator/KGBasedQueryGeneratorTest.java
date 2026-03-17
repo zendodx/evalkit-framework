@@ -14,7 +14,8 @@ class KGBasedQueryGeneratorTest {
 
     @Test
     public void test() throws Exception {
-        String kgFilePath = "travel_demo/travel_kg.ttl";
+        // String kgFilePath = "travel_demo/travel_kg.ttl";
+        String kgFilePath = "travel_demo/travel_kg_v2.ttl";
         String scenarioConfigFilePath = "travel_demo/scenario_config.json";
         LLMService llmService = DebugUtils.buildLLMService();
 
