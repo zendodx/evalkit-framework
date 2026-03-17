@@ -7,10 +7,10 @@ import com.evalkit.framework.eval.model.EvalResult;
 import com.evalkit.framework.eval.model.InputData;
 import com.evalkit.framework.eval.node.data_generator.config.DataGeneratorConfig;
 import com.evalkit.framework.eval.node.data_generator.exporter.GenDataExporter;
+import com.evalkit.framework.eval.node.dataloader.DataLoader;
 import com.evalkit.framework.eval.node.scorer.strategy.EvalReasonStrategy;
 import com.evalkit.framework.eval.node.scorer.strategy.ScoreStrategy;
 import com.evalkit.framework.workflow.model.WorkflowContext;
-import com.evalkit.framework.workflow.model.WorkflowNode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -24,7 +24,7 @@ import java.util.Map;
  * 数据生成器基类
  */
 @Slf4j
-public abstract class DataGenerator extends WorkflowNode {
+public abstract class DataGenerator extends DataLoader {
     DataGeneratorConfig config;
 
     public DataGenerator(DataGeneratorConfig config) {
