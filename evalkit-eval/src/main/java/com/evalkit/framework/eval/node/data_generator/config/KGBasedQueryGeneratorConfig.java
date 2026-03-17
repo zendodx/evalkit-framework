@@ -3,13 +3,18 @@ package com.evalkit.framework.eval.node.data_generator.config;
 import com.evalkit.framework.infra.service.llm.LLMService;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 @SuperBuilder
 public class KGBasedQueryGeneratorConfig extends DataGeneratorConfig {
+    // 知识图谱文件路径
     protected String kgFilePath;
+    // 场景配置文件路径
     protected String scenarioConfigFilePath;
+    // 大模型服务
     protected LLMService llmService;
     // 是否开启相似度过滤, 默认不开启
     @Builder.Default
@@ -24,4 +29,13 @@ public class KGBasedQueryGeneratorConfig extends DataGeneratorConfig {
     // 生成用例Id前缀
     @Builder.Default
     protected String caseIdPrefix = "gen_case_";
+    // 会话id字段名称
+    @Builder.Default
+    protected String sessionIdFieldName = "sessionId";
+    // 轮次字段名称
+    @Builder.Default
+    protected String turnFieldName = "turn";
+    // query字段名称
+    @Builder.Default
+    protected String queryFieldName = "query";
 }

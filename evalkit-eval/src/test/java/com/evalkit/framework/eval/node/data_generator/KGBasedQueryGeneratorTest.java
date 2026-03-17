@@ -27,6 +27,10 @@ class KGBasedQueryGeneratorTest {
                         .enableOutputFile(true)
                         .generateCount(1)
                         .threadNum(1)
+                        .sessionIdFieldName("session_id")
+                        .turnFieldName("turn")
+                        .queryFieldName("query")
+                        .enableOneRawOneSession(false)
                         .build()
         );
 

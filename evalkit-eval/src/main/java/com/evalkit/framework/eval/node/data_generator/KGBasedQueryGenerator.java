@@ -202,7 +202,6 @@ public class KGBasedQueryGenerator extends DataGenerator {
         TestCase testCase = new TestCase();
         testCase.testCaseId = config.getCaseIdPrefix() + String.format("%03d", caseCounter.getAndIncrement());
         testCase.scenarioId = scenarioConfig.scenarioId;
-        testCase.sessionId = sessionId;
         testCase.kgSource = kgData;
 
         // 动态绑定图谱数据到断言中
@@ -213,6 +212,7 @@ public class KGBasedQueryGenerator extends DataGenerator {
                     .orElse(null);
 
             if (configTurn != null) {
+                generatedTurn.sessionId = sessionId;
                 generatedTurn.assertType = configTurn.assertType;
 
                 if (configTurn.expectedVars != null) {
@@ -240,28 +240,49 @@ public class KGBasedQueryGenerator extends DataGenerator {
         Boolean enableOneRawOneSession = config.getEnableOneRawOneSession();
 
         for (TestCase testCase : testCases) {
+            Map<String, Object> testCaseMap = MapUtils.beanToMap(testCase);
             if (Boolean.TRUE.equals(enableOneRawOneSession)) {
                 // 一行表示一个完整的会话
-                res.add(MapUtils.beanToMap(testCase));
+                List<Map<String, Object>> queryMapList = new ArrayList<>();
+                // 将query和turn字段名称转为指定名称
+                for (Turn turn : testCase.getQueries()) {
+                    queryMapList.add(convertTurnToMap(turn, config.getQueryFieldName(), config.getTurnFieldName(),
+                            config.getSessionIdFieldName()));
+                }
+                testCaseMap.put("queries", queryMapList);
+                res.add(testCaseMap);
             } else {
                 // 一行表示单轮 Query (拆平)
                 List<Turn> queries = testCase.getQueries();
-                Map<String, Object> testCaseMap = MapUtils.beanToMap(testCase);
                 // 移除嵌套的列表
                 testCaseMap.remove("queries");
-
                 for (Turn turn : queries) {
-                    Map<String, Object> queryMap = new LinkedHashMap<>();
                     // 存入会话级公共数据
-                    queryMap.putAll(testCaseMap);
+                    Map<String, Object> queryMap = new LinkedHashMap<>(testCaseMap);
                     // 存入单轮特有数据
-                    queryMap.putAll(MapUtils.beanToMap(turn));
+                    Map<String, Object> turnMap = convertTurnToMap(turn, config.getQueryFieldName(),
+                            config.getTurnFieldName(), config.getSessionIdFieldName());
+                    queryMap.putAll(turnMap);
                     res.add(queryMap);
                 }
             }
         }
         log.debug("[KGBasedQueryGenerator] Successfully formatted output, total rows: {}", res.size());
         return res;
+    }
+
+    protected Map<String, Object> convertTurnToMap(Turn turn, String queryFieldName, String turnFieldName, String sessionIdFieldName) {
+        Map<String, Object> turnMap = MapUtils.beanToMap(turn);
+        // 删除原本的query和turn字段
+        turnMap.remove("query");
+        turnMap.remove("turn");
+        turnMap.remove("sessionId");
+        // 添加会话ID字段
+        // 添加指定的turn和query字段
+        turnMap.put(queryFieldName, turn.query);
+        turnMap.put(turnFieldName, turn.turn);
+        turnMap.put(sessionIdFieldName, turn.sessionId);
+        return turnMap;
     }
 
     /**

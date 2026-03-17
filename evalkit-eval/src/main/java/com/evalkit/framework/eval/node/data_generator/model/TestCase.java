@@ -9,7 +9,6 @@ import java.util.Map;
 public class TestCase {
     public String testCaseId;
     public String scenarioId;
-    public String sessionId;
     public List<Turn> queries;
     public Map<String, String> kgSource;
 }

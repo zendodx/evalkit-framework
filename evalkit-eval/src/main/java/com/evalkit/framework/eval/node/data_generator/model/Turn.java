@@ -7,6 +7,7 @@ import java.util.List;
 
 @Data
 public class Turn {
+    public String sessionId;
     public int turn;
     public String query;
     @JsonIgnoreProperties
