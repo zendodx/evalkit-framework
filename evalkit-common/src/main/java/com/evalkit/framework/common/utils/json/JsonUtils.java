@@ -25,6 +25,18 @@ public class JsonUtils {
     }
 
     /**
+     * 判断字符串是否为合法Json
+     */
+    public static boolean isJson(String str) {
+        try {
+            objectMapper.readValue(str, Object.class);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
      * 对象转json
      */
     public static String toJson(Object obj) {
