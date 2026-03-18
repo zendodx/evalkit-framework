@@ -1,0 +1,55 @@
+{
+  "scenarioId": "itinerary_transport_hotel_flow",
+  "sparqlTemplate": "PREFIX travel: <http://travel.evalkit.com/>\nPREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n\nSELECT ?depCityName ?destCityName ?transportType ?transportNo ?hotelName ?roomName ?attractionName\nWHERE {\n  ?depCity rdfs:label ?depCityName .\n\n  ?destCity rdfs:label ?destCityName .\n\n  ?transport travel:departure ?depCity ;\n             travel:destination ?destCity ;\n             travel:transportType ?transportType ;\n             travel:transportNo ?transportNo .\n\n  ?hotel travel:locatedIn ?destCity ;\n         travel:hotelName ?hotelName .\n\n  ?room travel:roomType ?roomType ;\n        travel:roomName ?roomName .\n\n  ?attr travel:locatedIn ?destCity ;\n        travel:attractionName ?attractionName .\n\n  FILTER(?depCity != ?destCity)\n\n  FILTER(?depCityName != \"上海\")\n}",
+  "minSimilarity": 0.15,
+  "maxSimilarity": 0.85,
+  "goldenCase": {
+    "kgDataUsed": {
+      "depCityName": "上海",
+      "destCityName": "成都",
+      "transportType": "高铁",
+      "transportNo": "G321",
+      "hotelName": "熊猫主题客栈",
+      "roomName": "竹林亲子套房",
+      "attractionName": "大熊猫繁育基地"
+    },
+    "dialogue": [
+      {
+        "turn": 1,
+        "query": "打算带孩子去成都玩几天，有什么必打卡景点推荐吗？",
+        "expectedVars": [
+          "attractionName"
+        ]
+      },
+      {
+        "turn": 2,
+        "query": "从上海出发，有什么推荐的交通方式吗？",
+        "expectedVars": [
+          "transportNo"
+        ]
+      },
+      {
+        "turn": 3,
+        "query": "到了那边晚上住哪里比较方便？",
+        "expectedVars": [
+          "hotelName"
+        ]
+      },
+      {
+        "turn": 4,
+        "query": "家庭房还有吗。",
+        "expectedVars": [
+          "roomName"
+        ]
+      },
+      {
+        "turn": 5,
+        "query": "帮我把刚才看好的车票和这个亲子房一起下单吧。",
+        "expectedVars": [
+          "transportNo",
+          "roomName"
+        ]
+      }
+    ]
+  }
+}

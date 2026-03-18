@@ -43,17 +43,10 @@
     <!-- 定义 Loggers -->
     <Loggers>
         <!-- 根日志器 -->
-        <Root level="INFO">
+        <Root level="DEBUG">
             <AppenderRef ref="STDOUT"/>
             <AppenderRef ref="INFO_FILE"/>
             <AppenderRef ref="ERROR_FILE"/>
         </Root>
-
-        <!-- 如需 DEBUG 级别，取消注释以下配置 -->
-        <!--
-        <Root level="DEBUG">
-            <AppenderRef ref="STDOUT"/>
-        </Root>
-        -->
     </Loggers>
 </Configuration>

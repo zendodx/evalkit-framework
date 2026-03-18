@@ -59,8 +59,8 @@
         <poi-ooxml.version>5.4.0</poi-ooxml.version>
         <lucene.version>8.11.4</lucene.version>
         <retrofit.version>2.12.0</retrofit.version>
-        <converter-jackson.version>2.11.0</converter-jackson.version>
-        <converter-scalars.version>2.11.0</converter-scalars.version>
+        <converter-jackson.version>2.12.0</converter-jackson.version>
+        <converter-scalars.version>2.12.0</converter-scalars.version>
         <hikaricp.version>4.0.3</hikaricp.version>
         <mysql-connector-j.version>8.3.0</mysql-connector-j.version>
         <dify-java-client.version>1.1.5</dify-java-client.version>
@@ -123,6 +123,16 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
@@ -248,6 +258,18 @@
                 <artifactId>thymeleaf</artifactId>
                 <version>${thymeleaf.version}</version>
             </dependency>
+            <!-- Apache Jena (知识图谱) - 3.17.0 支持 Java 8 -->
+            <dependency>
+                <groupId>org.apache.jena</groupId>
+                <artifactId>jena-arq</artifactId>
+                <version>3.17.0</version>
+            </dependency>
+            <!-- FreeMarker (提示词模板引擎) -->
+            <dependency>
+                <groupId>org.freemarker</groupId>
+                <artifactId>freemarker</artifactId>
+                <version>2.3.32</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -261,22 +283,18 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -310,6 +328,14 @@
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.jena</groupId>
+            <artifactId>jena-arq</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.freemarker</groupId>
+            <artifactId>freemarker</artifactId>
         </dependency>
     </dependencies>
 </project>

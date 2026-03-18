@@ -18,14 +18,18 @@ import java.util.concurrent.TimeUnit;
  * 线程安全、可扩展的日期 Mocker
  * <p>
  * {{date pattern}} 当前时间
+ * <p>
  * {{future_date days}}  未来 days 天内
  * {{future_date days pattern}}  未来 days 天内
  * {{future_date days days}}  未来 days~days 天内
  * {{future_date days days pattern}}  未来 days~days 天内
+ * <p>
  * {{past_date days}}  过去 days 天内
  * {{past_date days pattern}}  过去 days 天内
  * {{past_date days days}}  过去 days~days 天内
  * {{past_date days days pattern}}  过去 days~days 天内
+ * <p>
+ * {{fuzzy_date}} 模糊日期,周末,下月等
  */
 @Slf4j
 public class DateMocker implements Mocker {
