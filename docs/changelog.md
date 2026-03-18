@@ -1,5 +1,21 @@
 # ChangeLog
 
+## [1.2.0] - 2026-03-18
+
+### Added
+
+- 增加中国模糊日期Mocker
+- 增加数字Mocker
+- 基于知识图谱的多轮对话Query生成器
+
+### Fixed
+- 序列化工具类增加json校验方法
+- 修复类型转换工具类转换潜在问题
+- SpelMockRuleEngine增加数字Mocker和中国模糊日期Mocker
+- 为便于兼容和集成,修改DataGenerator父类为DataLoader
+- 增加基于jene创建知识图谱的脚本
+- 调整数据生成器结构
+
 ## [1.1.0] - 2026-03-12
 
 ### Added
