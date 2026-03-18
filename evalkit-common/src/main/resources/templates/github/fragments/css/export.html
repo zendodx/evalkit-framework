@@ -1,0 +1,350 @@
+<!-- 导出对话框样式 -->
+<style th:fragment="export">
+    /* ========================================
+       导出对话框背景遮罩
+       ======================================== */
+    .export-dialog-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+    }
+
+    .export-dialog-overlay[style*="display: flex"] {
+        display: flex !important;
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    /* ========================================
+       导出对话框主体
+       ======================================== */
+    .export-dialog {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        width: 90%;
+        max-width: 600px;
+        max-height: 85vh;
+        display: flex;
+        flex-direction: column;
+        animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes slideUp {
+        from {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    /* ========================================
+       对话框头部
+       ======================================== */
+    .export-dialog-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #e4e7ed;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    .export-dialog-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #303133;
+    }
+
+    .export-dialog-close {
+        width: 24px;
+        height: 24px;
+        border: none;
+        background: none;
+        color: #909399;
+        font-size: 18px;
+        cursor: pointer;
+        transition: color 0.2s;
+        line-height: 1;
+        padding: 0;
+    }
+
+    .export-dialog-close:hover {
+        color: #f56c6c;
+    }
+
+    /* ========================================
+       对话框内容区域
+       ======================================== */
+    .export-dialog-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+    }
+
+    /* ========================================
+       导出格式选择区域
+       ======================================== */
+    .export-format-section {
+        margin-bottom: 24px;
+    }
+
+    .export-section-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #303133;
+        margin-bottom: 12px;
+    }
+
+    .export-format-group {
+        display: flex;
+        gap: 16px;
+    }
+
+    .export-format-radio {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        color: #606266;
+        user-select: none;
+    }
+
+    .export-format-radio input[type="radio"] {
+        cursor: pointer;
+        margin: 0;
+    }
+
+    .export-format-radio:hover {
+        color: #303133;
+    }
+
+    /* ========================================
+       导出数量控制区域
+       ======================================== */
+    .export-quantity-section {
+        margin-bottom: 24px;
+        padding: 12px;
+        background: #f5f7fa;
+        border-radius: 4px;
+    }
+
+    .export-quantity-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .export-quantity-item {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .export-quantity-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: #303133;
+    }
+
+    .export-quantity-input {
+        padding: 6px 10px;
+        font-size: 13px;
+        border: 1px solid #dcdfe6;
+        border-radius: 3px;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+
+    .export-quantity-input:focus {
+        border-color: #409eff;
+    }
+
+    .export-quantity-tip {
+        font-size: 12px;
+        color: #909399;
+    }
+
+    .export-quantity-info {
+        font-size: 13px;
+        color: #606266;
+        margin-bottom: 12px;
+        padding: 8px 0;
+        border-bottom: 1px solid #dcdfe6;
+    }
+
+    #exportTotalCount {
+        font-weight: 600;
+        color: #409eff;
+    }
+
+    /* ========================================
+       导出内容选择区域
+       ======================================== */
+    .export-content-section {
+        border-top: 1px solid #e4e7ed;
+        padding-top: 20px;
+    }
+
+    /* 单个内容部分 */
+    .export-content-part {
+        margin-bottom: 20px;
+        border: 1px solid #e4e7ed;
+        border-radius: 4px;
+    }
+
+    .export-content-part:last-child {
+        margin-bottom: 0;
+    }
+
+    /* 部分头部（复选框 + 名称 + 控制按钮） */
+    .export-part-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 5px 5px;
+        background: #f5f7fa;
+        border-bottom: 1px solid #e4e7ed;
+        flex-wrap: wrap;
+    }
+
+    .export-part-checkbox {
+        cursor: pointer;
+        margin: 0;
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+    }
+
+    .export-part-name {
+        font-size: 14px;
+        font-weight: 500;
+        color: #303133;
+        flex: 1;
+        min-width: 80px;
+    }
+
+    .export-part-controls {
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
+    .export-control-btn {
+        padding: 4px 10px;
+        font-size: 12px;
+        border: 1px solid #d9ecff;
+        background: #ecf5ff;
+        color: #409eff;
+        border-radius: 3px;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+
+    .export-control-btn:hover {
+        background: #409eff;
+        color: #fff;
+        border-color: #409eff;
+    }
+
+    /* 字段容器 */
+    .export-fields-container {
+        padding: 12px 14px;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+        max-height: 200px;
+    }
+
+    /* 字段复选框 */
+    .export-field-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: #606266;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .export-field-checkbox input[type="checkbox"] {
+        cursor: pointer;
+        margin: 0;
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+    }
+
+    .export-field-checkbox:hover {
+        color: #303133;
+    }
+
+    /* ========================================
+       对话框底部
+       ======================================== */
+    .export-dialog-footer {
+        padding: 16px 20px;
+        border-top: 1px solid #e4e7ed;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        flex-shrink: 0;
+    }
+
+    .export-btn-cancel,
+    .export-btn-confirm {
+        padding: 8px 20px;
+        font-size: 14px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-weight: 500;
+    }
+
+    .export-btn-cancel {
+        background: #f5f7fa;
+        color: #606266;
+        border: 1px solid #dcdfe6;
+    }
+
+    .export-btn-cancel:hover {
+        background: #fff;
+        border-color: #c6e2ff;
+        color: #409eff;
+    }
+
+    .export-btn-confirm {
+        background: #409eff;
+        color: #fff;
+    }
+
+    .export-btn-confirm:hover {
+        background: #66b1ff;
+    }
+
+    .export-btn-confirm:active {
+        background: #0a66cc;
+    }
+</style>
+
