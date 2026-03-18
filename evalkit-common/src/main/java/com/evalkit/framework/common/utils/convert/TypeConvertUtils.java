@@ -2,6 +2,7 @@ package com.evalkit.framework.common.utils.convert;
 
 import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Map;
 
@@ -33,8 +34,19 @@ public final class TypeConvertUtils {
         if (obj instanceof Integer) {
             return (Integer) obj;
         }
-        // 去掉首尾空格，提升容错
-        return Integer.parseInt(String.valueOf(obj).trim());
+        if (obj instanceof Number) {
+            return ((Number) obj).intValue();
+        }
+        if (obj instanceof String) {
+            String objStr = String.valueOf(obj).trim();
+            if (StringUtils.isEmpty(objStr)) {
+                return null;
+            }
+            // 去掉首尾空格，提升容错
+            return Integer.parseInt(objStr);
+        }
+        // 无法转换
+        return null;
     }
 
     /**
@@ -51,7 +63,18 @@ public final class TypeConvertUtils {
         if (obj instanceof Long) {
             return (Long) obj;
         }
-        return Long.parseLong(String.valueOf(obj).trim());
+        if (obj instanceof Number) {
+            return ((Number) obj).longValue();
+        }
+        if (obj instanceof String) {
+            String objStr = String.valueOf(obj).trim();
+            if (StringUtils.isEmpty(objStr)) {
+                return null;
+            }
+            return Long.parseLong(objStr);
+        }
+        // 无法转换
+        return null;
     }
 
     /**
@@ -68,7 +91,18 @@ public final class TypeConvertUtils {
         if (obj instanceof Double) {
             return (Double) obj;
         }
-        return Double.parseDouble(String.valueOf(obj).trim());
+        if (obj instanceof Number) {
+            return ((Number) obj).doubleValue();
+        }
+        if (obj instanceof String) {
+            String objStr = String.valueOf(obj).trim();
+            if (StringUtils.isEmpty(objStr)) {
+                return null;
+            }
+            return Double.parseDouble(objStr);
+        }
+        // 无法转换
+        return null;
     }
 
     /**
@@ -105,12 +139,13 @@ public final class TypeConvertUtils {
      * @param obj 任意对象
      * @return Map
      */
+    @SuppressWarnings("unchecked")
     public static Map<String, Object> toMap(Object obj) {
         if (obj == null) {
             return null;
         }
         if (obj instanceof Map) {
-            return (Map) obj;
+            return (Map<String, Object>) obj;
         }
         return JsonUtils.fromJson(JsonUtils.toJson(obj), new TypeReference<Map<String, Object>>() {
         });
