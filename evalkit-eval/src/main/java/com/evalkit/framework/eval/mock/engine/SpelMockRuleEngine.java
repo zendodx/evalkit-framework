@@ -38,6 +38,8 @@ public class SpelMockRuleEngine extends AbstractMockRuleEngine {
         this.mockers.add(new DateMocker());
         this.mockers.add(new ChinaAddressMocker());
         this.mockers.add(new ChinaPoiMocker());
+        this.mockers.add(new NumberMocker());
+        this.mockers.add(new ChinaFuzzyDateMocker());
     }
 
     public void addMocker(Mocker mocker) {
