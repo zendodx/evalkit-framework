@@ -27,6 +27,8 @@
     <th:block th:replace="~{github/fragments/css/attribution :: attribution}"/>
     <!-- 6. 指标统计面板样式 -->
     <th:block th:replace="~{github/fragments/css/metric :: metric}"/>
+    <!-- 7. 导出对话框样式 -->
+    <th:block th:replace="~{github/fragments/css/export :: export}"/>
 </head>
 <body>
 <!-- 侧边栏 -->
@@ -42,6 +44,8 @@
                         <div class="attr-item" onclick="chooseAttr('v2')">归因V2</div>
                         <!-- 评估指标统计面板 -->
                         <div class="attr-item metric-panel" onclick="renderMetricCount()">指标统计</div>
+                        <!-- 结果导出 -->
+                        <div class="attr-item" onclick="openExportDialog()">结果导出</div>
                     </div>
                 </div>
                 <button class="filter-btn" id="overviewBtn" onclick="renderOverview()">总览</button>
@@ -136,6 +140,111 @@
 
 <!-- 复制提示 -->
 <div id="copyTip" class="copy-bubble">已复制</div>
+
+<!-- 导出对话框 -->
+<div id="exportDialogOverlay" class="export-dialog-overlay" style="display: none;">
+    <div class="export-dialog">
+        <div class="export-dialog-header">
+            <div class="export-dialog-title">结果导出</div>
+            <button class="export-dialog-close" onclick="closeExportDialog()">✕</button>
+        </div>
+
+        <div class="export-dialog-content">
+            <!-- 导出格式选择 -->
+            <div class="export-format-section">
+                <div class="export-section-title">选择导出格式</div>
+                <div class="export-format-group">
+                    <label class="export-format-radio">
+                        <input type="radio" name="exportFormat" value="xlsx" checked />
+                        <span>Excel (XLSX)</span>
+                    </label>
+                    <label class="export-format-radio">
+                        <input type="radio" name="exportFormat" value="csv" />
+                        <span>CSV</span>
+                    </label>
+                    <label class="export-format-radio">
+                        <input type="radio" name="exportFormat" value="json" />
+                        <span>JSON</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 导出数量控制 -->
+            <div class="export-quantity-section">
+                <div class="export-section-title">导出数量控制</div>
+                <div class="export-quantity-info">
+                    总数据量: <span id="exportTotalCount">0</span> 行
+                </div>
+                <div class="export-quantity-group">
+                    <div class="export-quantity-item">
+                        <label class="export-quantity-label">起始行 (offset):</label>
+                        <input type="number" id="exportOffset" class="export-quantity-input" value="0" min="0" />
+                    </div>
+                    <div class="export-quantity-item">
+                        <label class="export-quantity-label">导出数量 (limit):</label>
+                        <input type="number" id="exportLimit" class="export-quantity-input" value="0" min="0" />
+                        <span class="export-quantity-tip">0 表示全部</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 导出内容选择 -->
+            <div class="export-content-section">
+                <div class="export-section-title">选择导出内容</div>
+
+                <!-- 输入数据 -->
+                <div class="export-content-part">
+                    <div class="export-part-header">
+                        <input type="checkbox" class="export-part-checkbox" data-part="inputData" onchange="togglePartCheckbox(this)" />
+                        <span class="export-part-name">输入数据</span>
+                        <div class="export-part-controls">
+                            <button class="export-control-btn" onclick="selectAllFields('inputData', true)" title="全选">全选</button>
+                            <button class="export-control-btn" onclick="selectAllFields('inputData', false)" title="反选">反选</button>
+                        </div>
+                    </div>
+                    <div class="export-fields-container" id="inputDataFields">
+                        <!-- 动态生成 -->
+                    </div>
+                </div>
+
+                <!-- 业务接口数据 -->
+                <div class="export-content-part">
+                    <div class="export-part-header">
+                        <input type="checkbox" class="export-part-checkbox" data-part="businessData" onchange="togglePartCheckbox(this)" />
+                        <span class="export-part-name">业务接口数据</span>
+                        <div class="export-part-controls">
+                            <button class="export-control-btn" onclick="selectAllFields('businessData', true)" title="全选">全选</button>
+                            <button class="export-control-btn" onclick="selectAllFields('businessData', false)" title="反选">反选</button>
+                        </div>
+                    </div>
+                    <div class="export-fields-container" id="businessDataFields">
+                        <!-- 动态生成 -->
+                    </div>
+                </div>
+
+                <!-- 评测数据 -->
+                <div class="export-content-part">
+                    <div class="export-part-header">
+                        <input type="checkbox" class="export-part-checkbox" data-part="evalData" onchange="togglePartCheckbox(this)" />
+                        <span class="export-part-name">评测数据</span>
+                        <div class="export-part-controls">
+                            <button class="export-control-btn" onclick="selectAllFields('evalData', true)" title="全选">全选</button>
+                            <button class="export-control-btn" onclick="selectAllFields('evalData', false)" title="反选">反选</button>
+                        </div>
+                    </div>
+                    <div class="export-fields-container" id="evalDataFields">
+                        <!-- 动态生成 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="export-dialog-footer">
+            <button class="export-btn-cancel" onclick="closeExportDialog()">取消</button>
+            <button class="export-btn-confirm" onclick="executeExport()">导出</button>
+        </div>
+    </div>
+</div>
 </body>
 
 <!-- 业务脚本 - 后端数据注入 -->
@@ -170,6 +279,8 @@
 <th:block th:replace="~{default/fragments/js/render-attribution :: renderAttribution}"/>
 <!-- 7. 指标统计面板渲染 -->
 <th:block th:replace="~{default/fragments/js/render-metric :: renderMetric}"/>
+<!-- 8. 导出功能处理 -->
+<th:block th:replace="~{github/fragments/js/export :: export}"/>
 </body>
 </html>
 

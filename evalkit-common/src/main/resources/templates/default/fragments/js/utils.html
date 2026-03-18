@@ -172,5 +172,101 @@
         if (version === 'old') renderAttribute();
         if (version === 'v2') renderAttributeV2();
     }
+
+    /* ========================================
+       快捷键处理 - 上一个/下一个用例
+       ======================================== */
+    function handleKeyboardShortcuts(e) {
+        // 不在输入框中时才响应快捷键
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            return;
+        }
+
+        // ArrowUp 或 K 键：上一个用例
+        if ((e.key === 'ArrowUp' || e.key.toUpperCase() === 'K') && !e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            navigateToPreviousCase();
+        }
+        // ArrowDown 或 J 键：下一个用例
+        else if ((e.key === 'ArrowDown' || e.key.toUpperCase() === 'J') && !e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            navigateToNextCase();
+        }
+        // ? 键：显示快捷键帮助（可选）
+        else if (e.key === '?' && !e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            showKeyboardHelp();
+        }
+    }
+
+    /* ========================================
+       导航到上一个用例
+       ======================================== */
+    function navigateToPreviousCase() {
+        if (!AppState.selectedCase) return;
+
+        // 获取当前过滤后的用例列表
+        const filteredData = filterCaseData();
+        if (filteredData.length === 0) return;
+
+        // 找到当前用例在过滤列表中的索引
+        const currentIndex = filteredData.findIndex(item => item.dataIndex === AppState.selectedCase.dataIndex);
+
+        // 如果找到且不是第一个，则切换到前一个
+        if (currentIndex > 0) {
+            selectCase(filteredData[currentIndex - 1].dataIndex);
+        }
+        // 如果是第一个，循环到最后一个
+        else if (currentIndex === 0 && filteredData.length > 1) {
+            selectCase(filteredData[filteredData.length - 1].dataIndex);
+        }
+    }
+
+    /* ========================================
+       导航到下一个用例
+       ======================================== */
+    function navigateToNextCase() {
+        if (!AppState.selectedCase) return;
+
+        // 获取当前过滤后的用例列表
+        const filteredData = filterCaseData();
+        if (filteredData.length === 0) return;
+
+        // 找到当前用例在过滤列表中的索引
+        const currentIndex = filteredData.findIndex(item => item.dataIndex === AppState.selectedCase.dataIndex);
+
+        // 如果找到且不是最后一个，则切换到后一个
+        if (currentIndex >= 0 && currentIndex < filteredData.length - 1) {
+            selectCase(filteredData[currentIndex + 1].dataIndex);
+        }
+        // 如果是最后一个，循环到第一个
+        else if (currentIndex === filteredData.length - 1 && filteredData.length > 1) {
+            selectCase(filteredData[0].dataIndex);
+        }
+    }
+
+    /* ========================================
+       显示键盘快捷键帮助
+       ======================================== */
+    function showKeyboardHelp() {
+        const tip = document.getElementById('copyTip');
+        if (!tip) return;
+
+        const helpText = '⬆/K: 上一个用例 | ⬇/J: 下一个用例';
+        const originalText = tip.textContent;
+        const originalClass = tip.className;
+
+        tip.textContent = helpText;
+        tip.classList.add('show');
+
+        // 3秒后恢复
+        setTimeout(() => {
+            tip.classList.remove('show');
+            setTimeout(() => {
+                tip.textContent = originalText;
+                tip.className = originalClass;
+            }, 200);
+        }, 3000);
+    }
 </script>
 
