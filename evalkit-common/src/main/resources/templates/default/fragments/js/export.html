@@ -352,23 +352,40 @@
     }
 
     /* ========================================
-       导出为 XLSX（使用简单的 SheetJS 库或后端API）
+       导出为 XLSX（使用 SheetJS 库）
        ======================================== */
     function exportToXLSX(data) {
-        // 如果没有 SheetJS 库，转换为 CSV 格式或调用后端 API
-        // 这里使用一个简单的方案：调用后端 API
+        if (data.length === 0) {
+            alert('没有数据可导出');
+            return;
+        }
 
-        // 首先尝试使用客户端库（如果可用）
-        if (typeof XLSX !== 'undefined') {
-            // 使用 SheetJS 库
+        // 检查 SheetJS 库是否可用
+        if (typeof XLSX === 'undefined') {
+            alert('XLSX 库加载失败，请重试或使用其他格式导出');
+            console.error('SheetJS 库不可用');
+            return;
+        }
+
+        try {
+            // 使用 SheetJS 库生成 XLSX 文件
             const ws = XLSX.utils.json_to_sheet(data);
+
+            // 设置列宽
+            const colWidths = Object.keys(data[0]).map(key => ({
+                wch: Math.min(Math.max(key.length, 12), 50)
+            }));
+            ws['!cols'] = colWidths;
+
+            // 创建工作簿并添加工作表
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'Evaluation');
+
+            // 生成文件名并下载
             XLSX.writeFile(wb, `evaluation-export-${getTimestamp()}.xlsx`);
-        } else {
-            // 降级方案：导出为 CSV
-            console.warn('SheetJS 库不可用，使用 CSV 格式导出');
-            exportToCSV(data);
+        } catch (error) {
+            alert('导出 XLSX 文件失败: ' + error.message);
+            console.error('XLSX 导出错误:', error);
         }
     }
 
