@@ -1,5 +1,6 @@
 package com.evalkit.framework.eval.node.data_generator;
 
+import com.evalkit.framework.common.utils.list.ListUtils;
 import com.evalkit.framework.eval.model.InputData;
 import com.evalkit.framework.eval.node.data_generator.config.KGBasedQueryGeneratorConfig;
 import com.evalkit.framework.infra.service.llm.LLMService;
@@ -14,14 +15,14 @@ class KGBasedQueryGeneratorTest {
 
     @Test
     public void test() throws Exception {
-        // String kgFilePath = "travel_demo/travel_kg.ttl";
         String kgFilePath = "travel_demo/travel_kg_v2.ttl";
         String scenarioConfigFilePath = "travel_demo/scenario_config.json";
+        String scenarioConfigFilePath2 = "travel_demo/scenario2_config.json";
         LLMService llmService = DebugUtils.buildLLMService();
 
         KGBasedQueryGenerator generator = new KGBasedQueryGenerator(
                 KGBasedQueryGeneratorConfig.builder()
-                        .scenarioConfigFilePath(scenarioConfigFilePath)
+                        .scenarioConfigFilePath(ListUtils.of(scenarioConfigFilePath, scenarioConfigFilePath2))
                         .kgFilePath(kgFilePath)
                         .llmService(llmService)
                         .enableOutputFile(true)

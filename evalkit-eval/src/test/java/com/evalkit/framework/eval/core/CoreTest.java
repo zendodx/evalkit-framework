@@ -87,7 +87,7 @@ public class CoreTest {
 
         dataGenerator = new KGBasedQueryGenerator(
                 KGBasedQueryGeneratorConfig.builder()
-                        .scenarioConfigFilePath("travel_demo/scenario_config.json")
+                        .scenarioConfigFilePath(ListUtils.of("travel_demo/scenario_config.json"))
                         .kgFilePath("travel_demo/travel_kg_v2.ttl")
                         .llmService(llmService)
                         .enableOutputFile(true)
