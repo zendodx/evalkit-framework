@@ -17,6 +17,8 @@ import com.evalkit.framework.eval.node.data_generator.model.Turn;
 import com.evalkit.framework.eval.node.data_generator.prompt.PromptEngine;
 import com.evalkit.framework.infra.service.llm.LLMService;
 import com.fasterxml.jackson.core.type.TypeReference;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -44,24 +46,39 @@ public class KGBasedQueryGenerator extends DataGenerator {
         this.config = config;
     }
 
+    @Data
+    @AllArgsConstructor
+    protected static class ScenarioConfigAndSession {
+        String scenarioConfigFilePath;
+        String sessionId;
+    }
+
     /**
      * 并发生成评测数据
      */
     @Override
     protected List<Map<String, Object>> generate() throws Exception {
-        // 分配sessionId
-        Integer generateCount = config.getGenerateCount();
-        List<String> sessionIs = new ArrayList<>();
-        for (int i = 0; i < generateCount; i++) {
-            sessionIs.add(UuidUtils.generateUuid());
-        }
         List<Map<String, Object>> res = new ArrayList<>();
+
+        List<ScenarioConfigAndSession> scenarioConfigAndSessions = new ArrayList<>();
+        List<String> scenarioConfigFilePaths = config.getScenarioConfigFilePath();
+
+        // 遍历配置文件列表
+        for (String scenarioConfigFilePath : scenarioConfigFilePaths) {
+            // 每个配置生成指定条数会话
+            Integer generateCount = config.getGenerateCount();
+            for (int i = 0; i < generateCount; i++) {
+                scenarioConfigAndSessions.add(new ScenarioConfigAndSession(scenarioConfigFilePath, UuidUtils.generateUuid()));
+            }
+        }
+
         // 并发生成单会话多轮Query
-        List<List<Map<String, Object>>> rawQueries = BatchRunner.runBatch(sessionIs, this::generateSessionQueries,
+        List<List<Map<String, Object>>> rawQueries = BatchRunner.runBatch(scenarioConfigAndSessions, this::generateSessionQueries,
                 PoolName.DATA_GENERATOR, config.getThreadNum(), size -> size * SINGLE_TASK_TIMEOUT);
         if (CollectionUtils.isEmpty(rawQueries)) {
             throw new IllegalArgumentException("[KGBasedQueryGenerator] Generate eval case data failed");
         }
+
         // 合并结果
         for (List<Map<String, Object>> queryList : rawQueries) {
             res.addAll(queryList);
@@ -72,16 +89,16 @@ public class KGBasedQueryGenerator extends DataGenerator {
 
     /**
      * 生成单个会话的测试用例 (主流程编排)
-     *
-     * @param sessionId 会话ID
-     * @return 格式化后的测试用例数据
      */
-    protected List<Map<String, Object>> generateSessionQueries(String sessionId) {
-        log.debug("[KGBasedQueryGenerator] Start generating queries for sessionId: {}", sessionId);
+    protected List<Map<String, Object>> generateSessionQueries(ScenarioConfigAndSession scenarioConfigAndSession) {
+        String sessionId = scenarioConfigAndSession.sessionId;
+        String scenarioConfigFilePath = scenarioConfigAndSession.scenarioConfigFilePath;
+
+        log.debug("[KGBasedQueryGenerator] Start generating queries for sessionId: {}", scenarioConfigAndSession.getSessionId());
 
         try {
-            // 1加载并解析场景配置
-            ScenarioConfig scenarioConfig = loadAndParseConfig();
+            // 加载并解析场景配置
+            ScenarioConfig scenarioConfig = loadAndParseConfig(scenarioConfigFilePath);
             if (scenarioConfig == null) return Collections.emptyList();
 
             // 从知识图谱抽取并随机采样一条合法数据
@@ -112,9 +129,9 @@ public class KGBasedQueryGenerator extends DataGenerator {
     /**
      * 加载并解析场景配置
      */
-    private ScenarioConfig loadAndParseConfig() {
+    private ScenarioConfig loadAndParseConfig(String scenarioConfigFilePath) {
         try {
-            String configJson = readFileContent(config.getScenarioConfigFilePath());
+            String configJson = readFileContent(scenarioConfigFilePath);
             return JsonUtils.fromJson(configJson, ScenarioConfig.class);
         } catch (Exception e) {
             log.error("[KGBasedQueryGenerator] Failed to load or parse scenario config: {}", config.getScenarioConfigFilePath(), e);

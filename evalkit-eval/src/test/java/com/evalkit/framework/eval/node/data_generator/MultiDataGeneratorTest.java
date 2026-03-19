@@ -18,7 +18,7 @@ class MultiDataGeneratorTest {
 
         KGBasedQueryGenerator generator1 = new KGBasedQueryGenerator(
                 KGBasedQueryGeneratorConfig.builder()
-                        .scenarioConfigFilePath(scenarioConfigFilePath)
+                        .scenarioConfigFilePath(ListUtils.of(scenarioConfigFilePath))
                         .kgFilePath(kgFilePath)
                         .llmService(llmService)
                         .enableOutputFile(true)
@@ -28,7 +28,7 @@ class MultiDataGeneratorTest {
 
         KGBasedQueryGenerator generator2 = new KGBasedQueryGenerator(
                 KGBasedQueryGeneratorConfig.builder()
-                        .scenarioConfigFilePath(scenario2ConfigFilePath)
+                        .scenarioConfigFilePath(ListUtils.of(scenario2ConfigFilePath))
                         .kgFilePath(kgFilePath)
                         .llmService(llmService)
                         .enableOutputFile(true)
