@@ -92,9 +92,24 @@
        选择用例
        ======================================== */
     function selectCase(idx) {
+        // 保存当前滚动位置（获取 .detail-content-scroll 的滚动位置）
+        let scrollPosition = 0;
+        const scrollContainer = document.querySelector('.detail-content-scroll');
+        if (scrollContainer) {
+            scrollPosition = scrollContainer.scrollTop;
+        }
+
         AppState.selectedCase = evaluationData.find(d => d.dataIndex === idx);
         renderCaseList();
         renderDetail();
+
+        // 恢复滚动位置
+        requestAnimationFrame(() => {
+            const newScrollContainer = document.querySelector('.detail-content-scroll');
+            if (newScrollContainer) {
+                newScrollContainer.scrollTop = scrollPosition;
+            }
+        });
 
         // 同步 URL
         const url = new URL(location.href);
@@ -124,6 +139,14 @@
         renderDetail();
         showPanel('detail');
         renderCaseList();
+
+        // 跳转到详情顶部
+        requestAnimationFrame(() => {
+            const scrollContainer = document.querySelector('.detail-content-scroll');
+            if (scrollContainer) {
+                scrollContainer.scrollTop = 0;
+            }
+        });
 
         // 同步 URL
         if (AppState.selectedCase) {
