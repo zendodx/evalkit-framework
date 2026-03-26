@@ -24,8 +24,9 @@ import java.util.concurrent.ThreadLocalRandom;
  * {{fuzzy_date week future}} - 仅未来的模糊周
  * {{fuzzy_date month past}} - 仅过去的模糊月
  * {{fuzzy_date year future}} - 仅未来的模糊年
- * {{fuzzy_date season past}} - 仅过去的模糊季节
+ * {{fuzzy_date year past}} - 仅过去的模糊年
  * {{fuzzy_date human future}} - 仅未来的口语表达
+ * {{fuzzy_date human past}} - 仅过去的口语表达
  * <p>
  * 具体表达范围:
  * 未来模糊日: 不日, 即日, 改日, 他日, 来日, 当日
@@ -36,8 +37,6 @@ import java.util.concurrent.ThreadLocalRandom;
  * 过去模糊月: 上月, 过去一月, 过去二月, 过去三月
  * 未来模糊年: 今年, 明年, 后年, 年初, 年中, 年底, 下半年, 来年, 翌年, 未来一年, 未来二年, 未来三年
  * 过去模糊年: 去年, 前年, 往年, 往年同期, 历年, 经年, 上半年, 过去一年, 过去二年, 过去三年
- * 未来模糊季节: 二季度, 三季度, 四季度, 夏季, 秋季, 冬季, 初夏, 盛夏, 深秋, 初冬
- * 过去模糊季节: 去年春季, 去年夏季, 去年秋季, 去年冬季, 前年春季, 前年夏季, 前年秋季, 前年冬季
  * 未来口语常用: 过两天, 等会儿, 回头, 赶明儿
  * 过去口语常用: 前两三天, 前几天
  */
@@ -70,17 +69,17 @@ public class ChinaFuzzyDateMocker implements Mocker {
 
         /* 未来模糊日表达 */
         private static final String[] FUZZY_DAY_FUTURE = {
-                "不日", "即日", "改日", "他日", "来日", "当日"
+                "即日", "改日", "他日", "来日", "当日"
         };
 
         /* 过去模糊日表达 */
         private static final String[] FUZZY_DAY_PAST = {
-                "近日", "近来", "最近", "日前", "昔日", "往日"
+                "近日", "近来", "最近"
         };
 
         /* 未来模糊周表达 */
         private static final String[] FUZZY_WEEK_FUTURE = {
-                "本周", "下周", "周末", "未来一周", "未来二周", "未来三周"
+                "周末", "本周", "下周", "未来一周", "未来二周", "未来三周"
         };
 
         /* 过去模糊周表达 */
@@ -90,7 +89,7 @@ public class ChinaFuzzyDateMocker implements Mocker {
 
         /* 未来模糊月表达 */
         private static final String[] FUZZY_MONTH_FUTURE = {
-                "月初", "月中", "月末", "上旬", "中旬", "下旬", "月底", "未来一月", "未来二月", "未来三月"
+                "月初", "月中", "月末", "月底", "未来一月", "未来二月", "未来三月"
         };
 
         /* 过去模糊月表达 */
@@ -100,22 +99,12 @@ public class ChinaFuzzyDateMocker implements Mocker {
 
         /* 未来模糊年表达 */
         private static final String[] FUZZY_YEAR_FUTURE = {
-                "今年", "明年", "后年", "年初", "年中", "年底", "下半年", "来年", "翌年", "未来一年", "未来二年", "未来三年"
+                "今年", "明年", "后年", "年初", "年中", "年底", "下半年", "来年", "未来一年", "未来二年", "未来三年"
         };
 
         /* 过去模糊年表达 */
         private static final String[] FUZZY_YEAR_PAST = {
-                "去年", "前年", "往年", "往年同期", "历年", "经年", "上半年", "过去一年", "过去二年", "过去三年"
-        };
-
-        /* 未来模糊季节表达 */
-        private static final String[] FUZZY_SEASON_FUTURE = {
-                "二季度", "三季度", "四季度", "夏季", "秋季", "冬季", "初夏", "盛夏", "深秋", "初冬"
-        };
-
-        /* 过去模糊季节表达 */
-        private static final String[] FUZZY_SEASON_PAST = {
-                "去年春季", "去年夏季", "去年秋季", "去年冬季", "前年春季", "前年夏季", "前年秋季", "前年冬季"
+                "去年", "前年", "往年", "历年", "上半年", "过去一年", "过去二年", "过去三年"
         };
 
         /* 未来口语常用表达 */
@@ -163,8 +152,6 @@ public class ChinaFuzzyDateMocker implements Mocker {
                 return getRandomFuzzyDateByDirection(FUZZY_MONTH_FUTURE, FUZZY_MONTH_PAST);
             } else if ("year".equals(fuzzyType)) {
                 return getRandomFuzzyDateByDirection(FUZZY_YEAR_FUTURE, FUZZY_YEAR_PAST);
-            } else if ("season".equals(fuzzyType)) {
-                return getRandomFuzzyDateByDirection(FUZZY_SEASON_FUTURE, FUZZY_SEASON_PAST);
             } else if ("human".equals(fuzzyType)) {
                 return getRandomFuzzyDateByDirection(FUZZY_HUMAN_FUTURE, FUZZY_HUMAN_PAST);
             } else {
@@ -204,8 +191,8 @@ public class ChinaFuzzyDateMocker implements Mocker {
          * 随机选择所有类别中的一个模糊日期
          */
         private String getRandomAllFuzzyDate() {
-            String[][] allFuzzyFuture = {FUZZY_DAY_FUTURE, FUZZY_WEEK_FUTURE, FUZZY_MONTH_FUTURE, FUZZY_YEAR_FUTURE, FUZZY_SEASON_FUTURE, FUZZY_HUMAN_FUTURE};
-            String[][] allFuzzyPast = {FUZZY_DAY_PAST, FUZZY_WEEK_PAST, FUZZY_MONTH_PAST, FUZZY_YEAR_PAST, FUZZY_SEASON_PAST, FUZZY_HUMAN_PAST};
+            String[][] allFuzzyFuture = {FUZZY_DAY_FUTURE, FUZZY_WEEK_FUTURE, FUZZY_MONTH_FUTURE, FUZZY_YEAR_FUTURE, FUZZY_HUMAN_FUTURE};
+            String[][] allFuzzyPast = {FUZZY_DAY_PAST, FUZZY_WEEK_PAST, FUZZY_MONTH_PAST, FUZZY_YEAR_PAST, FUZZY_HUMAN_PAST};
 
             String[][] toUse = "future".equals(timeDirection) ? allFuzzyFuture : "past".equals(timeDirection) ? allFuzzyPast : allFuzzyFuture;
             String[] selected = toUse[ThreadLocalRandom.current().nextInt(toUse.length)];

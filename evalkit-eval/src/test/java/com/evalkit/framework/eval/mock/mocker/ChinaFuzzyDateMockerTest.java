@@ -176,44 +176,6 @@ class ChinaFuzzyDateMockerTest {
     }
 
     @Test
-    void testFuzzyDateSeason() {
-        Set<String> fuzzySeasons = new HashSet<>(Arrays.asList(
-                "二季度", "三季度", "四季度", "夏季", "秋季", "冬季",
-                "初夏", "盛夏", "深秋", "初冬",
-                "去年春季", "去年夏季", "去年秋季", "去年冬季",
-                "前年春季", "前年夏季", "前年秋季", "前年冬季"
-        ));
-        String result = mocker.mock("fuzzy_date", Collections.singletonList("season"));
-        log.info("result:{}", result);
-        assertNotNull(result);
-        assertTrue(fuzzySeasons.contains(result), "Result should be one of fuzzy season expressions");
-    }
-
-    @Test
-    void testFuzzyDateSeasonFuture() {
-        Set<String> futureSeasons = new HashSet<>(Arrays.asList(
-                "二季度", "三季度", "四季度", "夏季", "秋季", "冬季",
-                "初夏", "盛夏", "深秋", "初冬"
-        ));
-        String result = mocker.mock("fuzzy_date", Arrays.asList("season", "future"));
-        log.info("result:{}", result);
-        assertNotNull(result);
-        assertTrue(futureSeasons.contains(result), "Result should be one of future fuzzy season expressions");
-    }
-
-    @Test
-    void testFuzzyDateSeasonPast() {
-        Set<String> pastSeasons = new HashSet<>(Arrays.asList(
-                "去年春季", "去年夏季", "去年秋季", "去年冬季",
-                "前年春季", "前年夏季", "前年秋季", "前年冬季"
-        ));
-        String result = mocker.mock("fuzzy_date", Arrays.asList("season", "past"));
-        log.info("result:{}", result);
-        assertNotNull(result);
-        assertTrue(pastSeasons.contains(result), "Result should be one of past fuzzy season expressions");
-    }
-
-    @Test
     void testFuzzyDateHuman() {
         Set<String> fuzzyHumans = new HashSet<>(Arrays.asList(
                 "过两天", "等会儿", "回头", "赶明儿",
