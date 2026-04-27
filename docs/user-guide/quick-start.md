@@ -152,10 +152,8 @@ public class BasicEvalTest {
             public void process(WorkflowContext workflowContext) {
                 List<File> files = FileUtils.listFiles(parentDir);
                 log.info("附件列表: {}", files.stream().map(File::getAbsolutePath).collect(Collectors.toList()));
-                S3Service s3Service = new S3Service();
-                for (File file : files) {
-                    s3Service.uploadFile("test", file.getName(), file);
-                }
+                // 可在此处将附件上传到对象存储、发送通知等后置操作，例如：
+                // s3Client.uploadFile("bucket", file.getName(), file);
             }
         };
     }
