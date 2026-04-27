@@ -3,7 +3,6 @@ package com.evalkit.framework.workflow;
 import com.evalkit.framework.workflow.constants.WorkflowStatus;
 import com.evalkit.framework.workflow.model.WorkflowContext;
 import com.evalkit.framework.workflow.model.WorkflowNode;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -11,7 +10,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@Slf4j
 class WorkflowBuilderTest {
     WorkflowNode node1 = new WorkflowNode() {
         @Override
@@ -60,7 +58,7 @@ class WorkflowBuilderTest {
         WorkflowContext ctx = workflow.getWorkflowContext();
         List<String> keys = ctx.keys();
         assertEquals(3, keys.size());
-        log.info("Workflow context: {}", ctx);
+        System.out.println("Workflow context: " + ctx);
     }
 
     @Test

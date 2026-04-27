@@ -129,11 +129,12 @@ class SpelMockRuleEngineTest {
         String result = engine.mock("fuzzy_date day");
         log.info("Mock result for 'fuzzy_date day': {}", result);
         assertNotNull(result);
+        // 未来日：即日/改日/他日/来日/当日；过去日：近日/近来/最近
         List<String> dayExpressions = Arrays.asList(
-                "近日", "近来", "最近", "日前", "不日", "即日", "当日",
-                "改日", "他日", "来日", "昔日", "往日"
+                "即日", "改日", "他日", "来日", "当日",
+                "近日", "近来", "最近"
         );
-        assertTrue(dayExpressions.contains(result));
+        assertTrue(dayExpressions.contains(result), "Unexpected day expression: " + result);
     }
 
     @Test
@@ -141,8 +142,12 @@ class SpelMockRuleEngineTest {
         String result = engine.mock("fuzzy_date week");
         log.info("Mock result for 'fuzzy_date week': {}", result);
         assertNotNull(result);
-        List<String> weekExpressions = Arrays.asList("本周", "下周", "上周", "周末");
-        assertTrue(weekExpressions.contains(result));
+        // 未来周：周末/本周/下周/未来一周/未来二周/未来三周；过去周：上周/上上周/大上周/过去一周/过去二周/过去三周
+        List<String> weekExpressions = Arrays.asList(
+                "本周", "下周", "周末", "未来一周", "未来二周", "未来三周",
+                "上周", "上上周", "大上周", "过去一周", "过去二周", "过去三周"
+        );
+        assertTrue(weekExpressions.contains(result), "Unexpected week expression: " + result);
     }
 
     @Test
@@ -150,8 +155,12 @@ class SpelMockRuleEngineTest {
         String result = engine.mock("fuzzy_date month");
         log.info("Mock result for 'fuzzy_date month': {}", result);
         assertNotNull(result);
-        List<String> monthExpressions = Arrays.asList("月初", "月中", "月末", "上旬", "中旬", "下旬", "月底");
-        assertTrue(monthExpressions.contains(result));
+        // 月份表达包含未来（月初/月中/月末/月底/未来一月/未来二月/未来三月）和过去（上月/过去一月/过去二月/过去三月）两类
+        List<String> monthExpressions = Arrays.asList(
+                "月初", "月中", "月末", "月底", "未来一月", "未来二月", "未来三月",
+                "上月", "过去一月", "过去二月", "过去三月"
+        );
+        assertTrue(monthExpressions.contains(result), "Unexpected month expression: " + result);
     }
 
     @Test
@@ -159,11 +168,15 @@ class SpelMockRuleEngineTest {
         String result = engine.mock("fuzzy_date year");
         log.info("Mock result for 'fuzzy_date year': {}", result);
         assertNotNull(result);
+        // 未来年：今年/明年/后年/年初/年中/年底/下半年/来年/未来一年/未来二年/未来三年
+        // 过去年：去年/前年/往年/历年/上半年/过去一年/过去二年/过去三年
         List<String> yearExpressions = Arrays.asList(
-                "今年", "去年", "明年", "前年", "后年", "年初", "年中",
-                "年底", "上半年", "下半年", "往年", "来年", "翌年", "经年", "历年"
+                "今年", "明年", "后年", "年初", "年中", "年底", "下半年",
+                "来年", "未来一年", "未来二年", "未来三年",
+                "去年", "前年", "往年", "历年", "上半年",
+                "过去一年", "过去二年", "过去三年"
         );
-        assertTrue(yearExpressions.contains(result));
+        assertTrue(yearExpressions.contains(result), "Unexpected year expression: " + result);
     }
 
     @Test
