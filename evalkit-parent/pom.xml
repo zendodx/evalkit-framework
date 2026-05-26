@@ -264,12 +264,6 @@
                 <artifactId>jena-arq</artifactId>
                 <version>3.17.0</version>
             </dependency>
-            <!-- FreeMarker (提示词模板引擎) -->
-            <dependency>
-                <groupId>org.freemarker</groupId>
-                <artifactId>freemarker</artifactId>
-                <version>2.3.32</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -333,9 +327,29 @@
             <groupId>org.apache.jena</groupId>
             <artifactId>jena-arq</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.freemarker</groupId>
-            <artifactId>freemarker</artifactId>
-        </dependency>
     </dependencies>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <!-- 配置 Lombok 注解处理器，确保 Maven 编译时正确生成 @Slf4j 等注解 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.13.0</version>
+                    <configuration>
+                        <source>11</source>
+                        <target>11</target>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>${lombok.version}</version>
+                            </path>
+                        </annotationProcessorPaths>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 </project>

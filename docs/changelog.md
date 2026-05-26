@@ -1,5 +1,15 @@
 # ChangeLog
 
+## [1.2.3] - 2026-05-26
+
+### Added
+
+### Fixed
+
+- 优化知识图谱数据生成器,prompt存到md文件, 不使用freemarker处理prompt
+- 移除freemarker依赖
+- 更新文档
+
 ## [1.2.2] - 2026-03-26
 
 ### Added
