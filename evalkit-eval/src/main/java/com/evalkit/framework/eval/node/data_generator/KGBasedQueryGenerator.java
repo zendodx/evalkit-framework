@@ -223,13 +223,15 @@ public class KGBasedQueryGenerator extends DataGenerator {
 
         // 动态绑定图谱数据到断言中
         for (Turn generatedTurn : generatedQueries) {
+            // sessionId 与 configTurn 是否匹配无关，所有轮次都必须注入
+            generatedTurn.sessionId = sessionId;
+
             Turn configTurn = scenarioConfig.goldenCase.dialogue.stream()
                     .filter(t -> t.turn == generatedTurn.turn)
                     .findFirst()
                     .orElse(null);
 
             if (configTurn != null) {
-                generatedTurn.sessionId = sessionId;
                 generatedTurn.assertType = configTurn.assertType;
 
                 if (configTurn.expectedVars != null) {
