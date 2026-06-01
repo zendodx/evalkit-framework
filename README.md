@@ -31,7 +31,7 @@ EvalKit Framework是基于Java语言开发的自动化评测框架, 具有以下
 
 ## 相关文档
 
-- [用户手册](docs/user-guide/user-guide.md)
+- [用户手册](docs/user-guide/summary.md)
 - [版本变更](docs/changelog.md)
 - [开发须知](docs/contribute.md)
 

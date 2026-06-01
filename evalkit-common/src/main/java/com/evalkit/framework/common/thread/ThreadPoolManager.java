@@ -35,6 +35,12 @@ public class ThreadPoolManager {
         if (pool == null) {
             throw new IllegalArgumentException("No thread pool: " + name);
         }
+        // 线程池已关闭（例如前一次 run() 调用了 shutdown），自动重建以支持复用
+        if (pool.isShutdown()) {
+            ThreadPoolExecutor newPool = createDefault(name);
+            POOLS.put(name, newPool);
+            return newPool;
+        }
         return pool;
     }
 

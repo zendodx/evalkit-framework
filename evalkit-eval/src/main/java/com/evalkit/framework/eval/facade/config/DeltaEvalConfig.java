@@ -1,62 +1,18 @@
 package com.evalkit.framework.eval.facade.config;
 
 import com.evalkit.framework.common.utils.runtime.RuntimeEnvUtils;
-import com.evalkit.framework.eval.node.dataloader.DataLoader;
-import com.evalkit.framework.workflow.Workflow;
-
-import java.util.Map;
 
 /**
  * 增量评测配置
  */
 public class DeltaEvalConfig extends FullEvalConfig {
-    /* 批处理数量,默认10 */
     protected int batchSize;
-    /* 结果上报间隔,默认30秒 */
     protected int reportInterval;
-    /* MQ消息接收超时时间,默认10000毫秒 */
     protected int mqReceiveTimeout;
-    /* 是否开启断点续评, 默认true */
     protected boolean enableResume;
-    /* 单消息处理最大时间,60秒 */
     protected long messageProcessMaxTime;
 
-
     protected DeltaEvalConfig() {
-    }
-
-    protected DeltaEvalConfig(String taskName,
-                              String filePath,
-                              int offset,
-                              int limit,
-                              int threadNum,
-                              double passScore,
-                              Map<String, Object> extra,
-                              boolean openInjectData,
-                              boolean injectDataIndex,
-                              boolean injectInputData,
-                              boolean injectApiCompletionResult,
-                              boolean injectEvalResult,
-                              boolean injectExtra,
-                              DataLoader dataLoader,
-                              Workflow evalWorkflow,
-                              Workflow reportWorkflow,
-                              int batchSize,
-                              int reportInterval,
-                              int mqReceiveTimeout,
-                              boolean enableResume,
-                              long messageProcessMaxTime) {
-        super(taskName, filePath, offset, limit, threadNum, passScore, extra,
-                openInjectData, injectDataIndex, injectInputData, injectApiCompletionResult, injectEvalResult, injectExtra,
-                dataLoader, evalWorkflow, reportWorkflow);
-        this.dataLoader = dataLoader;
-        this.evalWorkflow = evalWorkflow;
-        this.reportWorkflow = reportWorkflow;
-        this.batchSize = batchSize;
-        this.reportInterval = reportInterval;
-        this.mqReceiveTimeout = mqReceiveTimeout;
-        this.enableResume = enableResume;
-        this.messageProcessMaxTime = messageProcessMaxTime;
     }
 
     public static DeltaEvalConfigBuilder<?> builder() {
@@ -106,11 +62,15 @@ public class DeltaEvalConfig extends FullEvalConfig {
     }
 
     public static class DeltaEvalConfigBuilder<B extends DeltaEvalConfigBuilder<B>> extends FullEvalConfigBuilder<B> {
-        /* 子类特有字段 */
+        /* 批处理大小 */
         protected int batchSize = 10;
+        /* 报告间隔, 30秒 */
         protected int reportInterval = 30;
+        /* MQ接收超时时间, 10秒 */
         protected int mqReceiveTimeout = 10000;
+        /* 是否开启中断续评模式 */
         protected boolean enableResume = true;
+        /* 消息处理最大时间, 60秒 */
         protected long messageProcessMaxTime = 60;
 
         public B batchSize(int batchSize) {
@@ -139,15 +99,23 @@ public class DeltaEvalConfig extends FullEvalConfig {
         }
 
         @Override
+        protected void applyTo(EvalConfig base) {
+            super.applyTo(base);
+            DeltaEvalConfig config = (DeltaEvalConfig) base;
+            config.batchSize = batchSize;
+            config.reportInterval = reportInterval;
+            config.mqReceiveTimeout = mqReceiveTimeout;
+            config.enableResume = enableResume;
+            config.messageProcessMaxTime = messageProcessMaxTime;
+        }
+
+        @Override
         public DeltaEvalConfig build() {
-            DeltaEvalConfig deltaEvalConfig = new DeltaEvalConfig(
-                    taskName, filePath, offset, limit, threadNum, passScore, extra,
-                    openInjectData, injectDataIndex, injectInputData, injectApiCompletionResult, injectEvalResult, injectExtra,
-                    dataLoader, evalWorkflow, reportWorkflow, batchSize, reportInterval,
-                    mqReceiveTimeout, enableResume, messageProcessMaxTime);
-            deltaEvalConfig.updateConfigFromEnv();
-            deltaEvalConfig.checkParams();
-            return deltaEvalConfig;
+            DeltaEvalConfig config = new DeltaEvalConfig();
+            applyTo(config);
+            config.updateConfigFromEnv();
+            config.checkParams();
+            return config;
         }
     }
 

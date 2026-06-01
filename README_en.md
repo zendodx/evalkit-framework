@@ -31,7 +31,7 @@ EvalKit Framework is an automated evaluation framework developed in Java, offeri
 
 ## User Documentation
 
-- [User guide](docs/user-guide/user-guide.md)
+- [User guide](docs/user-guide/summary.md)
 - [Change log](docs/changelog.md)
 - [Contribute](docs/contribute.md)
 
