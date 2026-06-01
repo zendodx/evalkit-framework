@@ -38,12 +38,23 @@ public abstract class FileReporter extends Reporter {
     }
 
     public FileReporter(String fileName, String parentDir) {
-        this.fileName = fileName;
+        // fileName 中的 "/" 替换为 "_"，避免被误解析为路径分隔符（如 taskName 含 "/"）
+        this.fileName = sanitizeFileName(fileName);
         if (StringUtils.isEmpty(parentDir)) {
             this.parentDir = DEFAULT_PARENT_DIR;
         } else {
             this.parentDir = parentDir;
         }
+    }
+
+    /**
+     * 将文件名中的路径分隔符 "/" 替换为 "_"，保证文件名安全
+     */
+    protected static String sanitizeFileName(String fileName) {
+        if (fileName == null) {
+            return null;
+        }
+        return fileName.replace("/", "_");
     }
 
     @Override
