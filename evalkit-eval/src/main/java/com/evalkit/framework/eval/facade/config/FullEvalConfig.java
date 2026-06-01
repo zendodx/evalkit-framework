@@ -3,54 +3,27 @@ package com.evalkit.framework.eval.facade.config;
 import com.evalkit.framework.eval.node.dataloader.DataLoader;
 import com.evalkit.framework.workflow.Workflow;
 
-import java.util.Map;
-
 /**
  * 全量式评测配置
  */
 public class FullEvalConfig extends EvalConfig {
-    /* 数据加载器 */
     protected DataLoader dataLoader;
-    /* 评测工作流 */
     protected Workflow evalWorkflow;
-    /* 结果上报工作流 */
     protected Workflow reportWorkflow;
 
     protected FullEvalConfig() {
-    }
-
-    protected FullEvalConfig(String taskName,
-                             String attachDir,
-                             String filePath,
-                             int offset,
-                             int limit,
-                             int threadNum,
-                             double passScore,
-                             Map<String, Object> extra,
-                             boolean openInjectData,
-                             boolean injectDataIndex,
-                             boolean injectInputData,
-                             boolean injectApiCompletionResult,
-                             boolean injectEvalResult,
-                             boolean injectExtra,
-                             DataLoader dataLoader,
-                             Workflow evalWorkflow,
-                             Workflow reportWorkflow) {
-        super(taskName, attachDir, filePath, offset, limit, threadNum, passScore, extra,
-                openInjectData, injectDataIndex, injectInputData, injectApiCompletionResult, injectEvalResult, injectExtra);
-        this.dataLoader = dataLoader;
-        this.evalWorkflow = evalWorkflow;
-        this.reportWorkflow = reportWorkflow;
     }
 
     public static FullEvalConfigBuilder<?> builder() {
         return new FullEvalConfigBuilder<>();
     }
 
-
     public static class FullEvalConfigBuilder<B extends FullEvalConfigBuilder<B>> extends EvalConfigBuilder<B> {
+        /* 数据加载器 */
         protected DataLoader dataLoader;
+        /* 评测工作流 */
         protected Workflow evalWorkflow;
+        /* 结果上报工作流 */
         protected Workflow reportWorkflow;
 
         public B dataLoader(DataLoader dataLoader) {
@@ -68,14 +41,25 @@ public class FullEvalConfig extends EvalConfig {
             return (B) this;
         }
 
+        /**
+         * 将 Builder 字段填入 config 对象（供子类 build() 复用）
+         */
+        @Override
+        protected void applyTo(EvalConfig base) {
+            super.applyTo(base);
+            FullEvalConfig config = (FullEvalConfig) base;
+            config.dataLoader = dataLoader;
+            config.evalWorkflow = evalWorkflow;
+            config.reportWorkflow = reportWorkflow;
+        }
+
         @Override
         public FullEvalConfig build() {
-            FullEvalConfig fullEvalConfig = new FullEvalConfig(taskName, attachDir, filePath, offset, limit, threadNum, passScore, extra,
-                    openInjectData, injectDataIndex, injectInputData, injectApiCompletionResult, injectEvalResult, injectExtra,
-                    dataLoader, evalWorkflow, reportWorkflow);
-            fullEvalConfig.updateConfigFromEnv();
-            fullEvalConfig.checkParams();
-            return fullEvalConfig;
+            FullEvalConfig config = new FullEvalConfig();
+            applyTo(config);
+            config.updateConfigFromEnv();
+            config.checkParams();
+            return config;
         }
     }
 

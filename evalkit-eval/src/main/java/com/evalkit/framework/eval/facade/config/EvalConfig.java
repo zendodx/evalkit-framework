@@ -14,66 +14,23 @@ import java.util.Map;
  * 评测运行基础配置
  */
 public class EvalConfig {
-    /* 任务名称,增量评测统一任务需保持任务名称一致, 默认 EvalTest_运行时间 */
     protected String taskName;
-    /* taskName对应的uuid,用于ActiveMQ和SQLite的文件名称 */
     protected String taskNameUuid;
-    /* 附件输出目录，默认为 attachments/{taskName}，所有 FileReporter 输出文件统一写入此目录 */
     protected String attachDir;
-    /* 评测数据集文件路径,默认空*/
     protected String filePath;
-    /* 分页偏移量, 默认0 */
     protected int offset;
-    /* 分页页大小, 默认-1,加载所有 */
     protected int limit;
-    /* 并发数,默认1 */
     protected int threadNum;
-    /* 评测通过分数 */
     protected double passScore;
-    /* 额外配置 */
     protected Map<String, Object> extra;
-    /* 开启输入注入 */
-    protected boolean openInjectData;
-    /* 按需注入开关 */
-    protected boolean injectDataIndex;
-    protected boolean injectInputData;
-    protected boolean injectApiCompletionResult;
-    protected boolean injectEvalResult;
-    protected boolean injectExtra;
+    protected boolean enableInjectData;
+    protected boolean enableInjectDataIndex;
+    protected boolean enableInjectInputData;
+    protected boolean enableInjectApiCompletionResult;
+    protected boolean enableInjectEvalResult;
+    protected boolean enableInjectExtra;
 
     protected EvalConfig() {
-
-    }
-
-    protected EvalConfig(String taskName,
-                         String attachDir,
-                         String filePath,
-                         int offset,
-                         int limit,
-                         int threadNum,
-                         double passScore,
-                         Map<String, Object> extra,
-                         boolean openInjectData,
-                         boolean injectDataIndex,
-                         boolean injectInputData,
-                         boolean injectApiCompletionResult,
-                         boolean injectEvalResult,
-                         boolean injectExtra) {
-        this.taskName = taskName;
-        this.taskNameUuid = UuidUtils.generateUuidByKey(taskName);
-        this.attachDir = (attachDir != null && !attachDir.isEmpty()) ? attachDir : "attachments/" + taskName;
-        this.filePath = filePath;
-        this.offset = offset;
-        this.limit = limit;
-        this.threadNum = threadNum;
-        this.passScore = passScore;
-        this.extra = extra;
-        this.openInjectData = openInjectData;
-        this.injectDataIndex = injectDataIndex;
-        this.injectInputData = injectInputData;
-        this.injectApiCompletionResult = injectApiCompletionResult;
-        this.injectEvalResult = injectEvalResult;
-        this.injectExtra = injectExtra;
     }
 
     /**
@@ -103,6 +60,11 @@ public class EvalConfig {
         String taskName = RuntimeEnvUtils.getJVMPropertyString("taskName", null);
         if (StringUtils.isNotEmpty(taskName)) {
             this.taskName = taskName;
+            // taskName 变更时同步更新依赖它的派生字段
+            this.taskNameUuid = UuidUtils.generateUuidByKey(this.taskName);
+            if (this.attachDir == null || this.attachDir.isEmpty()) {
+                this.attachDir = "attachments/" + this.taskName;
+            }
         }
         String attachDir = RuntimeEnvUtils.getJVMPropertyString("attachDir", null);
         if (StringUtils.isNotEmpty(attachDir)) {
@@ -134,29 +96,29 @@ public class EvalConfig {
             this.extra = JsonUtils.fromJson(extra, new TypeReference<Map<String, Object>>() {
             });
         }
-        Boolean openInjectData = RuntimeEnvUtils.getJVMPropertyBoolean("openInjectData", null);
-        if (openInjectData != null) {
-            this.openInjectData = openInjectData;
+        Boolean enableInjectData = RuntimeEnvUtils.getJVMPropertyBoolean("enableInjectData", null);
+        if (enableInjectData != null) {
+            this.enableInjectData = enableInjectData;
         }
-        Boolean injectDataIndex = RuntimeEnvUtils.getJVMPropertyBoolean("injectDataIndex", null);
-        if (injectDataIndex != null) {
-            this.injectDataIndex = injectDataIndex;
+        Boolean enableInjectDataIndex = RuntimeEnvUtils.getJVMPropertyBoolean("enableInjectDataIndex", null);
+        if (enableInjectDataIndex != null) {
+            this.enableInjectDataIndex = enableInjectDataIndex;
         }
-        Boolean injectInputData = RuntimeEnvUtils.getJVMPropertyBoolean("injectInputData", null);
-        if (injectInputData != null) {
-            this.injectInputData = injectInputData;
+        Boolean enableInjectInputData = RuntimeEnvUtils.getJVMPropertyBoolean("enableInjectInputData", null);
+        if (enableInjectInputData != null) {
+            this.enableInjectInputData = enableInjectInputData;
         }
-        Boolean injectApiCompletionResult = RuntimeEnvUtils.getJVMPropertyBoolean("injectApiCompletionResult", null);
-        if (injectApiCompletionResult != null) {
-            this.injectApiCompletionResult = injectApiCompletionResult;
+        Boolean enableInjectApiCompletionResult = RuntimeEnvUtils.getJVMPropertyBoolean("enableInjectApiCompletionResult", null);
+        if (enableInjectApiCompletionResult != null) {
+            this.enableInjectApiCompletionResult = enableInjectApiCompletionResult;
         }
-        Boolean injectEvalResult = RuntimeEnvUtils.getJVMPropertyBoolean("injectEvalResult", null);
-        if (injectEvalResult != null) {
-            this.injectEvalResult = injectEvalResult;
+        Boolean enableInjectEvalResult = RuntimeEnvUtils.getJVMPropertyBoolean("enableInjectEvalResult", null);
+        if (enableInjectEvalResult != null) {
+            this.enableInjectEvalResult = enableInjectEvalResult;
         }
-        Boolean injectExtra = RuntimeEnvUtils.getJVMPropertyBoolean("injectExtra", null);
-        if (injectExtra != null) {
-            this.injectExtra = injectExtra;
+        Boolean enableInjectExtra = RuntimeEnvUtils.getJVMPropertyBoolean("enableInjectExtra", null);
+        if (enableInjectExtra != null) {
+            this.enableInjectExtra = enableInjectExtra;
         }
     }
 
@@ -186,20 +148,36 @@ public class EvalConfig {
     }
 
     public static class EvalConfigBuilder<B extends EvalConfigBuilder<B>> {
+        /* 任务名称,增量评测统一任务需保持任务名称一致, 默认 EvalTest_运行时间 */
         protected String taskName = "EvalTest_" + DateUtils.nowToString("yyyyMMddHHmmss");
+        /* taskName对应的uuid,用于ActiveMQ和SQLite的文件名称 */
+        protected String taskNameUuid = UuidUtils.generateUuidByKey(taskName);
+        /* 附件输出目录，默认为 attachments/{taskName}，所有 FileReporter 输出文件统一写入此目录 */
         protected String attachDir;
+        /* 评测数据集文件路径,默认空*/
         protected String filePath;
+        /* 分页偏移量, 默认0 */
         protected int offset = 0;
+        /* 分页页大小, 默认-1,加载所有 */
         protected int limit = -1;
+        /* 并发数,默认1 */
         protected int threadNum = 1;
+        /* 及格分数,默认0 */
         protected double passScore = 0.0;
+        /* 额外配置 */
         protected Map<String, Object> extra;
-        protected boolean openInjectData = false;
-        protected boolean injectDataIndex = true;
-        protected boolean injectInputData = true;
-        protected boolean injectApiCompletionResult = true;
-        protected boolean injectEvalResult = true;
-        protected boolean injectExtra = true;
+        /* 开启输入注入, 默认不开启 */
+        protected boolean enableInjectData = false;
+        /* 按需注入数据索引 */
+        protected boolean enableInjectDataIndex = true;
+        /* 按需注入输入数据 */
+        protected boolean enableInjectInputData = true;
+        /* 按需注入接口完成结果 */
+        protected boolean enableInjectApiCompletionResult = true;
+        /* 按需注入评测结果 */
+        protected boolean enableInjectEvalResult = true;
+        /* 按需注入额外配置 */
+        protected boolean enableInjectExtra = true;
 
         protected EvalConfigBuilder() {
         }
@@ -244,45 +222,66 @@ public class EvalConfig {
             return (B) this;
         }
 
-        public B openInjectData(boolean openInjectData) {
-            this.openInjectData = openInjectData;
+        public B openInjectData(boolean enableInjectData) {
+            this.enableInjectData = enableInjectData;
             return (B) this;
         }
 
-        public B injectDataIndex(boolean injectDataIndex) {
-            this.injectDataIndex = injectDataIndex;
+        public B injectDataIndex(boolean enableInjectDataIndex) {
+            this.enableInjectDataIndex = enableInjectDataIndex;
             return (B) this;
         }
 
-        public B injectInputData(boolean injectInputData) {
-            this.injectInputData = injectInputData;
+        public B injectInputData(boolean enableInjectInputData) {
+            this.enableInjectInputData = enableInjectInputData;
             return (B) this;
         }
 
-        public B injectApiCompletionResult(boolean injectApiCompletionResult) {
-            this.injectApiCompletionResult = injectApiCompletionResult;
+        public B injectApiCompletionResult(boolean enableInjectApiCompletionResult) {
+            this.enableInjectApiCompletionResult = enableInjectApiCompletionResult;
             return (B) this;
         }
 
-        public B injectEvalResult(boolean injectEvalResult) {
-            this.injectEvalResult = injectEvalResult;
+        public B injectEvalResult(boolean enableInjectEvalResult) {
+            this.enableInjectEvalResult = enableInjectEvalResult;
             return (B) this;
         }
 
-        public B injectExtra(boolean injectExtra) {
-            this.injectExtra = injectExtra;
+        public B injectExtra(boolean enableInjectExtra) {
+            this.enableInjectExtra = enableInjectExtra;
             return (B) this;
+        }
+
+        /**
+         * 将 Builder 字段填入 config 对象（供子类 build() 复用）
+         */
+        protected void applyTo(EvalConfig config) {
+            config.taskName = taskName;
+            config.taskNameUuid = UuidUtils.generateUuidByKey(taskName);
+            config.attachDir = (attachDir != null && !attachDir.isEmpty()) ? attachDir : "attachments/" + taskName;
+            config.filePath = filePath;
+            config.offset = offset;
+            config.limit = limit;
+            config.threadNum = threadNum;
+            config.passScore = passScore;
+            config.extra = extra;
+            config.enableInjectData = enableInjectData;
+            config.enableInjectDataIndex = enableInjectDataIndex;
+            config.enableInjectInputData = enableInjectInputData;
+            config.enableInjectApiCompletionResult = enableInjectApiCompletionResult;
+            config.enableInjectEvalResult = enableInjectEvalResult;
+            config.enableInjectExtra = enableInjectExtra;
         }
 
         /**
          * 最终 build：一定会触发环境变量覆盖 + 校验
          */
         public EvalConfig build() {
-            EvalConfig evalConfig = new EvalConfig(taskName, attachDir, filePath, offset, limit, threadNum, passScore, extra,
-                    openInjectData, injectDataIndex, injectInputData, injectApiCompletionResult, injectEvalResult, injectExtra);
-            evalConfig.updateConfigFromEnv();
-            evalConfig.checkParams();
-            return evalConfig;
+            EvalConfig config = new EvalConfig();
+            applyTo(config);
+            config.updateConfigFromEnv();
+            config.checkParams();
+            return config;
         }
     }
 
@@ -350,52 +349,52 @@ public class EvalConfig {
         this.extra = extra;
     }
 
-    public boolean isOpenInjectData() {
-        return openInjectData;
+    public boolean isEnableInjectData() {
+        return enableInjectData;
     }
 
-    public void setOpenInjectData(boolean openInjectData) {
-        this.openInjectData = openInjectData;
+    public void setEnableInjectData(boolean enableInjectData) {
+        this.enableInjectData = enableInjectData;
     }
 
-    public boolean isInjectDataIndex() {
-        return injectDataIndex;
+    public boolean isEnableInjectDataIndex() {
+        return enableInjectDataIndex;
     }
 
-    public void setInjectDataIndex(boolean injectDataIndex) {
-        this.injectDataIndex = injectDataIndex;
+    public void setEnableInjectDataIndex(boolean enableInjectDataIndex) {
+        this.enableInjectDataIndex = enableInjectDataIndex;
     }
 
-    public boolean isInjectInputData() {
-        return injectInputData;
+    public boolean isEnableInjectInputData() {
+        return enableInjectInputData;
     }
 
-    public void setInjectInputData(boolean injectInputData) {
-        this.injectInputData = injectInputData;
+    public void setEnableInjectInputData(boolean enableInjectInputData) {
+        this.enableInjectInputData = enableInjectInputData;
     }
 
-    public boolean isInjectApiCompletionResult() {
-        return injectApiCompletionResult;
+    public boolean isEnableInjectApiCompletionResult() {
+        return enableInjectApiCompletionResult;
     }
 
-    public void setInjectApiCompletionResult(boolean injectApiCompletionResult) {
-        this.injectApiCompletionResult = injectApiCompletionResult;
+    public void setEnableInjectApiCompletionResult(boolean enableInjectApiCompletionResult) {
+        this.enableInjectApiCompletionResult = enableInjectApiCompletionResult;
     }
 
-    public boolean isInjectEvalResult() {
-        return injectEvalResult;
+    public boolean isEnableInjectEvalResult() {
+        return enableInjectEvalResult;
     }
 
-    public void setInjectEvalResult(boolean injectEvalResult) {
-        this.injectEvalResult = injectEvalResult;
+    public void setEnableInjectEvalResult(boolean enableInjectEvalResult) {
+        this.enableInjectEvalResult = enableInjectEvalResult;
     }
 
-    public boolean isInjectExtra() {
-        return injectExtra;
+    public boolean isEnableInjectExtra() {
+        return enableInjectExtra;
     }
 
-    public void setInjectExtra(boolean injectExtra) {
-        this.injectExtra = injectExtra;
+    public void setEnableInjectExtra(boolean enableInjectExtra) {
+        this.enableInjectExtra = enableInjectExtra;
     }
 
     public String getTaskNameUuid() {
