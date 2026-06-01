@@ -26,6 +26,7 @@ public class DeltaEvalConfig extends FullEvalConfig {
     }
 
     protected DeltaEvalConfig(String taskName,
+                              String attachDir,
                               String filePath,
                               int offset,
                               int limit,
@@ -46,7 +47,7 @@ public class DeltaEvalConfig extends FullEvalConfig {
                               int mqReceiveTimeout,
                               boolean enableResume,
                               long messageProcessMaxTime) {
-        super(taskName, filePath, offset, limit, threadNum, passScore, extra,
+        super(taskName, attachDir, filePath, offset, limit, threadNum, passScore, extra,
                 openInjectData, injectDataIndex, injectInputData, injectApiCompletionResult, injectEvalResult, injectExtra,
                 dataLoader, evalWorkflow, reportWorkflow);
         this.dataLoader = dataLoader;
@@ -141,7 +142,7 @@ public class DeltaEvalConfig extends FullEvalConfig {
         @Override
         public DeltaEvalConfig build() {
             DeltaEvalConfig deltaEvalConfig = new DeltaEvalConfig(
-                    taskName, filePath, offset, limit, threadNum, passScore, extra,
+                    taskName, attachDir, filePath, offset, limit, threadNum, passScore, extra,
                     openInjectData, injectDataIndex, injectInputData, injectApiCompletionResult, injectEvalResult, injectExtra,
                     dataLoader, evalWorkflow, reportWorkflow, batchSize, reportInterval,
                     mqReceiveTimeout, enableResume, messageProcessMaxTime);

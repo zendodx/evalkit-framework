@@ -20,6 +20,7 @@ public class FullEvalConfig extends EvalConfig {
     }
 
     protected FullEvalConfig(String taskName,
+                             String attachDir,
                              String filePath,
                              int offset,
                              int limit,
@@ -35,7 +36,7 @@ public class FullEvalConfig extends EvalConfig {
                              DataLoader dataLoader,
                              Workflow evalWorkflow,
                              Workflow reportWorkflow) {
-        super(taskName, filePath, offset, limit, threadNum, passScore, extra,
+        super(taskName, attachDir, filePath, offset, limit, threadNum, passScore, extra,
                 openInjectData, injectDataIndex, injectInputData, injectApiCompletionResult, injectEvalResult, injectExtra);
         this.dataLoader = dataLoader;
         this.evalWorkflow = evalWorkflow;
@@ -69,7 +70,7 @@ public class FullEvalConfig extends EvalConfig {
 
         @Override
         public FullEvalConfig build() {
-            FullEvalConfig fullEvalConfig = new FullEvalConfig(taskName, filePath, offset, limit, threadNum, passScore, extra,
+            FullEvalConfig fullEvalConfig = new FullEvalConfig(taskName, attachDir, filePath, offset, limit, threadNum, passScore, extra,
                     openInjectData, injectDataIndex, injectInputData, injectApiCompletionResult, injectEvalResult, injectExtra,
                     dataLoader, evalWorkflow, reportWorkflow);
             fullEvalConfig.updateConfigFromEnv();

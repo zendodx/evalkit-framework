@@ -55,7 +55,7 @@ class FullEvalFacadeTest {
         @Override
         protected void afterExecute() {
             log.info("===>Finish consume and eval, remain data size:{}, processed data size:{}", getRemainDataCount(), getProcessedDataCount());
-            List<File> files = FileUtils.listFiles("attachments/");
+            List<File> files = FileUtils.listFiles(config.getAttachDir());
             List<String> collect = files.stream().map(File::getName).collect(Collectors.toList());
             log.info("===>attaches files:{}", collect);
         }
@@ -137,13 +137,15 @@ class FullEvalFacadeTest {
             }
         };
 
-        // 评测结果上报
+        // 评测结果上报（parentDir 在 config.build() 后由 getAttachDir() 获取，此处先用默认值 attachments）
+        String taskName = "FullEvalTest";
+        String attachDir = "attachments/" + taskName;
         String fileName = "FullEvalTest" + DateUtils.nowToString();
         BasicCounter basicCounter = new BasicCounter();
-        HtmlReporter htmlReporter = new HtmlReporter(fileName);
-        JsonReporter jsonReporter = new JsonReporter(fileName);
-        ExcelReporter excelReporter = new ExcelReporter(fileName);
-        CsvReporter csvReporter = new CsvReporter(fileName);
+        HtmlReporter htmlReporter = new HtmlReporter(fileName, attachDir);
+        JsonReporter jsonReporter = new JsonReporter(fileName, attachDir);
+        ExcelReporter excelReporter = new ExcelReporter(fileName, attachDir);
+        CsvReporter csvReporter = new CsvReporter(fileName, attachDir);
 
         List<Scorer> scorers = ListUtils.of(scorer1, scorer2, scorer3);
 
@@ -155,7 +157,7 @@ class FullEvalFacadeTest {
 
         CustomFullEval cfe = new CustomFullEval(
                 FullEvalConfig.builder()
-                        .taskName("FullEvalTest")
+                        .taskName(taskName)
                         .dataLoader(multiDataLoader)
                         .evalWorkflow(evalWorkflow)
                         .reportWorkflow(reportWorkflow)

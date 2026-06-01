@@ -89,7 +89,7 @@ class OrderedDeltaEvalFacadeTest {
             processedAfterExecute = getProcessedDataCount();
             log.info("===>Finish consume and eval, remain data size:{}, processed data size:{}",
                     remainAfterExecute, processedAfterExecute);
-            List<File> files = FileUtils.listFiles("attachments/" + config.getTaskName());
+            List<File> files = FileUtils.listFiles(config.getAttachDir());
             List<String> collect = files.stream().map(File::getName).collect(Collectors.toList());
             log.info("===>attaches files:{}", collect);
         }
@@ -157,12 +157,14 @@ class OrderedDeltaEvalFacadeTest {
     }
 
     private Workflow buildReportWorkflow(String taskName) {
-        String parentDir = "attachments/" + taskName;
+        // parentDir 由 EvalConfig.attachDir 统一管理（默认 attachments/{taskName}）
+        // 与 afterExecute() 中的 config.getAttachDir() 保持同步
+        String attachDir = "attachments/" + taskName;
         BasicCounter basicCounter = new BasicCounter();
-        HtmlReporter htmlReporter = new HtmlReporter(taskName, parentDir);
-        JsonReporter jsonReporter = new JsonReporter(taskName, parentDir);
-        ExcelReporter excelReporter = new ExcelReporter(taskName, parentDir);
-        CsvReporter csvReporter = new CsvReporter(taskName, parentDir);
+        HtmlReporter htmlReporter = new HtmlReporter(taskName, attachDir);
+        JsonReporter jsonReporter = new JsonReporter(taskName, attachDir);
+        ExcelReporter excelReporter = new ExcelReporter(taskName, attachDir);
+        CsvReporter csvReporter = new CsvReporter(taskName, attachDir);
         return new WorkflowBuilder()
                 .link(basicCounter, htmlReporter, jsonReporter, excelReporter, csvReporter).build();
     }

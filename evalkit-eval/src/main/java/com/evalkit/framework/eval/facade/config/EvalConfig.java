@@ -18,6 +18,8 @@ public class EvalConfig {
     protected String taskName;
     /* taskName对应的uuid,用于ActiveMQ和SQLite的文件名称 */
     protected String taskNameUuid;
+    /* 附件输出目录，默认为 attachments/{taskName}，所有 FileReporter 输出文件统一写入此目录 */
+    protected String attachDir;
     /* 评测数据集文件路径,默认空*/
     protected String filePath;
     /* 分页偏移量, 默认0 */
@@ -44,6 +46,7 @@ public class EvalConfig {
     }
 
     protected EvalConfig(String taskName,
+                         String attachDir,
                          String filePath,
                          int offset,
                          int limit,
@@ -58,6 +61,7 @@ public class EvalConfig {
                          boolean injectExtra) {
         this.taskName = taskName;
         this.taskNameUuid = UuidUtils.generateUuidByKey(taskName);
+        this.attachDir = (attachDir != null && !attachDir.isEmpty()) ? attachDir : "attachments/" + taskName;
         this.filePath = filePath;
         this.offset = offset;
         this.limit = limit;
@@ -99,6 +103,10 @@ public class EvalConfig {
         String taskName = RuntimeEnvUtils.getJVMPropertyString("taskName", null);
         if (StringUtils.isNotEmpty(taskName)) {
             this.taskName = taskName;
+        }
+        String attachDir = RuntimeEnvUtils.getJVMPropertyString("attachDir", null);
+        if (StringUtils.isNotEmpty(attachDir)) {
+            this.attachDir = attachDir;
         }
         String filePath = RuntimeEnvUtils.getJVMPropertyString("filePath", null);
         if (StringUtils.isNotEmpty(filePath)) {
@@ -179,6 +187,7 @@ public class EvalConfig {
 
     public static class EvalConfigBuilder<B extends EvalConfigBuilder<B>> {
         protected String taskName = "EvalTest_" + DateUtils.nowToString("yyyyMMddHHmmss");
+        protected String attachDir;
         protected String filePath;
         protected int offset = 0;
         protected int limit = -1;
@@ -197,6 +206,11 @@ public class EvalConfig {
 
         public B taskName(String taskName) {
             this.taskName = taskName;
+            return (B) this;
+        }
+
+        public B attachDir(String attachDir) {
+            this.attachDir = attachDir;
             return (B) this;
         }
 
@@ -264,12 +278,20 @@ public class EvalConfig {
          * 最终 build：一定会触发环境变量覆盖 + 校验
          */
         public EvalConfig build() {
-            EvalConfig evalConfig = new EvalConfig(taskName, filePath, offset, limit, threadNum, passScore, extra,
+            EvalConfig evalConfig = new EvalConfig(taskName, attachDir, filePath, offset, limit, threadNum, passScore, extra,
                     openInjectData, injectDataIndex, injectInputData, injectApiCompletionResult, injectEvalResult, injectExtra);
             evalConfig.updateConfigFromEnv();
             evalConfig.checkParams();
             return evalConfig;
         }
+    }
+
+    public String getAttachDir() {
+        return attachDir;
+    }
+
+    public void setAttachDir(String attachDir) {
+        this.attachDir = attachDir;
     }
 
     public String getTaskName() {

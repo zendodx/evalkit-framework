@@ -66,7 +66,7 @@ class DeltaEvalFacadeTest {
             processedAfterExecute = getProcessedDataCount();
             log.info("===>Finish consume and eval, remain data size:{}, processed data size:{}",
                     remainAfterExecute, processedAfterExecute);
-            List<File> files = FileUtils.listFiles("attachments/" + config.getTaskName());
+            List<File> files = FileUtils.listFiles(config.getAttachDir());
             List<String> collect = files.stream().map(File::getName).collect(Collectors.toList());
             log.info("===>attaches files:{}", collect);
         }
@@ -136,7 +136,8 @@ class DeltaEvalFacadeTest {
 
     private Workflow buildReportWorkflow(String taskName) {
         BasicCounter basicCounter = new BasicCounter();
-        // parentDir 统一用 "attachments/{taskName}"，与 afterExecute() 中 FileUtils.listFiles 的查询路径保持一致
+        // parentDir 由 EvalConfig.attachDir 统一管理（默认 attachments/{taskName}）
+        // Reporter 的输出目录与 afterExecute() 中的 config.getAttachDir() 保持同步
         String attachDir = "attachments/" + taskName;
         HtmlReporter htmlReporter = new HtmlReporter(taskName, attachDir);
         JsonReporter jsonReporter = new JsonReporter(taskName, attachDir);

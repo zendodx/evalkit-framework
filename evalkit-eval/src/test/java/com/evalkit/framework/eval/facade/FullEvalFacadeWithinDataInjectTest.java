@@ -52,7 +52,7 @@ class FullEvalFacadeWithinDataInjectTest {
         @Override
         protected void afterExecute() {
             log.info("===>Finish consume and eval, remain data size:{}, processed data size:{}", getRemainDataCount(), getProcessedDataCount());
-            List<File> files = FileUtils.listFiles("attaches/");
+            List<File> files = FileUtils.listFiles(config.getAttachDir());
             List<String> collect = files.stream().map(File::getName).collect(Collectors.toList());
             log.info("===>attaches files:{}", collect);
         }
@@ -116,13 +116,15 @@ class FullEvalFacadeWithinDataInjectTest {
             }
         };
 
-        // 评测结果上报
+        // 评测结果上报（parentDir 统一为 attachments/{taskName}）
+        String taskName = "FullEvalFacadeWithinDataInjectTest";
+        String attachDir = "attachments/" + taskName;
         String fileName = "full_eval_within_datainject_test_" + DateUtils.nowToString();
         BasicCounter basicCounter = new BasicCounter();
-        HtmlReporter htmlReporter = new HtmlReporter(fileName, fileName);
-        JsonReporter jsonReporter = new JsonReporter(fileName, fileName);
-        ExcelReporter excelReporter = new ExcelReporter(fileName, fileName);
-        CsvReporter csvReporter = new CsvReporter(fileName, fileName);
+        HtmlReporter htmlReporter = new HtmlReporter(fileName, attachDir);
+        JsonReporter jsonReporter = new JsonReporter(fileName, attachDir);
+        ExcelReporter excelReporter = new ExcelReporter(fileName, attachDir);
+        CsvReporter csvReporter = new CsvReporter(fileName, attachDir);
 
         List<Scorer> scorers = ListUtils.of(scorer1, scorer2, scorer3);
 
@@ -134,7 +136,7 @@ class FullEvalFacadeWithinDataInjectTest {
 
         CustomFullEval cfe = new CustomFullEval(
                 FullEvalConfig.builder()
-                        .taskName("FullEvalFacadeWithinDataInjectTest")
+                        .taskName(taskName)
                         .dataLoader(jsonFileDataLoader)
                         .evalWorkflow(evalWorkflow)
                         .reportWorkflow(reportWorkflow)
