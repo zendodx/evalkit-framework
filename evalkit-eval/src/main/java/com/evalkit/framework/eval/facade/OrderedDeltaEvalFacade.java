@@ -7,6 +7,7 @@ import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.eval.facade.config.DeltaEvalConfig;
 import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.model.InputData;
+import com.evalkit.framework.infra.server.mq.ActiveMQEmbeddedServer.BatchResult;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.jms.JMSException;
@@ -108,7 +109,8 @@ public abstract class OrderedDeltaEvalFacade extends DeltaEvalFacade {
                             if (batch.isEmpty()) {
                                 log.info("Empty batch, start empty rounds count:{}", emptyRounds.get());
                                 emptyRounds.incrementAndGet();
-                                return false;
+                                // 空批次回滚（无消息可提交）
+                                return BatchResult.ROLLBACK;
                             }
                             emptyRounds.set(0); // 重置空轮询计数
                             // 使用OrderedBatchRunner进行有序批量处理
@@ -136,18 +138,23 @@ public abstract class OrderedDeltaEvalFacade extends DeltaEvalFacade {
                                     message -> prepareOrderKey(parseMessage(message)),
                                     prepareMessageComparator(),
                                     threadNum,
-                                    // 超时时间计算：每条消息30秒
+                                    // 超时时间计算：每条消息最大处理时间
                                     size -> size * messageProcessMaxTime
                             );
-                            // 过滤掉处理失败的数据
+                            // 计入本批所有消息（包括失败的），失败的已落幂等表或将由重投递机制重试
+                            // 只要拉到消息就推进 consumed，防止失败消息无限阻塞退出条件
+                            consumed.addAndGet(batch.size());
                             long successCount = processedData.stream().filter(Objects::nonNull).count();
-                            consumed.addAndGet(successCount);
-                            // 消费完毕
+                            long failCount = batch.size() - successCount;
+                            if (failCount > 0) {
+                                log.warn("Batch processed with {} failures, still advancing consumed counter", failCount);
+                            }
+                            // 消费完毕：提交本批并停止
                             if (consumed.get() >= remainCount) {
                                 latch.countDown();
-                                return false;
+                                return BatchResult.STOP;
                             }
-                            return true;
+                            return BatchResult.CONTINUE;
                         });
                         // 如果消费完毕，则退出循环
                     } while (consumed.get() < remainCount && emptyRounds.get() < MAX_EMPTY_ROUNDS);
@@ -155,6 +162,7 @@ public abstract class OrderedDeltaEvalFacade extends DeltaEvalFacade {
                     log.error("Eval failed, error: {}", e.getMessage(), e);
                     throw e;
                 } finally {
+                    // 兜底：若循环因 emptyRounds 超限退出，确保 latch 被释放
                     latch.countDown();
                 }
             });

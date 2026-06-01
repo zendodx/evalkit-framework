@@ -18,6 +18,7 @@ import com.evalkit.framework.eval.node.dataloader.config.DataLoaderConfig;
 import com.evalkit.framework.eval.node.dataloader.injector.DataInjector;
 import com.evalkit.framework.eval.node.scorer.strategy.SumScoreStrategy;
 import com.evalkit.framework.infra.server.mq.ActiveMQEmbeddedServer;
+import com.evalkit.framework.infra.server.mq.ActiveMQEmbeddedServer.BatchResult;
 import com.evalkit.framework.infra.server.sql.SQLiteEmbeddedServer;
 import com.evalkit.framework.workflow.TaskExecutor;
 import com.evalkit.framework.workflow.Workflow;
@@ -222,61 +223,67 @@ public class DeltaEvalFacade extends EvalFacade {
         int curOffset = offset;
         int batchSize = 100;
         long loadedCount = 0;
-        do {
-            // 分页加载数据
-            dataLoaderConfig.setOffset(curOffset);
-            if (curLimit == -1) {
-                dataLoaderConfig.setLimit(batchSize);
-            } else {
-                if (curOffset + batchSize > curLimit) {
-                    dataLoaderConfig.setLimit(curLimit - curOffset);
-                }
-            }
-            List<InputData> inputDataList = dataLoader.loadWrapper();
-            if (CollectionUtils.isEmpty(inputDataList)) break;
-            // 更新评测数据索引
-            long startIndex = loadedCount;
-            for (InputData inputData : inputDataList) {
-                inputData.setDataIndex(startIndex);
-                startIndex++;
-            }
-            loadedCount += inputDataList.size();
-            curOffset += batchSize;
-
-            // inputData集合转dataItem集合
-            List<DataItem> dataItems = inputDataList.stream().map(inputData -> {
-                DataItem dataItem = new DataItem();
-                dataItem.setDataIndex(inputData.getDataIndex());
-                dataItem.setInputData(inputData);
-                return dataItem;
-            }).collect(Collectors.toList());
-
-            // 数据加载器开启数据注入后需要将inputData中的已有数据注入到dataItem
-            boolean openInjectData = dataLoaderConfig.isOpenInjectData();
-            if (openInjectData) {
-                DataInjector.batchInject(dataItems, dataLoaderConfig.isInjectDataIndex(), dataLoaderConfig.isInjectInputData(),
-                        dataLoaderConfig.isInjectApiCompletionResult(), dataLoaderConfig.isInjectEvalResult(),
-                        dataLoaderConfig.isInjectExtra());
-            }
-            // MQ存储dataItems
-            if (CollectionUtils.isNotEmpty(dataItems)) {
-                List<String> messages = dataItems.stream()
-                        .map(JsonUtils::toJson)
-                        .collect(Collectors.toList());
-                activeMQEmbeddedServer.batchSendTextMessageToQueue(taskNameUuid, messages);
-            }
-            // 清空dataItems
-            dataItems.clear();
-            inputDataList.clear();
-        } while (curLimit == -1 || (curLimit >= 0 && loadedCount < curLimit));
-        // 数据库更新任务数量
         try {
-            evalTaskMapper.updateAllCount(taskNameUuid, activeMQEmbeddedServer.getQueueMessageCount(taskNameUuid));
+            do {
+                // 分页加载数据
+                dataLoaderConfig.setOffset(curOffset);
+                if (curLimit == -1) {
+                    dataLoaderConfig.setLimit(batchSize);
+                } else {
+                    if (curOffset + batchSize > curLimit) {
+                        dataLoaderConfig.setLimit(curLimit - curOffset);
+                    }
+                }
+                List<InputData> inputDataList = dataLoader.loadWrapper();
+                if (CollectionUtils.isEmpty(inputDataList)) break;
+                // 更新评测数据索引
+                long startIndex = loadedCount;
+                for (InputData inputData : inputDataList) {
+                    inputData.setDataIndex(startIndex);
+                    startIndex++;
+                }
+                loadedCount += inputDataList.size();
+                curOffset += batchSize;
+
+                // inputData集合转dataItem集合
+                List<DataItem> dataItems = inputDataList.stream().map(inputData -> {
+                    DataItem dataItem = new DataItem();
+                    dataItem.setDataIndex(inputData.getDataIndex());
+                    dataItem.setInputData(inputData);
+                    return dataItem;
+                }).collect(Collectors.toList());
+
+                // 数据加载器开启数据注入后需要将inputData中的已有数据注入到dataItem
+                boolean openInjectData = dataLoaderConfig.isOpenInjectData();
+                if (openInjectData) {
+                    DataInjector.batchInject(dataItems, dataLoaderConfig.isInjectDataIndex(), dataLoaderConfig.isInjectInputData(),
+                            dataLoaderConfig.isInjectApiCompletionResult(), dataLoaderConfig.isInjectEvalResult(),
+                            dataLoaderConfig.isInjectExtra());
+                }
+                // MQ存储dataItems
+                if (CollectionUtils.isNotEmpty(dataItems)) {
+                    List<String> messages = dataItems.stream()
+                            .map(JsonUtils::toJson)
+                            .collect(Collectors.toList());
+                    activeMQEmbeddedServer.batchSendTextMessageToQueue(taskNameUuid, messages);
+                }
+                // 清空dataItems
+                dataItems.clear();
+                inputDataList.clear();
+            } while (curLimit == -1 || (curLimit >= 0 && loadedCount < curLimit));
+        } finally {
+            // 恢复原始分页参数，避免 DataLoaderConfig 被污染影响下次调用（如 enableResume=false 重跑）
+            dataLoaderConfig.setOffset(offset);
+            dataLoaderConfig.setLimit(limit);
+        }
+        // 数据库更新任务数量：使用 loadedCount（精确值），避免依赖 JMX QueueSize 的异步延迟
+        try {
+            evalTaskMapper.updateAllCount(taskNameUuid, loadedCount);
             evalTaskMapper.updateStatus(taskNameUuid, EvalTaskStatus.PROCESSING);
         } catch (SQLException e) {
             log.error("Update all count error: {}", e.getMessage(), e);
         }
-        log.info("Load data to MQ success, queue size: {}", activeMQEmbeddedServer.getQueueMessageCount(taskNameUuid));
+        log.info("Load data to MQ success, loaded count: {}", loadedCount);
     }
 
     /**
@@ -291,37 +298,61 @@ public class DeltaEvalFacade extends EvalFacade {
         ThreadPoolExecutor pool = ThreadPoolManager.get(PoolName.MQ_CONSUME);
         AtomicLong consumed = new AtomicLong(0);
         CountDownLatch latch = new CountDownLatch(1);
-        long total = getRemainDataCount();
-        for (int i = 0; i < threadNum && total > 0; i++) {
-            pool.submit(() -> {
-                do {
-                    activeMQEmbeddedServer.batchReceiveInTx(taskNameUuid, batchSize, mqReceiveTimeout, (batch, session) -> {
-                        if (batch.isEmpty()) {
-                            return false;
-                        }
-                        for (Message m : batch) {
-                            // 幂等检查,已经处理过则跳过
-                            String messageId = m.getJMSMessageID();
-                            if (isProcess(messageId)) {
-                                log.info("Message already processed, messageId: {}", messageId);
-                                continue;
+        // 等待 JMX QueueSize 统计与实际入队数量一致（JMX 更新为异步，小数据量时可能延迟）
+        // 最多等待 3 秒，避免死等；若超时则仍使用当前值（兜底由 MAX_EMPTY_ROUNDS 保护）
+        long total = waitForQueueSize(taskNameUuid, 3000);
+        // total=0 说明无需处理（全部已完成或无数据），提前放行
+        if (total <= 0) {
+            log.info("No remaining data to eval, skip consuming");
+            latch.countDown();
+        } else {
+            for (int i = 0; i < threadNum; i++) {
+                pool.submit(() -> {
+                    // 连续空批次上限，兜底防止MQ异常时死循环
+                    final int MAX_EMPTY_ROUNDS = 10;
+                    int emptyRounds = 0;
+                    try {
+                        while (consumed.get() < total && emptyRounds < MAX_EMPTY_ROUNDS) {
+                            activeMQEmbeddedServer.batchReceiveInTx(taskNameUuid, batchSize, mqReceiveTimeout, (batch, session) -> {
+                                if (batch.isEmpty()) {
+                                    // 空批次：回滚（无消息可提交），由外层计数器兜底退出
+                                    return BatchResult.ROLLBACK;
+                                }
+                                long actualProcessed = 0;
+                                for (Message m : batch) {
+                                    // 幂等检查,已经处理过则跳过（不计入本次）
+                                    String messageId = m.getJMSMessageID();
+                                    if (isProcess(messageId)) {
+                                        log.info("Message already processed, messageId: {}", messageId);
+                                        continue;
+                                    }
+                                    evalAndInsert(m);
+                                    // 去重表落库
+                                    makeProcessed(messageId);
+                                    actualProcessed++;
+                                    log.info("Eval data consume and eval success, messageId: {}", messageId);
+                                }
+                                long newConsumed = consumed.addAndGet(actualProcessed);
+                                if (newConsumed >= total) {
+                                    // 消费完毕：提交本批并停止
+                                    latch.countDown();
+                                    return BatchResult.STOP;
+                                }
+                                return BatchResult.CONTINUE;
+                            });
+                            // 检查是否空批次（batchReceiveInTx 返回 false 表示 ROLLBACK/STOP）
+                            if (consumed.get() < total && activeMQEmbeddedServer.getQueueMessageCount(taskNameUuid) == 0) {
+                                emptyRounds++;
+                            } else {
+                                emptyRounds = 0;
                             }
-                            evalAndInsert(m);
-                            // 去重表落库
-                            makeProcessed(messageId);
-                            log.info("Eval data consume and eval success, messageId: {}", messageId);
                         }
-                        consumed.addAndGet(batch.size());
-                        if (consumed.get() >= total) {
-                            // 消费完毕
-                            latch.countDown();
-                            return false;
-                        }
-                        return true;
-                    });
-                    // 如果消费完毕，则退出循环
-                } while (consumed.get() < total);
-            });
+                    } finally {
+                        // 兜底：若循环因 emptyRounds 超限退出，确保 latch 被释放
+                        latch.countDown();
+                    }
+                });
+            }
         }
         // 把等待逻辑包成 CompletableFuture，主线程可以继续干别的
         return CompletableFuture.runAsync(() -> {
@@ -463,6 +494,29 @@ public class DeltaEvalFacade extends EvalFacade {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * 等待 JMX QueueSize 达到非零（或超时）
+     * ActiveMQ 的 JMX QueueSize 统计是异步更新的，数据量小时入队后可能短暂返回 0
+     *
+     * @param queueName  队列名
+     * @param timeoutMs  最长等待毫秒数
+     * @return 队列实际大小（可能为 0 若真的没有数据或超时）
+     */
+    protected long waitForQueueSize(String queueName, long timeoutMs) {
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        long size = activeMQEmbeddedServer.getQueueMessageCount(queueName);
+        while (size == 0 && System.currentTimeMillis() < deadline) {
+            try {
+                Thread.sleep(20);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+            size = activeMQEmbeddedServer.getQueueMessageCount(queueName);
+        }
+        return size;
     }
 
     /**

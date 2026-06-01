@@ -526,18 +526,30 @@ public class ActiveMQEmbeddedServer {
         return messages;
     }
 
+    /**
+     * 批处理回调的处理结果
+     * CONTINUE  - 本批提交，继续拉取下一批
+     * STOP      - 本批提交，停止拉取（消费完毕或主动终止）
+     * ROLLBACK  - 本批回滚（空批次或处理失败，消息重新入队）
+     */
+    public enum BatchResult {
+        CONTINUE, STOP, ROLLBACK
+    }
+
     @FunctionalInterface
     public interface JmsBatchCallback {
         /**
-         * true 表示处理成功，会 commit；false 或抛异常会 rollback
+         * @return CONTINUE 提交并继续；STOP 提交并停止；ROLLBACK 回滚
          */
-        boolean apply(List<Message> batch, Session session) throws Exception;
+        BatchResult apply(List<Message> batch, Session session) throws Exception;
     }
 
     /**
      * 接收消息并处理,自主事务控制
+     *
+     * @return true 表示调用方应继续拉取，false 表示停止
      */
-    public void batchReceiveInTx(String queueName, int batchSize, long timeout, JmsBatchCallback callback) {
+    public boolean batchReceiveInTx(String queueName, int batchSize, long timeout, JmsBatchCallback callback) {
         if (!isStarted()) {
             throw new IllegalStateException("[ActiveMQ] Broker already stopped");
         }
@@ -558,12 +570,15 @@ public class ActiveMQEmbeddedServer {
                 }
                 batch.add(m);
             }
-            // 交给调用方处理，成功就 commit，异常就 rollback
-            boolean ok = callback.apply(batch, session);
-            if (ok) {
-                session.commit();
-            } else {
+            // 交给调用方处理
+            BatchResult result = callback.apply(batch, session);
+            if (result == BatchResult.ROLLBACK) {
                 session.rollback();
+                return false;
+            } else {
+                // CONTINUE 或 STOP 都提交
+                session.commit();
+                return result == BatchResult.CONTINUE;
             }
         } catch (Exception e) {
             rollback(session);

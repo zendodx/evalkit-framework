@@ -96,6 +96,124 @@ class DeltaEvalConfigTest {
         assertThat(config.getTaskName()).isEqualTo("customTask");
         assertThat(config.getThreadNum()).isEqualTo(16);
         assertThat(config.getPassScore()).isEqualTo(0.9);
+        // env 设置 batchSize=10 且 10>1，所以会覆盖代码中的 batchSize(1)
         assertThat(config.getBatchSize()).isEqualTo(10);
+    }
+
+    /**
+     * batchSize=1 是合法的最小值，不应触发 checkParams 抛异常
+     * 同时验证 env 的 batchSize 判断为 >1（等于1时不覆盖），代码设定的 batchSize=1 应被保留
+     */
+    @Test
+    void batchSizeOneIsValidAndNotOverriddenByEnvWhenEnvIsOne() {
+        // env batchSize=1（条件是 >1，所以 1 不覆盖）
+        setProp("batchSize", "1");
+
+        DeltaEvalConfig config = DeltaEvalConfig.builder()
+                .taskName("batchOne")
+                .batchSize(1)
+                .build();
+
+        // batchSize=1 应被保留（env 的 1 不满足 >1 的覆盖条件）
+        assertThat(config.getBatchSize()).isEqualTo(1);
+    }
+
+    /**
+     * batchSize=0 应触发 checkParams 校验失败
+     */
+    @Test
+    void batchSizeZeroShouldThrow() {
+        org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> DeltaEvalConfig.builder()
+                        .taskName("batchZero")
+                        .batchSize(0)
+                        .build(),
+                "batchSize=0 应抛出 IllegalArgumentException"
+        );
+    }
+
+    /**
+     * batchSize 负值应触发 checkParams 校验失败
+     */
+    @Test
+    void batchSizeNegativeShouldThrow() {
+        org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> DeltaEvalConfig.builder()
+                        .taskName("batchNeg")
+                        .batchSize(-5)
+                        .build(),
+                "batchSize<0 应抛出 IllegalArgumentException"
+        );
+    }
+
+    /**
+     * messageProcessMaxTime 默认值验证（OrderedDeltaEvalFacade 专用字段）
+     */
+    @Test
+    void messageProcessMaxTimeDefault() {
+        DeltaEvalConfig config = DeltaEvalConfig.builder().build();
+        assertThat(config.getMessageProcessMaxTime()).isEqualTo(60L);
+    }
+
+    /**
+     * messageProcessMaxTime=0 应触发校验失败
+     */
+    @Test
+    void messageProcessMaxTimeZeroShouldThrow() {
+        org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> DeltaEvalConfig.builder()
+                        .taskName("mptZero")
+                        .messageProcessMaxTime(0)
+                        .build(),
+                "messageProcessMaxTime=0 应抛出 IllegalArgumentException"
+        );
+    }
+
+    /**
+     * enableResume 默认为 true，可被 env 覆盖为 false
+     */
+    @Test
+    void enableResumeDefaultTrueAndCanBeOverriddenByEnv() {
+        // 默认值
+        DeltaEvalConfig defaultConfig = DeltaEvalConfig.builder().build();
+        assertThat(defaultConfig.isEnableResume()).isTrue();
+
+        // env 覆盖
+        setProp("enableResume", "false");
+        DeltaEvalConfig envConfig = DeltaEvalConfig.builder().build();
+        assertThat(envConfig.isEnableResume()).isFalse();
+    }
+
+    /**
+     * reportInterval=0 应触发校验失败
+     */
+    @Test
+    void reportIntervalZeroShouldThrow() {
+        org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> DeltaEvalConfig.builder()
+                        .taskName("riZero")
+                        .reportInterval(0)
+                        .build(),
+                "reportInterval=0 应抛出 IllegalArgumentException"
+        );
+    }
+
+    /**
+     * mqReceiveTimeout=0 应触发校验失败
+     */
+    @Test
+    void mqReceiveTimeoutZeroShouldThrow() {
+        org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> DeltaEvalConfig.builder()
+                        .taskName("mqZero")
+                        .mqReceiveTimeout(0)
+                        .build(),
+                "mqReceiveTimeout=0 应抛出 IllegalArgumentException"
+        );
     }
 }
