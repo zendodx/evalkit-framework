@@ -352,12 +352,14 @@ public abstract class RubricBasedScorer extends Scorer {
         sb.append("请严格按照以下 JSON 格式输出，不要输出任何其他内容：\n");
         sb.append("```json\n");
         sb.append("{\n");
-        sb.append("  \"reasoning\": \"<逐步分析待评估内容与该维度定义的匹配程度，给出具体依据>\",\n");
+        sb.append("  \"reasoning\": \"<逐步分析待评估内容与该维度定义的匹配程度，给出具体依据，不超过500字>\",\n");
         sb.append("  \"score\": <数值，根据推理过程得出的最终分数>,\n");
-        sb.append("  \"reason\": \"<一句话总结打分结论>\"\n");
+        sb.append("  \"reason\": \"<一句话总结打分结论，不超过100字>\"\n");
         sb.append("}\n");
         sb.append("```\n");
         sb.append("重要: reasoning 字段必须先于 score 字段出现，先分析后打分，不得倒置顺序。\n");
+        sb.append("重要: JSON 字符串字段中如需使用双引号，必须用转义形式 \\\" 表示，不得使用未转义的 \"。\n");
+        sb.append("重要: reasoning 字段不超过500字，reason 字段不超过100字，避免输出过长。\n");
         sb.append("输出完成后请自检，确保 JSON 严格可解析。\n\n");
 
         // 用户待评估数据
