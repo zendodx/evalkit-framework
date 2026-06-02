@@ -1,5 +1,13 @@
 # ChangeLog
 
+## [1.3.1] - 2026-06-02
+
+### Added
+
+- Scorer支持条件执行配置condition,增加评估器路由,根据条件执行不同的Scorer
+
+### Fixed
+
 ## [1.3.0] - 2026-06-02
 
 ### Added
