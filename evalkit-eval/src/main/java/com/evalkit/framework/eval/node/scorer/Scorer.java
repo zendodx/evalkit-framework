@@ -139,6 +139,43 @@ public abstract class Scorer extends WorkflowNode {
     }
 
     /**
+     * 判断当前数据项是否需要执行本 Scorer
+     * <p>当 {@link ScorerConfig#getCondition()} 为 {@code null} 时始终返回 {@code true}（不过滤，向前兼容）；
+     * 否则将条件函数应用于 {@code dataItem}，返回函数结果。</p>
+     *
+     * @param dataItem 待判断的数据项
+     * @return {@code true} 表示需要评估，{@code false} 表示跳过
+     */
+    protected boolean shouldEval(DataItem dataItem) {
+        java.util.function.Function<DataItem, Boolean> condition = config.getCondition();
+        return condition == null || Boolean.TRUE.equals(condition.apply(dataItem));
+    }
+
+    /**
+     * 构建跳过结果（条件不满足时返回）。
+     * <p>跳过结果的 {@code totalScore = 0}，不会影响汇总评分；
+     * {@code success = true, pass = true}，不会拉低整体通过率。</p>
+     *
+     * @param item 当前数据项
+     * @return 跳过结果
+     */
+    protected ScorerResult buildSkipResult(DataItem item) {
+        return ScorerResult.builder()
+                .dataIndex(item.getDataIndex())
+                .metric(config.getMetricName())
+                .score(config.getSkipScore())
+                .totalScore(0)
+                .reason("skipped by condition")
+                .success(true)
+                .pass(true)
+                .scoreRate(0)
+                .threshold(config.getThreshold())
+                .star(false)
+                .scorerType(this.scorerType)
+                .build();
+    }
+
+    /**
      * 构建评测失败的结果
      *
      * @param item 当前数据项
@@ -202,7 +239,9 @@ public abstract class Scorer extends WorkflowNode {
         if (CollectionUtils.isEmpty(dataItems)) {
             throw new EvalException("Data items is empty");
         }
-        List<ScorerResult> scorerResults = BatchRunner.runBatch(dataItems, this::evalWrapper, PoolName.SCORER, config.getThreadNum(), size -> size * SINGLE_TASK_TIMEOUT);
+        List<ScorerResult> scorerResults = BatchRunner.runBatch(dataItems,
+                item -> shouldEval(item) ? this.evalWrapper(item) : this.buildSkipResult(item),
+                PoolName.SCORER, config.getThreadNum(), size -> size * SINGLE_TASK_TIMEOUT);
         if (CollectionUtils.isEmpty(scorerResults)) {
             throw new EvalException("Scorer result is empty");
         }
