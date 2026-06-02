@@ -379,6 +379,219 @@ DifyWorkflowScorer difyScorer = new DifyWorkflowScorer(
 
 ---
 
+## RubricBasedScorer
+
+**量规（Rubric）评估器**，通过预先定义的多个评估维度（Criteria）和对应的打分规则，对模型输出进行系统性、多维度的质量评估。每个维度独立发起一次 LLM 调用，采用强制推理（CoT）模式确保打分准确，最终按配置的合并策略汇总为最终得分。
+
+> **适用场景**：需要从多个角度综合评估模型输出质量的场景，如同时评估"内容安全 + 答案准确性 + 表达流畅度"。
+
+### 体系结构总览
+
+```
+RubricBasedScorer（抽象类）
+│
+├── 维度配置（RubricCriteria）
+│   ├── 打分类型   STEPPED（阶梯分）/ BINARY（二元分 0/1）
+│   ├── 分值区间   minScore ~ maxScore
+│   ├── 打分指引   scoringGuide（注入 Prompt）
+│   ├── Few-shot   anchors（锚点示例，提升一致性）
+│   ├── 权重       weight（用于加权合并）
+│   ├── 必过标记   star（一票否决）
+│   ├── 条件执行   condition（动态决定是否执行此维度）
+│   └── 跳过默认分 skipScore（condition=false 时使用）
+│
+└── 合并策略（RubricMergeStrategy）
+    ├── WEIGHTED_AVERAGE   加权平均（默认）
+    ├── SIMPLE_AVERAGE     简单平均
+    ├── LOGICAL_AND        逻辑与（所有维度均需通过）
+    ├── STAR_GATE          必过门控（star 维度未过则归零）
+    └── COMPLETION_RATE    通过率（通过维度数 / 总维度数）
+```
+
+### 配置项（RubricBasedScorerConfig）
+
+包含 `ScorerConfig` 所有配置，额外配置项：
+
+| 配置项 | 说明 | 必填 | 默认值 |
+|--------|------|------|--------|
+| `llmService` | LLM 服务实例 | 是 | 无 |
+| `criteria` | 评估维度列表 | 是 | 无 |
+| `mergeStrategy` | 各维度分数合并策略 | 否 | `WEIGHTED_AVERAGE` |
+| `normalizeScore` | 是否将各维度分归一化到 [0,1] 后再合并 | 否 | `true` |
+| `criteriaThreadNum` | 维度并发线程数（各维度 LLM 调用并行） | 否 | 3 |
+| `enableRetry` | LLM 解析失败时是否重试 | 否 | `true` |
+| `retryTimes` | 最大重试次数 | 否 | 3 |
+| `sampleTimes` | 多次采样取均值（0 = 单次采样） | 否 | 0 |
+
+### 维度配置（RubricCriteria）
+
+| 字段 | 说明 | 默认值 |
+|------|------|--------|
+| `name` | 维度名称（英文，作为 JSON Key） | 必填 |
+| `definition` | 维度定义，描述评估目标 | 必填 |
+| `scoreType` | `STEPPED`（阶梯分）/ `BINARY`（0 或 1） | `BINARY` |
+| `maxScore` | 最高分 | 1.0 |
+| `minScore` | 最低分（通常为 0，也可配置为 1 等） | 0.0 |
+| `passScore` | 通过分数线（归一化后 < passScore/maxScore 视为未达标） | 1.0 |
+| `scoringGuide` | 打分指引（注入 Prompt，建议详细描述每个分值的含义） | 无 |
+| `anchors` | Few-shot 锚点示例（强烈建议配置，提升打分一致性） | 无 |
+| `weight` | 权重（用于 `WEIGHTED_AVERAGE` 策略） | 1.0 |
+| `star` | 是否为必过维度（`STAR_GATE` 策略下归一化分为 0 则整体归零） | `false` |
+| `condition` | 条件执行函数 `Function<DataItem, Boolean>`，返回 `false` 时跳过此维度 | `null`（始终执行） |
+| `skipScore` | 条件不满足时的默认原始分数 | 0.0 |
+
+### 合并策略详解
+
+| 策略 | 公式 | 说明 |
+|------|------|------|
+| `WEIGHTED_AVERAGE` | `Σ(score_i × weight_i) / Σ(weight_i)` | 加权平均，默认策略 |
+| `SIMPLE_AVERAGE` | `Σ(score_i) / n` | 简单平均，忽略权重 |
+| `LOGICAL_AND` | 所有维度归一化分 ≥ passRate 则得 1.0，否则 0.0 | 全部通过才算通过 |
+| `STAR_GATE` | 有任意 `star=true` 的维度未达标则整体为 0.0，否则取加权平均 | 设置一票否决门控 |
+| `COMPLETION_RATE` | 达标维度数 / 总维度数 | 通过率，适合清单式检查 |
+
+### 示例：基础用法
+
+最小实现：只需继承并实现 `prepareUserPrompt()`，框架负责所有 LLM 调用、打分解析和结果合并。
+
+```java
+RubricBasedScorer scorer = new RubricBasedScorer(
+        RubricBasedScorerConfig.builder()
+                .metricName("综合质量评估")
+                .llmService(myLLMService)
+                .criteria(Arrays.asList(
+                        // 安全性维度：二元分，必过
+                        RubricCriteria.builder()
+                                .name("Safety")
+                                .definition("回复是否包含有害、违规、歧视性内容")
+                                .scoreType(RubricScoreType.BINARY)
+                                .maxScore(1).minScore(0).passScore(1)
+                                .scoringGuide("1=无任何有害内容; 0=包含有害内容")
+                                .star(true)   // 必过维度：安全不过则整体为 0
+                                .build(),
+                        // 准确性维度：5 级阶梯分，权重 2
+                        RubricCriteria.builder()
+                                .name("Accuracy")
+                                .definition("回复的事实准确程度，有无错误或捏造")
+                                .scoreType(RubricScoreType.STEPPED)
+                                .maxScore(5).minScore(0).passScore(3)
+                                .scoringGuide("5=完全准确; 4=基本准确有小偏差; 3=整体可信有遗漏; 2=有明显错误; 1=大量虚构")
+                                .weight(2.0)
+                                .build(),
+                        // 流畅性维度：5 级阶梯分，权重 1
+                        RubricCriteria.builder()
+                                .name("Fluency")
+                                .definition("回复的语言流畅度和可读性")
+                                .scoreType(RubricScoreType.STEPPED)
+                                .maxScore(5).minScore(0).passScore(3)
+                                .scoringGuide("5=表达精准流畅; 4=基本流畅有小瑕疵; 3=可读但有语法问题; 2=较难理解; 1=不可读")
+                                .weight(1.0)
+                                .build()
+                ))
+                .mergeStrategy(RubricMergeStrategy.STAR_GATE)  // Safety 不过则整体为 0
+                .threshold(0.6)
+                .build()
+) {
+    @Override
+    public String prepareUserPrompt(InputData inputData, ApiCompletionResult apiCompletionResult) {
+        return String.format("用户问题：%s\n模型回复：%s",
+                inputData.get("query"),
+                apiCompletionResult.get("response"));
+    }
+};
+```
+
+### 示例：Few-shot 锚点（提升打分一致性）
+
+配置 `anchors` 可以为 LLM 提供具体的示例参照，显著提升不同样本之间的打分一致性：
+
+```java
+RubricCriteria accuracyCriteria = RubricCriteria.builder()
+        .name("Accuracy")
+        .definition("回复的事实准确程度")
+        .scoreType(RubricScoreType.STEPPED)
+        .maxScore(5).minScore(0).passScore(3)
+        .anchors(Arrays.asList(
+                RubricCriteria.ScoringAnchor.builder()
+                        .score(5)
+                        .description("回复中所有事实陈述均正确，与权威来源完全吻合，无任何捏造")
+                        .build(),
+                RubricCriteria.ScoringAnchor.builder()
+                        .score(3)
+                        .description("核心事实基本正确，但有 1~2 处细节不准确或表述模糊")
+                        .build(),
+                RubricCriteria.ScoringAnchor.builder()
+                        .score(1)
+                        .description("多处关键事实错误或大量内容无中生有，误导性强")
+                        .build()
+        ))
+        .build();
+```
+
+### 示例：条件执行（condition / skipScore）
+
+当某些样本不满足某维度的评估前提时（如没有检索上下文，就无需评估上下文相关性），可通过 `condition` 动态跳过该维度，并用 `skipScore` 填充默认分：
+
+```java
+RubricCriteria contextRelevance = RubricCriteria.builder()
+        .name("ContextRelevance")
+        .definition("回复是否充分利用了检索到的上下文信息")
+        .scoreType(RubricScoreType.STEPPED)
+        .maxScore(5).minScore(0).passScore(3)
+        // 只有样本携带 context 字段时才评估此维度
+        .condition(dataItem -> dataItem.getInputData().get("context") != null)
+        // 无上下文时给中性分（passScore），不拉低整体分数
+        .skipScore(3.0)
+        .build();
+```
+
+**`skipScore` 策略选择：**
+
+| 赋值 | 含义 | 适用场景 |
+|------|------|----------|
+| `0.0`（默认） | 保守策略，视为未通过 | 跳过等同于失败时 |
+| `passScore` | 中性策略，视为刚好通过 | 不适用时不影响整体 |
+| `maxScore` | 豁免策略，视为满分通过 | 该维度对此类样本不适用时 |
+
+### 示例：关闭归一化（normalizeScore=false）
+
+默认情况下框架会将各维度分数归一化到 `[0, 1]` 再合并，`totalScore` 始终为 1.0。若希望保留各维度的原始量程（如 1~5 分），可关闭归一化：
+
+```java
+RubricBasedScorerConfig config = RubricBasedScorerConfig.builder()
+        .metricName("原始分模式评估")
+        .llmService(myLLMService)
+        .criteria(Arrays.asList(
+                RubricCriteria.builder().name("Accuracy").definition("准确性")
+                        .scoreType(RubricScoreType.STEPPED).maxScore(5).minScore(0).passScore(3).weight(2.0).build(),
+                RubricCriteria.builder().name("Fluency").definition("流畅性")
+                        .scoreType(RubricScoreType.STEPPED).maxScore(10).minScore(0).passScore(6).weight(1.0).build()
+        ))
+        .mergeStrategy(RubricMergeStrategy.WEIGHTED_AVERAGE)
+        .normalizeScore(false)   // 关闭归一化，保留原始分量程
+        .build();
+// Accuracy=4, Fluency=7, weight=2:1
+// score      = (4*2 + 7*1) / (2+1) = 5.0
+// totalScore = (5*2 + 10*1) / (2+1) = 6.67
+// scoreRate  = 5.0 / 6.67 ≈ 0.75
+```
+
+> **注意**：即使关闭归一化，`STAR_GATE` / `LOGICAL_AND` / `COMPLETION_RATE` 策略的 **passRate 门控判断仍然基于归一化分数**，以保证语义一致性。
+
+### ScorerResult 额外 extra 字段
+
+`RubricBasedScorer` 的评估结果会在 `extra` 中携带各维度的详细信息，可在报告层或后续处理中使用：
+
+| extra key | 类型 | 说明 |
+|-----------|------|------|
+| `criteria_raw_scores` | `Map<String, Double>` | 各维度原始分数 |
+| `criteria_norm_scores` | `Map<String, Double>` | 各维度归一化分数 |
+| `criteria_reasons` | `Map<String, String>` | 各维度打分理由 |
+| `criteria_reasonings` | `Map<String, String>` | 各维度 CoT 推理过程 |
+| `merge_strategy` | `String` | 本次使用的合并策略名 |
+
+---
+
 ## MultiCheckerBasedScorer
 
 将多个 **Checker（检查器）** 组合起来，每个 Checker 负责一个检查维度，最终分数由各 Checker 的结果汇总而来。详见 [检查器文档](./checker.md)。
