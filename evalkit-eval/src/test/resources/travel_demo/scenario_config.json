@@ -18,28 +18,36 @@
         "query": "打算带孩子去成都玩几天，有什么必打卡景点推荐吗？",
         "expectedVars": [
           "attractionName"
-        ]
+        ],
+        "scenario": "景点",
+        "intent": "景点推荐"
       },
       {
         "turn": 2,
         "query": "从上海出发，有什么推荐的交通方式吗？",
         "expectedVars": [
           "transportNo"
-        ]
+        ],
+        "scenario": "交通",
+        "intent": "交通方案"
       },
       {
         "turn": 3,
         "query": "到了那边晚上住哪里比较方便？",
         "expectedVars": [
           "hotelName"
-        ]
+        ],
+        "scenario": "酒店",
+        "intent": "酒店推荐"
       },
       {
         "turn": 4,
         "query": "帮我把刚才看好的车票下单吧。",
         "expectedVars": [
           "transportNo"
-        ]
+        ],
+        "scenario": "交通",
+        "intent": "交通预订"
       }
     ]
   }

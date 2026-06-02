@@ -40,4 +40,10 @@ public class KGBasedQueryGeneratorConfig extends DataGeneratorConfig {
     // query字段名称
     @Builder.Default
     protected String queryFieldName = "query";
+    // 场景字段名称
+    @Builder.Default
+    protected String scenarioFieldName = "scenario";
+    // 意图字段名称
+    @Builder.Default
+    protected String intentFieldName = "intent";
 }
