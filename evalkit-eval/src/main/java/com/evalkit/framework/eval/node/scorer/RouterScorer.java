@@ -22,6 +22,30 @@ import java.util.stream.Collectors;
 @Slf4j
 public class RouterScorer extends Scorer {
 
+    // ==================== extra 字段 Key ====================
+
+    /**
+     * 命中的路由名称（first-match / defaultScorer 时为单个字符串，match-all 时为逗号分隔列表）
+     */
+    public static final String EXTRA_KEY_MATCHED_ROUTE = "router_matched_route";
+
+    /**
+     * 实际执行的 Scorer 类名（first-match / defaultScorer 时为单个类名，match-all 时为逗号分隔列表）
+     */
+    public static final String EXTRA_KEY_MATCHED_SCORER = "router_matched_scorer";
+
+    /**
+     * 路由模式：first-match / match-all / default / skip
+     */
+    public static final String EXTRA_KEY_ROUTE_MODE = "router_route_mode";
+
+    // ==================== 路由模式常量 ====================
+
+    private static final String MODE_FIRST_MATCH = "first-match";
+    private static final String MODE_MATCH_ALL = "match-all";
+    private static final String MODE_DEFAULT = "default";
+    private static final String MODE_SKIP = "skip";
+
     protected final RouterScorerConfig routerConfig;
 
     public RouterScorer(RouterScorerConfig config) {
@@ -50,22 +74,34 @@ public class RouterScorer extends Scorer {
 
         if (routerConfig.isMatchAll()) {
             // match-all 模式：收集所有命中路由的结果
+            List<ScorerRoute> hitRoutes = new ArrayList<>();
             List<ScorerResult> matched = new ArrayList<>();
             for (ScorerRoute route : routes) {
                 if (route.matches(dataItem)) {
                     log.debug("RouterScorer match-all hit route [{}] for dataIndex={}", route.getRouteName(), dataItem.getDataIndex());
+                    hitRoutes.add(route);
                     matched.add(delegateEval(route.getScorer(), dataItem));
                 }
             }
             if (!matched.isEmpty()) {
-                return mergeResults(matched, dataItem);
+                ScorerResult result = mergeResults(matched, dataItem);
+                result.addExtraItem(EXTRA_KEY_ROUTE_MODE, MODE_MATCH_ALL);
+                result.addExtraItem(EXTRA_KEY_MATCHED_ROUTE,
+                        hitRoutes.stream().map(ScorerRoute::getRouteName).collect(Collectors.joining(",")));
+                result.addExtraItem(EXTRA_KEY_MATCHED_SCORER,
+                        hitRoutes.stream().map(r -> r.getScorer().getClass().getSimpleName()).collect(Collectors.joining(",")));
+                return result;
             }
         } else {
             // first-match 模式：找到第一个命中的路由
             for (ScorerRoute route : routes) {
                 if (route.matches(dataItem)) {
                     log.debug("RouterScorer first-match hit route [{}] for dataIndex={}", route.getRouteName(), dataItem.getDataIndex());
-                    return delegateEval(route.getScorer(), dataItem);
+                    ScorerResult result = delegateEval(route.getScorer(), dataItem);
+                    result.addExtraItem(EXTRA_KEY_ROUTE_MODE, MODE_FIRST_MATCH);
+                    result.addExtraItem(EXTRA_KEY_MATCHED_ROUTE, route.getRouteName());
+                    result.addExtraItem(EXTRA_KEY_MATCHED_SCORER, route.getScorer().getClass().getSimpleName());
+                    return result;
                 }
             }
         }
@@ -74,12 +110,18 @@ public class RouterScorer extends Scorer {
         Scorer defaultScorer = routerConfig.getDefaultScorer();
         if (defaultScorer != null) {
             log.debug("RouterScorer no route matched, using defaultScorer for dataIndex={}", dataItem.getDataIndex());
-            return delegateEval(defaultScorer, dataItem);
+            ScorerResult result = delegateEval(defaultScorer, dataItem);
+            result.addExtraItem(EXTRA_KEY_ROUTE_MODE, MODE_DEFAULT);
+            result.addExtraItem(EXTRA_KEY_MATCHED_ROUTE, "defaultScorer");
+            result.addExtraItem(EXTRA_KEY_MATCHED_SCORER, defaultScorer.getClass().getSimpleName());
+            return result;
         }
 
         // 无命中且无兜底，返回跳过结果
         log.debug("RouterScorer no route matched and no defaultScorer, skipping dataIndex={}", dataItem.getDataIndex());
-        return buildSkipResult(dataItem);
+        ScorerResult skipResult = buildSkipResult(dataItem);
+        skipResult.addExtraItem(EXTRA_KEY_ROUTE_MODE, MODE_SKIP);
+        return skipResult;
     }
 
     /**
