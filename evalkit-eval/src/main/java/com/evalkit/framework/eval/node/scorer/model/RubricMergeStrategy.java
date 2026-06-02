@@ -21,7 +21,7 @@ public enum RubricMergeStrategy {
     SIMPLE_AVERAGE,
 
     /**
-     * 逻辑合取（AND）: 任意维度归一化得分 < passRate 则取所有归一化分的最小值，否则取加权均值
+     * 逻辑合取（AND）: 任意维度归一化得分 小于 passRate 则取所有归一化分的最小值，否则取加权均值
      * 适用场景：要求所有维度都达标，任一短板直接拉低整体分。
      */
     LOGICAL_AND,

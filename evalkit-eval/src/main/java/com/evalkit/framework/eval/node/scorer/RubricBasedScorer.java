@@ -24,28 +24,28 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 量规（Rubric）效果评估器
+ * 量规（Rubric）效果评估器。
  * <p>
  * 量规是一种结构化的评估工具，通过预先定义的多个评估维度（criteria）和对应的评分规则，
  * 对模型输出进行系统性、可量化的质量评估。
  * <p>
- * 核心设计决策：
- * <pre>
- * 1. 独立调用：每个维度独立发起一次 LLM 调用，避免多维度共享 prompt 时的注意力稀释和格式错误放大。
- * 2. CoT 打分：prompt 强制要求"先推理后打分"（Chain-of-Thought），防止 LLM 先锚定分数再补理由。
- * 3. 归一化合并：所有维度得分在聚合前先归一化到 [0,1]，避免不同量程维度之间的量纲错乱。
- * 4. Few-shot 锚点：支持在每个维度配置分值示例，校准中间分值漂移（可选）。
- * 5. 采样平均：支持对同一维度多次采样取均值，提升打分稳定性（可选，默认 1 次）。
- * </pre>
+ * 核心设计要点：
+ * <ul>
+ *   <li>每个维度独立发起一次 LLM 调用，避免多维度共享 Prompt 时的注意力稀释和格式错误放大。</li>
+ *   <li>Prompt 强制要求先推理后打分（Chain-of-Thought），防止 LLM 先锚定分数再补理由。</li>
+ *   <li>各维度得分在聚合前先归一化到 [0, 1]，避免不同量程维度之间的量纲错乱。</li>
+ *   <li>支持在每个维度配置 Few-shot 分值示例，校准中间分值漂移（可选）。</li>
+ *   <li>支持对同一维度多次采样取均值，提升打分稳定性（可选，默认 1 次）。</li>
+ * </ul>
  * <p>
- * 使用方式（子类只需实现 prepareUserPrompt）：
+ * 使用方式（子类只需实现 {@link #prepareUserPrompt}）：
  * <pre>
  * public class MyScorer extends RubricBasedScorer {
  *     public MyScorer() {
  *         super(RubricBasedScorerConfig.builder()
  *             .metricName("内容质量")
  *             .llmService(myLLMService)
- *             .criteria(List.of(
+ *             .criteria(Arrays.asList(
  *                 RubricCriteria.builder()
  *                     .name("Faithfulness")
  *                     .definition("输出是否忠实于源材料")
@@ -74,26 +74,21 @@ public abstract class RubricBasedScorer extends Scorer {
 
     protected final RubricBasedScorerConfig config;
 
-    // ==================== extra 字段约定 Key ====================
-    /**
-     * 各维度原始分数，Map<criteriaName, rawScore>
-     */
+    // ==================== extra 字段 Key ====================
+
+    /** 各维度原始分数，{@code Map<criteriaName, rawScore>} */
     public static final String EXTRA_KEY_CRITERIA_RAW_SCORES = "rubric_criteria_raw_scores";
-    /**
-     * 各维度归一化分数，Map<criteriaName, normalizedScore>
-     */
+
+    /** 各维度归一化分数，{@code Map<criteriaName, normalizedScore>} */
     public static final String EXTRA_KEY_CRITERIA_NORM_SCORES = "rubric_criteria_norm_scores";
-    /**
-     * 各维度打分理由，Map<criteriaName, reason>
-     */
+
+    /** 各维度打分理由，{@code Map<criteriaName, reason>} */
     public static final String EXTRA_KEY_CRITERIA_REASONS = "rubric_criteria_reasons";
-    /**
-     * 各维度推理过程，Map<criteriaName, reasoning>
-     */
+
+    /** 各维度推理过程，{@code Map<criteriaName, reasoning>} */
     public static final String EXTRA_KEY_CRITERIA_REASONINGS = "rubric_criteria_reasonings";
-    /**
-     * 最终合并策略名称
-     */
+
+    /** 最终合并策略名称 */
     public static final String EXTRA_KEY_MERGE_STRATEGY = "rubric_merge_strategy";
 
     public RubricBasedScorer(RubricBasedScorerConfig config) {
@@ -113,7 +108,7 @@ public abstract class RubricBasedScorer extends Scorer {
         if (config.getSamplingTimes() < 1) {
             throw new IllegalArgumentException("[RubricBasedScorer] samplingTimes must >= 1");
         }
-        // fix#6: 补全各维度参数合法性校验，以及维度名称重复校验
+        // 校验各维度参数合法性及名称唯一性
         Set<String> nameSet = new HashSet<>();
         for (RubricCriteria c : config.getCriteria()) {
             if (StringUtils.isBlank(c.getName())) {
@@ -140,8 +135,13 @@ public abstract class RubricBasedScorer extends Scorer {
     // ==================== 子类扩展点 ====================
 
     /**
-     * 准备用户侧待评估内容（子类必须实现）
-     * 通常包含：问题、模型回答、参考上下文等
+     * 准备用户侧待评估内容（子类必须实现）。
+     * <p>
+     * 通常包含问题、模型回答、参考上下文等，直接拼接注入各维度 Prompt。
+     *
+     * @param inputData           当前样本的输入数据
+     * @param apiCompletionResult 当前样本的接口返回结果
+     * @return 用于评估的用户侧文本
      */
     public abstract String prepareUserPrompt(InputData inputData, ApiCompletionResult apiCompletionResult);
 
@@ -179,8 +179,8 @@ public abstract class RubricBasedScorer extends Scorer {
             }
         }
 
-        // 对需要执行的维度发起并发 LLM 调用
-        // 注意：必须使用 SCORER_CRITERIA 池而非 SCORER 池，避免线程池嵌套死锁
+        // 对需要执行的维度发起并发 LLM 调用。
+        // 使用独立的 SCORER_CRITERIA 线程池，避免与外层 SCORER 池形成嵌套死锁。
         if (!activeCriteria.isEmpty()) {
             int criteriaThreadNum = Math.min(activeCriteria.size(), config.getCriteriaThreadNum());
             List<CriteriaEvalResult> evalResults = BatchRunner.runBatch(
@@ -206,9 +206,9 @@ public abstract class RubricBasedScorer extends Scorer {
             }
         }
 
-        // 合并各维度得分
-        // normalizeScore=true（默认）：用归一化分数合并，totalScore 固定为 1.0
-        // normalizeScore=false：用原始分数合并，totalScore 动态计算为各维度加权 maxScore
+        // 合并各维度得分。
+        // normalizeScore=true（默认）：使用归一化分数合并，totalScore 固定为 1.0。
+        // normalizeScore=false：使用原始分数合并，totalScore 动态计算为各维度加权 maxScore。
         boolean normalize = config.isNormalizeScore();
         Map<String, Double> mergeScoreMap = normalize ? normalizedScores : rawScores;
         double finalScore = mergeScores(criteriaList, mergeScoreMap);
@@ -217,7 +217,7 @@ public abstract class RubricBasedScorer extends Scorer {
         // 构造汇总 reason
         String reason = buildReason(criteriaList, rawScores, normalizedScores, reasons);
 
-        // extra 透传各维度详情（设计决策⑦：报告层可感知）
+        // 将各维度详情透传到 extra，供报告层使用
         ScorerResult scorerResult = new ScorerResult();
         scorerResult.setMetric(config.getMetricName());
         scorerResult.setScore(finalScore);
@@ -234,7 +234,11 @@ public abstract class RubricBasedScorer extends Scorer {
     // ==================== 单维度评估 ====================
 
     /**
-     * 对单个维度发起 LLM 评估，支持多次采样取均值（设计决策⑤）
+     * 对单个维度发起 LLM 评估，支持多次采样取均值以提升打分稳定性。
+     *
+     * @param criteria   评估维度
+     * @param userPrompt 用户侧待评估文本
+     * @return 该维度的评估结果
      */
     private CriteriaEvalResult evalSingleCriteria(RubricCriteria criteria, String userPrompt) {
         int samplingTimes = config.getSamplingTimes();
@@ -246,7 +250,7 @@ public abstract class RubricBasedScorer extends Scorer {
             } catch (Exception e) {
                 log.warn("[RubricBasedScorer] LLM call failed for criteria={}, sample={}/{}, error={}",
                         criteria.getName(), i + 1, samplingTimes, e.getMessage());
-                // 单次采样失败不终止，跳过该次（如果全部失败则在后面兜底）
+                // 单次采样失败不终止，跳过该次；若全部失败则在后面统一抛出
             }
         }
 
@@ -255,11 +259,9 @@ public abstract class RubricBasedScorer extends Scorer {
                     "[RubricBasedScorer] All %d sampling attempts failed for criteria: %s", samplingTimes, criteria.getName()));
         }
 
-        // 多次采样取均值
+        // 多次采样取均值，reason/reasoning 保留与均值最接近的那次采样
         double avgRaw = samples.stream().mapToDouble(s -> s.rawScore).average().orElse(0.0);
         double normalizedScore = criteria.normalize(avgRaw);
-
-        // fix#3: reason/reasoning 保留与均值最接近的那次采样，而非盲目取最后一次
         CriteriaEvalResult representative = samples.stream()
                 .min(Comparator.comparingDouble(s -> Math.abs(s.rawScore - avgRaw)))
                 .orElse(samples.get(samples.size() - 1));
@@ -267,7 +269,12 @@ public abstract class RubricBasedScorer extends Scorer {
     }
 
     /**
-     * 单次 LLM 调用：构建 CoT Prompt → 调用 LLM → 解析结果
+     * 单次 LLM 调用：构建 CoT Prompt，调用 LLM，解析并返回结果。
+     *
+     * @param criteria   评估维度
+     * @param userPrompt 用户侧待评估文本
+     * @return 解析后的维度评估结果
+     * @throws EvalException LLM 调用或解析全部失败时抛出
      */
     private CriteriaEvalResult callLLMForCriteria(RubricCriteria criteria, String userPrompt) {
         String prompt = buildCriteriaPrompt(criteria, userPrompt);
@@ -297,11 +304,16 @@ public abstract class RubricBasedScorer extends Scorer {
                 criteria.getName(), lastEx != null ? lastEx.getMessage() : "unknown"));
     }
 
-    // ==================== Prompt 构建（设计决策①②④）====================
+    // ==================== Prompt 构建 ====================
 
     /**
-     * 为单个维度构建 CoT Prompt
-     * 格式：系统角色 + 维度规范 + Few-shot 锚点 + 用户数据 + 输出格式约束
+     * 为单个维度构建 CoT Prompt。
+     * <p>
+     * 格式：系统角色 + 维度规范 + Few-shot 锚点（可选）+ 输出格式约束 + 用户待评估数据。
+     *
+     * @param criteria   评估维度
+     * @param userPrompt 用户侧待评估文本
+     * @return 完整的评估 Prompt
      */
     private String buildCriteriaPrompt(RubricCriteria criteria, String userPrompt) {
         StringBuilder sb = new StringBuilder();
@@ -327,7 +339,7 @@ public abstract class RubricBasedScorer extends Scorer {
             sb.append("打分标准: ").append(criteria.getScoringGuide()).append("\n");
         }
 
-        // Few-shot 锚点（设计决策④）
+        // Few-shot 分值锚点示例
         if (CollectionUtils.isNotEmpty(criteria.getAnchors())) {
             sb.append("\n【分值锚点示例（帮助你校准分值）】\n");
             for (RubricCriteria.ScoringAnchor anchor : criteria.getAnchors()) {
@@ -335,7 +347,7 @@ public abstract class RubricBasedScorer extends Scorer {
             }
         }
 
-        // CoT 输出格式约束（设计决策②：先推理后打分）
+        // CoT 输出格式约束：要求先填写 reasoning 再给出 score，防止先锚定分数再补理由
         sb.append("\n【输出要求】\n");
         sb.append("请严格按照以下 JSON 格式输出，不要输出任何其他内容：\n");
         sb.append("```json\n");
@@ -358,7 +370,12 @@ public abstract class RubricBasedScorer extends Scorer {
     // ==================== LLM 回复解析 ====================
 
     /**
-     * 解析单维度 LLM 回复
+     * 解析单维度 LLM 回复，提取原始分和归一化分。
+     *
+     * @param criteria 评估维度
+     * @param reply    LLM 原始回复文本
+     * @return 解析后的维度评估结果
+     * @throws EvalException 回复格式无法解析时抛出
      */
     private CriteriaEvalResult parseCriteriaReply(RubricCriteria criteria, String reply) {
         String jsonStr = RegexUtils.extractMarkdownJsonBlock(reply);
@@ -370,11 +387,11 @@ public abstract class RubricBasedScorer extends Scorer {
             throw new EvalException("[RubricBasedScorer] Failed to parse LLM reply for criteria: " + criteria.getName() + ", reply: " + reply);
         }
         double rawScore = output.getScore();
-        // 二元分强制约束
+        // 二元分强制约束：非零即 1
         if (criteria.getScoreType() == RubricScoreType.BINARY) {
             rawScore = rawScore > 0 ? 1.0 : 0.0;
         }
-        // normalizedScore 始终计算，供各合并策略的 passRate 判断使用（无论 normalizeScore 开关如何）
+        // normalizedScore 始终计算，供各合并策略的 passRate 判断使用
         double normalizedScore = criteria.normalize(rawScore);
         return new CriteriaEvalResult(
                 rawScore,
@@ -387,10 +404,14 @@ public abstract class RubricBasedScorer extends Scorer {
     // ==================== 分数合并 ====================
 
     /**
-     * normalizeScore=false 时，计算原始分数域下的 totalScore：
-     * 取各维度加权 maxScore 之和除以总权重（与 WEIGHTED_AVERAGE 分母相同），
-     * 使得 score/totalScore 仍可解读为得分率。
-     * 对 SIMPLE_AVERAGE，等价于各维度 maxScore 的简单平均。
+     * 在 {@code normalizeScore=false} 时，计算原始分数域下的 totalScore。
+     * <p>
+     * 取各维度加权 maxScore 之和除以总权重，与 {@code WEIGHTED_AVERAGE} 的分母保持一致，
+     * 使得 {@code score / totalScore} 仍可解读为得分率。
+     * 对 {@code SIMPLE_AVERAGE}，等价于各维度 maxScore 的简单平均。
+     *
+     * @param criteriaList 所有评估维度
+     * @return 原始分数域下的满分值
      */
     private double calcRawTotalScore(List<RubricCriteria> criteriaList) {
         RubricMergeStrategy strategy = config.getMergeStrategy();
@@ -399,7 +420,7 @@ public abstract class RubricBasedScorer extends Scorer {
             double sum = criteriaList.stream().mapToDouble(RubricCriteria::getMaxScore).sum();
             return sum / criteriaList.size();
         }
-        // WEIGHTED_AVERAGE / LOGICAL_AND / STAR_GATE / COMPLETION_RATE 统一用加权 maxScore
+        // WEIGHTED_AVERAGE / LOGICAL_AND / STAR_GATE / COMPLETION_RATE 统一使用加权 maxScore
         double weightedMaxSum = 0;
         double totalWeight = 0;
         for (RubricCriteria c : criteriaList) {
@@ -410,79 +431,101 @@ public abstract class RubricBasedScorer extends Scorer {
     }
 
     /**
-     * 将各维度分数按 mergeStrategy 合并为最终得分
-     * （入参 scoreMap 可能是归一化分数或原始分数，取决于 normalizeScore 配置）
+     * 将各维度分数按配置的 {@link RubricMergeStrategy} 合并为最终得分。
+     * <p>
+     * 入参 {@code scoreMap} 可能是归一化分数或原始分数，取决于 {@code normalizeScore} 配置。
+     *
+     * @param criteriaList 所有评估维度
+     * @param scoreMap     各维度分数映射（key 为维度名称）
+     * @return 合并后的最终得分
      */
-    private double mergeScores(List<RubricCriteria> criteriaList, Map<String, Double> normalizedScores) {
+    private double mergeScores(List<RubricCriteria> criteriaList, Map<String, Double> scoreMap) {
         RubricMergeStrategy strategy = config.getMergeStrategy();
 
         switch (strategy) {
             case WEIGHTED_AVERAGE:
-                return mergeWeightedAverage(criteriaList, normalizedScores);
+                return mergeWeightedAverage(criteriaList, scoreMap);
             case SIMPLE_AVERAGE:
-                return mergeSimpleAverage(criteriaList, normalizedScores);
+                return mergeSimpleAverage(criteriaList, scoreMap);
             case LOGICAL_AND:
-                return mergeLogicalAnd(criteriaList, normalizedScores);
+                return mergeLogicalAnd(criteriaList, scoreMap);
             case STAR_GATE:
-                return mergeStarGate(criteriaList, normalizedScores);
+                return mergeStarGate(criteriaList, scoreMap);
             case COMPLETION_RATE:
-                return mergeCompletionRate(criteriaList, normalizedScores);
+                return mergeCompletionRate(criteriaList, scoreMap);
             default:
                 throw new IllegalArgumentException("[RubricBasedScorer] Unsupported mergeStrategy: " + strategy);
         }
     }
 
     /**
-     * 加权平均: Σ(normScore_i × weight_i) / Σ(weight_i)
+     * 加权平均：{@code Σ(score_i × weight_i) / Σ(weight_i)}。
+     *
+     * @param criteriaList 所有评估维度
+     * @param scoreMap     各维度分数映射
+     * @return 加权平均得分
      */
-    private double mergeWeightedAverage(List<RubricCriteria> criteriaList, Map<String, Double> normalizedScores) {
+    private double mergeWeightedAverage(List<RubricCriteria> criteriaList, Map<String, Double> scoreMap) {
         double weightedSum = 0;
         double totalWeight = 0;
         for (RubricCriteria c : criteriaList) {
-            double normScore = normalizedScores.getOrDefault(c.getName(), 0.0);
-            weightedSum += normScore * c.getWeight();
+            double score = scoreMap.getOrDefault(c.getName(), 0.0);
+            weightedSum += score * c.getWeight();
             totalWeight += c.getWeight();
         }
         return totalWeight > 0 ? weightedSum / totalWeight : 0;
     }
 
     /**
-     * 简单平均: Σ(normScore_i) / N
+     * 简单平均：{@code Σ(score_i) / N}，忽略权重。
+     *
+     * @param criteriaList 所有评估维度
+     * @param scoreMap     各维度分数映射
+     * @return 简单平均得分
      */
-    private double mergeSimpleAverage(List<RubricCriteria> criteriaList, Map<String, Double> normalizedScores) {
+    private double mergeSimpleAverage(List<RubricCriteria> criteriaList, Map<String, Double> scoreMap) {
         if (criteriaList.isEmpty()) return 0;
         double sum = criteriaList.stream()
-                .mapToDouble(c -> normalizedScores.getOrDefault(c.getName(), 0.0))
+                .mapToDouble(c -> scoreMap.getOrDefault(c.getName(), 0.0))
                 .sum();
         return sum / criteriaList.size();
     }
 
     /**
-     * 逻辑合取：任意维度未达 passRate 则取「最差失败维度」的得分，否则取加权均值
-     * fix#5: 原实现返回全局最小值，可能是不相关维度，语义模糊；
-     * 改为只在失败维度中取最小，更清晰地反映「最差短板」。
+     * 逻辑合取：任意维度未达 passRate 则返回最差失败维度的得分，否则取加权均值。
+     * <p>
+     * 仅在失败维度中取最小值，以明确反映最差短板，而非全局最小。
+     *
+     * @param criteriaList 所有评估维度
+     * @param scoreMap     各维度归一化分数映射
+     * @return 合并得分
      */
-    private double mergeLogicalAnd(List<RubricCriteria> criteriaList, Map<String, Double> normalizedScores) {
+    private double mergeLogicalAnd(List<RubricCriteria> criteriaList, Map<String, Double> scoreMap) {
         double worstFailScore = Double.MAX_VALUE;
         boolean anyFail = false;
         for (RubricCriteria c : criteriaList) {
-            double normScore = normalizedScores.getOrDefault(c.getName(), 0.0);
+            double normScore = scoreMap.getOrDefault(c.getName(), 0.0);
             if (normScore < c.getPassRate()) {
                 anyFail = true;
                 worstFailScore = Math.min(worstFailScore, normScore);
             }
         }
-        return anyFail ? worstFailScore : mergeWeightedAverage(criteriaList, normalizedScores);
+        return anyFail ? worstFailScore : mergeWeightedAverage(criteriaList, scoreMap);
     }
 
     /**
-     * Star Gate：star 维度归一化分 < passRate 则整体 0，否则取加权均值
-     * fix#2: 判断条件从 ==0.0（浮点精确相等）改为 < passRate（语义正确，避免浮点陷阱）
+     * Star Gate：任意 {@code star=true} 的维度归一化分低于 passRate 则整体返回 0.0，否则取加权均值。
+     * <p>
+     * 以 {@code normScore < passRate} 而非 {@code == 0.0} 作为判断条件，避免浮点精度问题。
+     *
+     * @param criteriaList 所有评估维度
+     * @param scoreMap     各维度归一化分数映射
+     * @return 合并得分
      */
-    private double mergeStarGate(List<RubricCriteria> criteriaList, Map<String, Double> normalizedScores) {
+    private double mergeStarGate(List<RubricCriteria> criteriaList, Map<String, Double> scoreMap) {
         for (RubricCriteria c : criteriaList) {
             if (c.isStar()) {
-                double normScore = normalizedScores.getOrDefault(c.getName(), 0.0);
+                double normScore = scoreMap.getOrDefault(c.getName(), 0.0);
                 if (normScore < c.getPassRate()) {
                     log.debug("[RubricBasedScorer] Star criteria [{}] not passed (normScore={} < passRate={}), final score = 0",
                             c.getName(), normScore, c.getPassRate());
@@ -490,16 +533,20 @@ public abstract class RubricBasedScorer extends Scorer {
                 }
             }
         }
-        return mergeWeightedAverage(criteriaList, normalizedScores);
+        return mergeWeightedAverage(criteriaList, scoreMap);
     }
 
     /**
-     * 严格完成率：通过维度数 / 总维度数
+     * 完成率：达标维度数 / 总维度数。
+     *
+     * @param criteriaList 所有评估维度
+     * @param scoreMap     各维度归一化分数映射
+     * @return 完成率（0.0 ~ 1.0）
      */
-    private double mergeCompletionRate(List<RubricCriteria> criteriaList, Map<String, Double> normalizedScores) {
+    private double mergeCompletionRate(List<RubricCriteria> criteriaList, Map<String, Double> scoreMap) {
         if (criteriaList.isEmpty()) return 0;
         long passCount = criteriaList.stream()
-                .filter(c -> normalizedScores.getOrDefault(c.getName(), 0.0) >= c.getPassRate())
+                .filter(c -> scoreMap.getOrDefault(c.getName(), 0.0) >= c.getPassRate())
                 .count();
         return (double) passCount / criteriaList.size();
     }
@@ -507,8 +554,13 @@ public abstract class RubricBasedScorer extends Scorer {
     // ==================== 理由构建 ====================
 
     /**
-     * 构建汇总理由：列出每个维度的分数和结论
-     * fix#7: 改用 StringJoiner 拼接，消除「先 append 后裁剪」的脆弱逻辑
+     * 构建汇总理由，列出每个维度的分数和结论。
+     *
+     * @param criteriaList     所有评估维度
+     * @param rawScores        各维度原始分数
+     * @param normalizedScores 各维度归一化分数
+     * @param reasons          各维度打分理由
+     * @return 格式化的汇总字符串
      */
     private String buildReason(List<RubricCriteria> criteriaList,
                                Map<String, Double> rawScores,
@@ -528,7 +580,7 @@ public abstract class RubricBasedScorer extends Scorer {
     // ==================== 内部数据类 ====================
 
     /**
-     * 单维度评估结果（内部传递）
+     * 单维度评估结果（内部传递用）。
      */
     private static class CriteriaEvalResult {
         final double rawScore;
@@ -545,22 +597,16 @@ public abstract class RubricBasedScorer extends Scorer {
     }
 
     /**
-     * LLM 回复的 JSON 结构（CoT 格式：reasoning 先于 score）
+     * LLM 回复的 JSON 结构（CoT 格式：reasoning 先于 score）。
      */
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class CriteriaLLMOutput {
-        /**
-         * 推理过程（CoT，先于 score 输出）
-         */
+        /** 推理过程（Chain-of-Thought，先于 score 输出） */
         private String reasoning;
-        /**
-         * 最终分数
-         */
+        /** 最终分数 */
         private Double score;
-        /**
-         * 一句话结论
-         */
+        /** 一句话结论 */
         private String reason;
     }
 }
