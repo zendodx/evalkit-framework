@@ -140,11 +140,10 @@ public abstract class Scorer extends WorkflowNode {
 
     /**
      * 判断当前数据项是否需要执行本 Scorer
-     * <p>当 {@link ScorerConfig#getCondition()} 为 {@code null} 时始终返回 {@code true}（不过滤，向前兼容）；
-     * 否则将条件函数应用于 {@code dataItem}，返回函数结果。</p>
+     * condition 为 null 时始终返回 true（不过滤，向前兼容）
      *
      * @param dataItem 待判断的数据项
-     * @return {@code true} 表示需要评估，{@code false} 表示跳过
+     * @return true 需要评估，false 跳过
      */
     protected boolean shouldEval(DataItem dataItem) {
         java.util.function.Function<DataItem, Boolean> condition = config.getCondition();
@@ -152,9 +151,8 @@ public abstract class Scorer extends WorkflowNode {
     }
 
     /**
-     * 构建跳过结果（条件不满足时返回）。
-     * <p>跳过结果的 {@code totalScore = 0}，不会影响汇总评分；
-     * {@code success = true, pass = true}，不会拉低整体通过率。</p>
+     * 构建跳过结果（条件不满足时返回）
+     * totalScore=0 不计入汇总，success=true pass=true 不影响通过率
      *
      * @param item 当前数据项
      * @return 跳过结果

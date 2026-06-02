@@ -32,27 +32,12 @@ public class ScorerConfig {
     /* 动态评估器总分数,某些评估的总数分时运行中决定的,需要动态变化 */
     @Builder.Default
     protected boolean dynamicTotalScore = false;
-    /**
-     * 场景路由条件
-     * <p>当 {@code condition} 不为 {@code null} 时，只有满足条件的 {@link DataItem} 才会被本 Scorer 评估；
-     * 不满足条件的 DataItem 将自动生成一条"已跳过"结果（score = skipScore，totalScore = 0，不计入汇总）。
-     * {@code null} 表示不过滤，对所有 DataItem 均执行评估（默认行为，向前兼容）。</p>
-     *
-     * <pre>{@code
-     * ScorerConfig.builder()
-     *     .metricName("对话质量")
-     *     .condition(item -> "chat".equals(item.getInputData().get("scene")))
-     *     .build();
-     * }</pre>
-     */
+    /* 场景路由条件，null=不过滤；不满足条件时生成跳过结果（score=skipScore，totalScore=0，不计入汇总） */
     @JsonIgnore
     @Builder.Default
     protected Function<DataItem, Boolean> condition = null;
 
-    /**
-     * 条件不满足时跳过返回的默认分，默认 0。
-     * <p>该结果的 totalScore = 0，因此不会影响汇总分数的计算。</p>
-     */
+    /* 条件不满足时跳过返回的默认分，默认 0，totalScore=0 不计入汇总 */
     @Builder.Default
     protected double skipScore = 0.0;
 }

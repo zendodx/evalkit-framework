@@ -13,42 +13,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 路由评估器
- *
- * <p>根据每个 {@link DataItem} 的字段值，将其动态路由到对应的 {@link Scorer} 执行评估。
- * 适用于同一数据集包含多个场景、不同场景需要使用不同评估器的情况。</p>
- *
- * <h3>路由匹配模式</h3>
- * <ul>
- *   <li><b>first-match（默认）</b>：每个 DataItem 只由第一个命中的 {@link ScorerRoute} 处理，
- *       结果只有一条 ScorerResult。</li>
- *   <li><b>match-all</b>：每个 DataItem 由所有命中的路由依次处理，
- *       但 RouterScorer 的 {@link #eval} 只返回一条汇总 ScorerResult；
- *       如需多条独立结果，建议在 Workflow 中直接串联多个带 {@code condition} 的 Scorer（方案A）。</li>
- * </ul>
- *
- * <h3>无路由命中时的行为</h3>
- * <ul>
- *   <li>若 {@link RouterScorerConfig#getDefaultScorer()} 不为 {@code null}，则委托兜底评估器处理。</li>
- *   <li>否则返回跳过结果（score = skipScore，totalScore = 0，不计入汇总）。</li>
- * </ul>
- *
- * <h3>使用示例</h3>
- * <pre>{@code
- * RouterScorer router = new RouterScorer(
- *     RouterScorerConfig.builder()
- *         .metricName("场景路由评估")
- *         .routes(Arrays.asList(
- *             ScorerRoute.of(item -> "chat".equals(item.getInputData().get("scene")),   chatScorer,   "对话场景"),
- *             ScorerRoute.of(item -> "search".equals(item.getInputData().get("scene")), searchScorer, "搜索场景"),
- *             ScorerRoute.of(item -> "rag".equals(item.getInputData().get("scene")),    ragScorer,    "RAG场景")
- *         ))
- *         .defaultScorer(fallbackScorer)
- *         .build()
- * );
- *
- * Workflow evalWorkflow = Workflow.builder().addNode(router).build();
- * }</pre>
+ * 路由评估器，根据 DataItem 字段动态路由到对应 Scorer 执行评估。
+ * matchAll=false（默认）：first-match，命中第一条路由即执行；
+ * matchAll=true：match-all，命中的所有路由依次执行，结果取平均。
+ * 无路由命中时若 defaultScorer 不为 null 则委托兜底评估器，否则返回跳过结果。
  */
 @EqualsAndHashCode(callSuper = true)
 @Slf4j
@@ -70,15 +38,10 @@ public class RouterScorer extends Scorer {
     }
 
     /**
-     * 根据路由规则将 DataItem 分发到对应的 Scorer 执行评估。
-     *
-     * <p>在执行子 Scorer 的 {@code eval()} 之前，会将本 RouterScorer 的 workflowContext
-     * 注入到子 Scorer 中，确保子 Scorer 可以访问上下文（ScoreStrategy、Threshold 等）。</p>
+     * 根据路由规则分发 DataItem，执行前将 workflowContext 注入子 Scorer
      *
      * @param dataItem 待评估数据项
-     * @return 评估结果；若 matchAll=false 则为第一个命中路由的结果；
-     *         若 matchAll=true 则为所有命中路由结果的合并（取平均分和拼接理由）；
-     *         无命中时为跳过结果
+     * @return first-match 时第一个命中路由的结果；match-all 时所有命中结果的平均；无命中时跳过结果
      * @throws Exception 子 Scorer 评估抛出的异常
      */
     @Override
@@ -120,11 +83,11 @@ public class RouterScorer extends Scorer {
     }
 
     /**
-     * 将 workflowContext 注入子 Scorer，然后委托其执行 {@code eval()}。
+     * 注入 workflowContext 后委托子 Scorer 执行 eval()
      *
      * @param scorer   目标评估器
      * @param dataItem 待评估数据项
-     * @return 子 Scorer 的评估结果（原始，未经 doEval 包装）
+     * @return 子 Scorer 的评估结果
      * @throws Exception 子 Scorer 抛出的异常
      */
     private ScorerResult delegateEval(Scorer scorer, DataItem dataItem) throws Exception {
@@ -133,10 +96,10 @@ public class RouterScorer extends Scorer {
     }
 
     /**
-     * match-all 模式下合并多条路由结果：取平均分、拼接理由。
+     * match-all 模式：合并多条路由结果，取平均分、拼接理由
      *
      * @param results  各路由结果列表（非空）
-     * @param dataItem 原始数据项（用于填充 dataIndex）
+     * @param dataItem 原始数据项
      * @return 合并后的 ScorerResult
      */
     private ScorerResult mergeResults(List<ScorerResult> results, DataItem dataItem) {
