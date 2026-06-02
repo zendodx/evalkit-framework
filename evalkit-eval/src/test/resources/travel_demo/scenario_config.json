@@ -20,7 +20,8 @@
           "attractionName"
         ],
         "scenario": "景点",
-        "intent": "景点推荐"
+        "intent": "景点推荐",
+        "remark": "用户是家长，需体现带孩子出游的视角，语气要生活化"
       },
       {
         "turn": 2,
@@ -29,7 +30,8 @@
           "transportNo"
         ],
         "scenario": "交通",
-        "intent": "交通方案"
+        "intent": "交通方案",
+        "remark": "只询问交通方式，不要提到具体车次号"
       },
       {
         "turn": 3,
@@ -47,7 +49,8 @@
           "transportNo"
         ],
         "scenario": "交通",
-        "intent": "交通预订"
+        "intent": "交通预订",
+        "remark": "使用代词指代车票，不要在本轮说出具体交通工具编号"
       }
     ]
   }
