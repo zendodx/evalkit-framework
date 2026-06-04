@@ -64,3 +64,10 @@ attachments
 # mvn flatten
 .flattened-pom.xml
 .dump
+
+# github pages
+docs/.bundle
+docs/.jekyll-cache
+docs/_site
+docs/vendor
+docs/Gemfile.lock
