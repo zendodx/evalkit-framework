@@ -236,42 +236,168 @@
     }
 
     /* ========================================
-       评估器结果展示
+       评估器结果展示（按 scorerType 分类渲染）
        ======================================== */
     function scorerDiv(list) {
         if (!list || list.length === 0) {
-            return `<span>没有评估器</span>`
+            return `<span>没有评估器</span>`;
         }
         return list.map(s => {
-            const pass = s.pass;
-            return `<div style="margin-bottom:6px;padding:6px;border-left:3px solid ${pass ? '#67c23a' : '#f56c6c'};background:${pass ? '#e1f3d8' : '#fde2e2'};border-radius:2px;">
-                      <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600">
-                        <div>
-                            <span>${s.metric}${s.star ? '<span style="color:#ff4757;margin-left:4px">必过</span>' : ''}</span>
-                            <span>${s.success ? '' : '<span style="color:#ff4757;margin-left:4px">评测出错</span>'}</span>
-                        </div>
-                        <span class="metric-badge ${pass ? 'pass' : 'fail'}">${pass ? '通过' : '未通过'} | 阈值 ${s.threshold} | 得分率 ${formatNumber(s.scoreRate)} | 得分 ${formatNumber(s.score)} / ${formatNumber(s.totalScore)}</span>
-                      </div>
-                      <div style="font-size:12px;color:#606266;margin:5px 0">${s.reason}</div>
-                      ${s.extra ? (() => {
-                const map = wrapperScorerResultExtra(s.extra);
-                return jsonDiv(map);
-            })() : ''
+            if (s.scorerType === 'rubricBasedScorer') {
+                return rubricScorerDiv(s);
             }
-                    </div>`;
+            return defaultScorerDiv(s);
         }).join('');
     }
 
     /* ========================================
-       评估器 Extra 字段处理
+       默认评估器渲染（通用）
+       ======================================== */
+    function defaultScorerDiv(s) {
+        const pass = s.pass;
+        return `<div style="margin-bottom:6px;padding:6px;border-left:3px solid ${pass ? '#67c23a' : '#f56c6c'};background:${pass ? '#e1f3d8' : '#fde2e2'};border-radius:2px;">
+                  <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600">
+                    <div>
+                        <span>${s.metric}${s.star ? '<span style="color:#ff4757;margin-left:4px">必过</span>' : ''}</span>
+                        <span>${s.success ? '' : '<span style="color:#ff4757;margin-left:4px">评测出错</span>'}</span>
+                    </div>
+                    <span class="metric-badge ${pass ? 'pass' : 'fail'}">${pass ? '通过' : '未通过'} | 阈值 ${s.threshold} | 得分率 ${formatNumber(s.scoreRate)} | 得分 ${formatNumber(s.score)} / ${formatNumber(s.totalScore)}</span>
+                  </div>
+                  <div style="font-size:12px;color:#606266;margin:5px 0">${s.reason}</div>
+                  ${s.extra ? (() => {
+                      const map = wrapperScorerResultExtra(s.extra);
+                      return jsonDiv(map);
+                  })() : ''}
+                </div>`;
+    }
+
+    /* ========================================
+       RubricBasedScorer 专属渲染（保持原卡片样式，追加维度表格）
+       ======================================== */
+    function rubricScorerDiv(s) {
+        const pass = s.pass;
+        const extra = s.extra || {};
+
+        // 从 extra 中解析各维度数据
+        const rawScores   = parseJsonField(extra['rubric_criteria_raw_scores']);
+        const normScores  = parseJsonField(extra['rubric_criteria_norm_scores']);
+        const passRates   = parseJsonField(extra['rubric_criteria_pass_rates']);
+        const reasons     = parseJsonField(extra['rubric_criteria_reasons']);
+        const reasonings  = parseJsonField(extra['rubric_criteria_reasonings']);
+
+        // 收集所有维度名称（保持顺序）
+        const criteriaNames = Object.keys(rawScores || normScores || reasons || {});
+        const tableHtml = criteriaNames.length > 0
+            ? buildRubricTable(criteriaNames, rawScores, normScores, passRates, reasons, reasonings)
+            : '';
+
+        // 完整 extra 原始数据展示在表格下方（含 rubric 专属字段，方便调试）
+        const extraHtml = Object.keys(extra).length > 0
+            ? `<div style="margin-top:10px">${jsonDiv(extra)}</div>`
+            : '';
+
+        return `<div style="margin-bottom:6px;padding:6px;border-left:3px solid ${pass ? '#67c23a' : '#f56c6c'};background:${pass ? '#e1f3d8' : '#fde2e2'};border-radius:2px;">
+                  <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600">
+                    <div>
+                        <span>${s.metric}${s.star ? '<span style="color:#ff4757;margin-left:4px">必过</span>' : ''}</span>
+                        <span>${s.success ? '' : '<span style="color:#ff4757;margin-left:4px">评测出错</span>'}</span>
+                    </div>
+                    <span class="metric-badge ${pass ? 'pass' : 'fail'}">${pass ? '通过' : '未通过'} | 阈值 ${s.threshold} | 得分率 ${formatNumber(s.scoreRate)} | 得分 ${formatNumber(s.score)} / ${formatNumber(s.totalScore)}</span>
+                  </div>
+                  <div style="font-size:12px;color:#606266;margin-top:6px;margin-bottom:${tableHtml ? '0' : '2px'}">${s.reason}</div>
+                  ${tableHtml ? `<div style="margin-top:8px">${tableHtml}</div>` : ''}
+                  ${extraHtml}
+                </div>`;
+    }
+
+    /* 构建维度数据表格（全 inline style，不依赖主题 CSS） */
+    function buildRubricTable(criteriaNames, rawScores, normScores, passRates, reasons, reasonings) {
+        const tdBase = 'padding:4px 6px;border-bottom:1px solid rgba(0,0,0,0.06);vertical-align:top;font-size:11px;word-break:break-word;';
+
+        const rows = criteriaNames.map(name => {
+            const raw      = rawScores  ? formatNumber(rawScores[name])  : '-';
+            const norm     = normScores ? formatNumber(normScores[name]) : '-';
+            const normVal  = normScores ? (normScores[name] || 0) : 0;
+            // 优先使用后端透传的真实 passRate，如果没有则默认 1.0（即必须满分）
+            const passRate = passRates ? (passRates[name] != null ? passRates[name] : 1.0) : 1.0;
+            const reason   = reasons   ? (reasons[name]  || '-') : '-';
+            const reasoning = reasonings ? (reasonings[name] || '') : '';
+
+            const isSkipped = reason === '[skipped]';
+
+            const passCell = isSkipped
+                ? `<span style="color:#909399;font-style:italic">跳过</span>`
+                : (normVal >= passRate
+                    ? `<span style="color:#67c23a;font-weight:600">✓</span>`
+                    : `<span style="color:#f56c6c;font-weight:600">✗</span>`);
+
+            // 进度条
+            const barColor = normVal >= passRate ? '#67c23a' : '#f56c6c';
+            const normCell = `<div style="display:flex;align-items:center;gap:5px">
+                                <div style="flex:1;height:5px;background:#ddd;border-radius:3px;overflow:hidden;min-width:36px">
+                                  <div style="height:100%;width:${Math.round(normVal * 100)}%;background:${barColor};border-radius:3px"></div>
+                                </div>
+                                <span style="font-size:11px;color:#606266;white-space:nowrap">${norm}</span>
+                              </div>`;
+
+            // reasoning 折叠展示
+            const reasoningHtml = reasoning && !isSkipped
+                ? `<details style="margin-top:3px">
+                     <summary style="cursor:pointer;color:#909399;font-size:11px;user-select:none">推理过程</summary>
+                     <div style="margin-top:3px;padding:4px 6px;background:rgba(0,0,0,0.04);border-radius:2px;color:#606266;font-size:11px;line-height:1.5;white-space:pre-wrap;word-break:break-word">${escapeHtml(reasoning)}</div>
+                   </details>`
+                : '';
+
+            return `<tr>
+                      <td style="${tdBase}font-weight:600;color:#303133">${escapeHtml(name)}</td>
+                      <td style="${tdBase}color:#409eff;font-weight:600">${raw}</td>
+                      <td style="${tdBase}">${normCell}</td>
+                      <td style="${tdBase}text-align:center">${passCell}</td>
+                      <td style="${tdBase}color:#606266">
+                        ${isSkipped ? '<span style="color:#909399;font-style:italic">条件不满足，已跳过</span>' : escapeHtml(reason)}
+                        ${reasoningHtml}
+                      </td>
+                    </tr>`;
+        }).join('');
+
+        const thBase = 'padding:4px 6px;background:rgba(0,0,0,0.04);font-weight:600;color:#909399;text-align:left;font-size:11px;white-space:nowrap;border-bottom:1px solid rgba(0,0,0,0.08);';
+
+        return `<table style="width:100%;border-collapse:collapse;table-layout:fixed">
+                  <colgroup>
+                    <col style="width:13%">
+                    <col style="width:9%">
+                    <col style="width:17%">
+                    <col style="width:7%">
+                    <col style="width:54%">
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th style="${thBase}">维度</th>
+                      <th style="${thBase}">原始分</th>
+                      <th style="${thBase}">归一化</th>
+                      <th style="${thBase}text-align:center">达标</th>
+                      <th style="${thBase}">理由</th>
+                    </tr>
+                  </thead>
+                  <tbody>${rows}</tbody>
+                </table>`;
+    }
+
+    /* 解析 extra 中的字段（可能是 JSON 字符串或已解析的对象） */
+    function parseJsonField(val) {
+        if (!val) return null;
+        if (typeof val === 'object') return val;
+        try { return JSON.parse(val); } catch (_) { return null; }
+    }
+
+    /* ========================================
+       评估器 Extra 字段处理（非 rubric 类型）
        ======================================== */
     function wrapperScorerResultExtra(extra = {}) {
         const out = {};
-
         Object.entries(extra).forEach(([k, v]) => {
             out[k] = parseValue(v);
         });
-
         return out;
     }
 

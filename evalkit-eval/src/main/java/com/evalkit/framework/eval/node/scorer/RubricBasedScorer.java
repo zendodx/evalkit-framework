@@ -88,6 +88,9 @@ public abstract class RubricBasedScorer extends Scorer {
     /** 各维度推理过程，{@code Map<criteriaName, reasoning>} */
     public static final String EXTRA_KEY_CRITERIA_REASONINGS = "rubric_criteria_reasonings";
 
+    /** 各维度通过率阈值，{@code Map<criteriaName, passRate>}，用于报告层判断每个维度是否达标 */
+    public static final String EXTRA_KEY_CRITERIA_PASS_RATES = "rubric_criteria_pass_rates";
+
     /** 最终合并策略名称 */
     public static final String EXTRA_KEY_MERGE_STRATEGY = "rubric_merge_strategy";
 
@@ -217,6 +220,12 @@ public abstract class RubricBasedScorer extends Scorer {
         // 构造汇总 reason
         String reason = buildReason(criteriaList, rawScores, normalizedScores, reasons);
 
+        // 各维度通过率阈值（passRate = passScore / maxScore），供报告层判断每个维度是否达标
+        Map<String, Double> passRates = new LinkedHashMap<>();
+        for (RubricCriteria c : criteriaList) {
+            passRates.put(c.getName(), c.getPassRate());
+        }
+
         // 将各维度详情透传到 extra，供报告层使用
         ScorerResult scorerResult = new ScorerResult();
         scorerResult.setMetric(config.getMetricName());
@@ -225,6 +234,7 @@ public abstract class RubricBasedScorer extends Scorer {
         scorerResult.setReason(reason);
         scorerResult.addExtraItem(EXTRA_KEY_CRITERIA_RAW_SCORES, rawScores);
         scorerResult.addExtraItem(EXTRA_KEY_CRITERIA_NORM_SCORES, normalizedScores);
+        scorerResult.addExtraItem(EXTRA_KEY_CRITERIA_PASS_RATES, passRates);
         scorerResult.addExtraItem(EXTRA_KEY_CRITERIA_REASONS, reasons);
         scorerResult.addExtraItem(EXTRA_KEY_CRITERIA_REASONINGS, reasonings);
         scorerResult.addExtraItem(EXTRA_KEY_MERGE_STRATEGY, config.getMergeStrategy().name());
