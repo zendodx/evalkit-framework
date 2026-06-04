@@ -1,3 +1,10 @@
+---
+layout: default
+title: 数据生成器（DataGenerator）
+parent: 用户指南
+nav_order: 7
+---
+
 # 数据生成器（DataGenerator）
 
 ## 概述

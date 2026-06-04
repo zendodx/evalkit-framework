@@ -1,3 +1,10 @@
+---
+layout: default
+title: 检查器（Checker）
+parent: 用户指南
+nav_order: 11
+---
+
 # 检查器（Checker）
 
 检查器是 `MultiCheckerBasedScorer` 的内部组件，负责对评测数据进行**单个维度的细粒度检查**，每个检查器包含若干个**检查项（CheckItem）**，最终分数由所有检查项的结果汇总而来。

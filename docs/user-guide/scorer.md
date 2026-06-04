@@ -1,3 +1,10 @@
+---
+layout: default
+title: 评估器（Scorer）
+parent: 用户指南
+nav_order: 10
+---
+
 # 评估器（Scorer）
 
 评估器是框架的核心节点，负责对接口返回结果进行**打分**。多个评估器可以并行执行，最终分数由 `Begin` 节点配置的打分策略汇总。
@@ -656,4 +663,167 @@ Scorer safetyScorer = new Scorer(
                 .threshold(1.0)
                 .build()
 ) { ... };
+
+---
+
+## RubricBasedScorer（量规评估器）
+
+`RubricBasedScorer` 是基于**量规（Rubric）**的 LLM 评估器，通过预先定义的多个评估维度（`criteria`）和对应的打分规则，对模型输出进行系统性、可量化的质量评估。
+
+**核心优势：**
+
+- 每个维度独立发起 LLM 调用，避免多维度共享 Prompt 时的注意力稀释
+- 强制 Chain-of-Thought（先推理后打分），防止 LLM 先锚定分数再补理由
+- 各维度得分归一化到 `[0, 1]` 后再聚合，消除不同量程维度之间的量纲干扰
+- 支持 Few-shot 分值锚点，校准中间分值漂移
+- 支持多次采样取均值，提升打分稳定性
+
+### 快速示例
+
+继承 `RubricBasedScorer` 并实现 `prepareUserPrompt`，提供待评估的用户侧文本：
+
+```java
+public class ContentQualityScorer extends RubricBasedScorer {
+
+    public ContentQualityScorer(LLMService llmService) {
+        super(RubricBasedScorerConfig.builder()
+                .metricName("内容质量")
+                .llmService(llmService)
+                .criteria(Arrays.asList(
+                        // 忠实度：阶梯分，权重 2 倍
+                        RubricCriteria.builder()
+                                .name("Faithfulness")
+                                .definition("输出是否忠实于提供的上下文，不包含任何捏造内容")
+                                .scoreType(RubricScoreType.STEPPED)
+                                .maxScore(5).passScore(3).weight(2.0)
+                                .scoringGuide("5=完全忠实; 3=基本忠实偶有小偏差; 1=大量虚构内容")
+                                .build(),
+                        // 安全性：二元分，一票否决
+                        RubricCriteria.builder()
+                                .name("Harmfulness")
+                                .star(true)
+                                .definition("是否包含有害内容")
+                                .scoringGuide("0=无害; 1=有害")
+                                .build()
+                ))
+                .mergeStrategy(RubricMergeStrategy.STAR_GATE)
+                .build());
+    }
+
+    @Override
+    public String prepareUserPrompt(InputData input, ApiCompletionResult result) {
+        return "问题: " + input.get("query") + "\n\n回答: " + result.getAnswer();
+    }
+}
+```
+
+### RubricBasedScorerConfig 配置项
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `llmService` | `LLMService` | 必填 | 用于评分的大模型服务 |
+| `criteria` | `List<RubricCriteria>` | 必填 | 评估维度列表（至少一个） |
+| `mergeStrategy` | `RubricMergeStrategy` | `WEIGHTED_AVERAGE` | 维度分数综合策略，见下方说明 |
+| `samplingTimes` | `int` | `1` | 每个维度的采样次数，`>1` 时多次调用取均值，提升稳定性 |
+| `criteriaThreadNum` | `int` | `1` | 维度并发线程数，建议设为维度数量以全并发执行 |
+| `criteriaBatchSize` | `int` | `1` | 每次 LLM 调用评估的维度数，`1` = 单维度模式，`>1` = 批量模式（节省 Token） |
+| `normalizeScore` | `boolean` | `true` | 是否将各维度分数归一化到 `[0,1]` 后再合并 |
+
+> **`criteriaBatchSize` 说明：**
+> - `1`（默认）：每个维度独立一次 LLM 调用，注意力最集中，打分最准确，推荐高精度场景。
+> - `2~5`：多维度合并为一次调用，Token 成本与准确性之间的平衡点。
+> - `<= 0` 或超出实际维度数：自动降为全量（所有维度一次调用）。
+> - 批量模式下若 LLM 格式错误，会整批重试；重试耗尽后自动降级为逐个单独调用。
+
+### RubricCriteria 维度配置项
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `name` | `String` | 必填 | 维度名称，作为 Key 和展示标识 |
+| `definition` | `String` | - | 维度定义，描述评估目标 |
+| `scoreType` | `RubricScoreType` | `BINARY` | 评分类型：`BINARY`（0/1）或 `STEPPED`（区间整数分） |
+| `maxScore` | `double` | `1.0` | 最高分（`STEPPED` 时有效） |
+| `minScore` | `double` | `0.0` | 最低分（`STEPPED` 时有效） |
+| `passScore` | `double` | `1.0` | 通过分数线，`passRate = passScore / maxScore` |
+| `weight` | `double` | `1.0` | 维度权重，用于 `WEIGHTED_AVERAGE` 策略 |
+| `star` | `boolean` | `false` | 是否为一票否决维度（配合 `STAR_GATE` 策略使用） |
+| `scoringGuide` | `String` | - | 打分指引，直接注入 Prompt，可显著提升一致性 |
+| `anchors` | `List<ScoringAnchor>` | - | Few-shot 分值锚点，描述"X分对应什么输出" |
+| `condition` | `Function<DataItem, Boolean>` | `null`（始终执行）| 条件执行函数，返回 `false` 时跳过该维度 |
+| `skipScore` | `double` | `0.0` | 条件不满足时的默认原始分（跳过时生效） |
+
+### RubricMergeStrategy 合并策略
+
+| 策略 | 公式 | 适用场景 |
+|------|------|----------|
+| `WEIGHTED_AVERAGE`（默认） | `Σ(normScore_i × weight_i) / Σ(weight_i)` | 各维度重要程度不同，需要通过权重区分 |
+| `SIMPLE_AVERAGE` | `Σ(normScore_i) / N` | 各维度等权重 |
+| `LOGICAL_AND` | 任意维度 `normScore < passRate` 时取最小失败分，否则加权均值 | 要求所有维度都达标，任一短板直接拉低整体 |
+| `STAR_GATE` | 任意 `star=true` 维度 `normScore < passRate` 则整体返回 0，否则加权均值 | 存在一票否决项（如安全合规维度） |
+| `COMPLETION_RATE` | `count(normScore_i >= passRate_i) / N` | 关注"有多少维度达标"而非具体分值 |
+
+### 分值锚点（Few-shot Anchor）
+
+为维度配置分值锚点，可以显著校准 LLM 的中间分值认知，减少打分漂移：
+
+```java
+RubricCriteria.builder()
+        .name("Relevance")
+        .definition("回答与问题的相关程度")
+        .scoreType(RubricScoreType.STEPPED)
+        .maxScore(5).passScore(3)
+        .scoringGuide("5=完全切题; 3=部分相关; 1=完全跑题")
+        .anchors(Arrays.asList(
+                RubricCriteria.ScoringAnchor.builder()
+                        .score(5).description("回答完整解决了用户问题，所有信息直接相关").build(),
+                RubricCriteria.ScoringAnchor.builder()
+                        .score(3).description("回答有一定帮助，但包含部分不相关内容").build(),
+                RubricCriteria.ScoringAnchor.builder()
+                        .score(1).description("回答基本不回应用户问题，内容严重偏题").build()
+        ))
+        .build()
+```
+
+### 条件执行维度
+
+某些维度只在特定数据条件下才需要评估（如仅在有参考文档时才评估忠实度）：
+
+```java
+RubricCriteria.builder()
+        .name("ContextRelevance")
+        .definition("回答是否与提供的参考文档一致")
+        .condition(item -> item.getInputData().get("context") != null)
+        .skipScore(3.0)   // 无参考文档时视为中性通过，不影响整体分
+        .build()
+```
+
+### extra 附加信息
+
+`RubricBasedScorer` 在 `ScorerResult.extra` 中透传各维度详细数据，可供报告层和调试使用：
+
+| Key 常量 | Key 值 | 内容 |
+|----------|--------|------|
+| `EXTRA_KEY_CRITERIA_RAW_SCORES` | `rubric_criteria_raw_scores` | `Map<criteriaName, rawScore>` 各维度原始分 |
+| `EXTRA_KEY_CRITERIA_NORM_SCORES` | `rubric_criteria_norm_scores` | `Map<criteriaName, normalizedScore>` 各维度归一化分 |
+| `EXTRA_KEY_CRITERIA_PASS_RATES` | `rubric_criteria_pass_rates` | `Map<criteriaName, passRate>` 各维度通过率阈值 |
+| `EXTRA_KEY_CRITERIA_REASONS` | `rubric_criteria_reasons` | `Map<criteriaName, reason>` 各维度打分结论 |
+| `EXTRA_KEY_CRITERIA_REASONINGS` | `rubric_criteria_reasonings` | `Map<criteriaName, reasoning>` 各维度推理过程 |
+| `EXTRA_KEY_MERGE_STRATEGY` | `rubric_merge_strategy` | 本次使用的合并策略名称 |
+
+```java
+ScorerResult result = scorer.eval(dataItem);
+
+// 读取各维度原始分
+Map<String, Double> rawScores = result.getExtraItem(RubricBasedScorer.EXTRA_KEY_CRITERIA_RAW_SCORES);
+
+// 读取各维度推理过程
+Map<String, String> reasonings = result.getExtraItem(RubricBasedScorer.EXTRA_KEY_CRITERIA_REASONINGS);
+```
+
+### normalizeScore 说明
+
+| 配置 | 最终得分域 | totalScore | 适用场景 |
+|------|-----------|-----------|----------|
+| `normalizeScore=true`（默认） | `[0, 1]` | 固定 `1.0` | 各维度量程不同（推荐） |
+| `normalizeScore=false` | 原始分值域 | 动态计算（各维度加权 maxScore 均值） | 所有维度量程相同、希望结果可读为原始分值 |
 

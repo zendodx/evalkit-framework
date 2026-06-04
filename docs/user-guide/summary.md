@@ -1,3 +1,10 @@
+---
+layout: default
+title: 全模块汇总导览
+parent: 用户指南
+nav_order: 16
+---
+
 # EvalKit Framework 全模块汇总导览
 
 > 版本：1.4.x | 最后更新：2026-06-04

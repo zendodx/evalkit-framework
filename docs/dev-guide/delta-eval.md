@@ -1,3 +1,10 @@
+---
+layout: default
+title: 增量评测技术说明
+parent: 开发指南
+nav_order: 1
+---
+
 # 增量评测技术说明
 
 > 本文档面向框架开发者，描述增量评测（`DeltaEvalFacade` / `OrderedDeltaEvalFacade`）的内部设计、数据流、并发模型及关键实现细节。

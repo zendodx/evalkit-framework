@@ -1,3 +1,11 @@
+---
+layout: default
+title: 用户指南
+nav_order: 2
+has_children: true
+permalink: /user-guide/
+---
+
 # EvalKit Framework 用户指南
 
 > 版本：1.2.x | 语言：Java 8+ | 构建：Maven 3.6+

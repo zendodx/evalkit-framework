@@ -1,3 +1,10 @@
+---
+layout: default
+title: 接口调用器（ApiCompletion）
+parent: 用户指南
+nav_order: 8
+---
+
 # 接口调用器（ApiCompletion）
 
 接口调用器负责对每条测试数据**调用被测的业务接口**，并将返回结果存入 `DataItem` 的 `apiCompletionResult` 字段，供后续评估器使用。

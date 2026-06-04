@@ -1,3 +1,9 @@
+---
+layout: default
+title: ChangeLog
+nav_order: 4
+---
+
 # ChangeLog
 
 ## [1.3.1] - 2026-06-02

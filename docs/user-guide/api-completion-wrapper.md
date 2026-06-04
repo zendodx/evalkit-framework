@@ -1,3 +1,10 @@
+---
+layout: default
+title: 接口结果装饰器（ApiCompletionWrapper）
+parent: 用户指南
+nav_order: 9
+---
+
 # 接口结果装饰器（ApiCompletionWrapper）
 
 接口结果装饰器在**接口调用完成后、评估器执行前**运行，用于对 `ApiCompletionResult` 进行转化、清洗或补充，将接口原始输出变换为评估器所需的格式。
