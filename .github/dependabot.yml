@@ -1,0 +1,27 @@
+# To get started with Dependabot version updates, you'll need to specify which
+# package ecosystems to update and where the package manifests are located.
+# Please see the documentation for all configuration options:
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+# .github/dependabot.yml
+version: 2
+updates:
+  # Maven 依赖更新
+  - package-ecosystem: "maven"
+    directory: "/"                    # pom.xml 所在目录（多模块项目根目录）
+    schedule:
+      interval: "weekly"              # 检查频率：daily, weekly, monthly
+      day: "monday"                   # 每周一检查（可选）
+      time: "09:00"                   # 上午9点（UTC，可选）
+      timezone: "Asia/Shanghai"       # 指定时区
+    open-pull-requests-limit: 10      # 最大并发 PR 数
+    target-branch: "main"             # 目标分支
+    reviewers:                        # 自动指定审查者
+      - "zendodx"
+    labels:
+      - "dependencies"
+      - "java"
+      - "maven"
+    commit-message:
+      prefix: "chore(deps)"           # 提交信息格式：chore(deps): bump xxx from 1.0 to 2.0
+      include: "scope"
