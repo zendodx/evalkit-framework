@@ -1,4 +1,29 @@
+---
+layout: default
+title: ChangeLog
+nav_order: 4
+---
+
 # ChangeLog
+
+## [1.3.1] - 2026-06-02
+
+### Added
+
+- Scorer支持条件执行配置condition,增加评估器路由,根据条件执行不同的Scorer
+- api调用结果装饰器
+
+### Fixed
+
+- 增加大模型输出限制, 字符串中的""要用转义形式 \"\", 否则会造成反序列化错误
+- extra中增加所选Scorer的数据
+- RouterScorer路由匹配模式默认为匹配所有
+- KG生成器增加场景和意图字段配置项
+- 增加KG生成时的限制
+- 重构html评测模版
+- html评测报告支持渲染Rubric表格
+- Rubric评估器支持配置单次评测指标数量
+- 修复框架空指针问题
 
 ## [1.3.0] - 2026-06-02
 

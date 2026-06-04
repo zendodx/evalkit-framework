@@ -1,3 +1,10 @@
+---
+layout: default
+title: Query 生成器（QueryGenerator）
+parent: 用户指南
+nav_order: 6
+---
+
 # Query 生成器（QueryGenerator）
 
 ## 概述

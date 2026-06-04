@@ -30,10 +30,14 @@ public class PromptEngine {
         String goldenCaseKgDataJson = JsonUtils.toJson(goldenCase.kgDataUsed);
         String newKgDataJson = JsonUtils.toJson(newKgData);
 
-        // 构建参考示例的对话轮次文本
+        // 构建参考示例的对话轮次文本（若该轮有 remark，附加到轮次描述中作为生成约束）
         StringBuilder dialogueBuilder = new StringBuilder();
         for (Turn turn : goldenCase.dialogue) {
-            dialogueBuilder.append("第").append(turn.turn).append("轮: ").append(turn.query).append("\n");
+            dialogueBuilder.append("第").append(turn.turn).append("轮: ").append(turn.query);
+            if (turn.remark != null && !turn.remark.trim().isEmpty()) {
+                dialogueBuilder.append("  [本轮生成限制: ").append(turn.remark).append("]");
+            }
+            dialogueBuilder.append("\n");
         }
 
         return template

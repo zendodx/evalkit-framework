@@ -1,5 +1,6 @@
 package com.evalkit.framework.eval.node.scorer;
 
+import com.evalkit.framework.common.utils.map.MapUtils;
 import com.evalkit.framework.eval.context.WorkflowContextOps;
 import com.evalkit.framework.eval.model.ApiCompletionResult;
 import com.evalkit.framework.eval.model.DataItem;
@@ -20,7 +21,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ScorerTest {
 
-    /** 构造一个最简单的具体 Scorer，始终返回指定分数 */
+    /**
+     * 构造一个最简单的具体 Scorer，始终返回指定分数
+     */
     private Scorer buildScorer(String metric, double totalScore, double threshold, boolean star, double returnScore) {
         ScorerConfig cfg = ScorerConfig.builder()
                 .metricName(metric)
@@ -36,7 +39,9 @@ class ScorerTest {
         };
     }
 
-    /** 构造一个始终抛异常的 Scorer */
+    /**
+     * 构造一个始终抛异常的 Scorer
+     */
     private Scorer buildThrowingScorer(String metric) {
         ScorerConfig cfg = ScorerConfig.builder().metricName(metric).build();
         return new Scorer(cfg) {
@@ -47,7 +52,9 @@ class ScorerTest {
         };
     }
 
-    /** 构建带上下文的 DataItem */
+    /**
+     * 构建带上下文的 DataItem
+     */
     private DataItem buildDataItem(long dataIndex, Scorer scorer, SumScoreStrategy strategy) {
         WorkflowContext ctx = new WorkflowContext();
         WorkflowContextOps.setScorerStrategy(ctx, strategy);
@@ -108,7 +115,9 @@ class ScorerTest {
             ScorerConfig cfg = ScorerConfig.builder().metricName("m").threshold(-0.1).build();
             new Scorer(cfg) {
                 @Override
-                public ScorerResult eval(DataItem dataItem) { return null; }
+                public ScorerResult eval(DataItem dataItem) {
+                    return null;
+                }
             };
         }).isInstanceOf(IllegalArgumentException.class);
     }
@@ -119,7 +128,9 @@ class ScorerTest {
             ScorerConfig cfg = ScorerConfig.builder().metricName("m").threadNum(0).build();
             new Scorer(cfg) {
                 @Override
-                public ScorerResult eval(DataItem dataItem) { return null; }
+                public ScorerResult eval(DataItem dataItem) {
+                    return null;
+                }
             };
         }).isInstanceOf(IllegalArgumentException.class);
     }
@@ -250,5 +261,142 @@ class ScorerTest {
         // totalScore 来自评估结果中的 5, scoreRate=4/5=0.8
         assertThat(result.getTotalScore()).isCloseTo(5.0, org.assertj.core.data.Offset.offset(1e-6));
         assertThat(result.getScoreRate()).isCloseTo(0.8, org.assertj.core.data.Offset.offset(1e-6));
+    }
+
+    // ─────────────────────────── shouldEval（条件跳过）────────────────────
+
+    @Test
+    void shouldEval_nullCondition_alwaysTrue() {
+        // condition=null 时，shouldEval 始终返回 true（向前兼容，不过滤任何数据项）
+        Scorer scorer = buildScorer("m", 1.0, 0, false, 1.0);
+        DataItem item = new DataItem();
+        item.setDataIndex(1L);
+        assertTrue(scorer.shouldEval(item));
+    }
+
+    @Test
+    void shouldEval_conditionMatches_returnsTrue() {
+        // condition 命中时返回 true，本 Scorer 正常执行
+        ScorerConfig cfg = ScorerConfig.builder()
+                .metricName("m")
+                .condition(i -> "chat".equals(i.getInputData().get("scene")))
+                .build();
+        Scorer scorer = new Scorer(cfg) {
+            @Override
+            public ScorerResult eval(DataItem d) {
+                return null;
+            }
+        };
+        DataItem item = new DataItem();
+        item.setInputData(new InputData(MapUtils.of("scene", "chat")));
+        assertTrue(scorer.shouldEval(item));
+    }
+
+    @Test
+    void shouldEval_conditionNotMatches_returnsFalse() {
+        // condition 未命中时返回 false，doExecute 层将调用 buildSkipResult 跳过
+        ScorerConfig cfg = ScorerConfig.builder()
+                .metricName("m")
+                .condition(i -> "chat".equals(i.getInputData().get("scene")))
+                .build();
+        Scorer scorer = new Scorer(cfg) {
+            @Override
+            public ScorerResult eval(DataItem d) {
+                return null;
+            }
+        };
+        DataItem item = new DataItem();
+        item.setInputData(new InputData(MapUtils.of("scene", "search")));
+        assertFalse(scorer.shouldEval(item));
+    }
+
+    @Test
+    void shouldEval_conditionReturnsNull_treatedAsFalse() {
+        // condition 返回 null 时视为 false，防止 NPE
+        ScorerConfig cfg = ScorerConfig.builder()
+                .metricName("m")
+                .condition(i -> null)
+                .build();
+        Scorer scorer = new Scorer(cfg) {
+            @Override
+            public ScorerResult eval(DataItem d) {
+                return null;
+            }
+        };
+        assertFalse(scorer.shouldEval(new DataItem()));
+    }
+
+    // ─────────────────────────── buildSkipResult（跳过结果）──────────────
+
+    @Test
+    void buildSkipResult_fieldsCorrect() {
+        // 跳过结果的各字段语义：success=true、pass=true（不拉低通过率），
+        // totalScore=0（不影响汇总基准），reason 固定为 "skipped by condition"
+        Scorer scorer = buildScorer("指标A", 1.0, 0.5, false, 1.0);
+        DataItem item = new DataItem();
+        item.setDataIndex(42L);
+
+        ScorerResult skip = scorer.buildSkipResult(item);
+
+        assertEquals(42L, skip.getDataIndex());
+        assertEquals("指标A", skip.getMetric());
+        assertEquals(0.0, skip.getScore(), 1e-6);
+        assertEquals(0.0, skip.getTotalScore(), 1e-6);
+        assertEquals("skipped by condition", skip.getReason());
+        assertTrue(skip.isSuccess());
+        assertTrue(skip.isPass());   // 跳过不算失败
+    }
+
+    @Test
+    void buildSkipResult_starIsFalse_noVeto() {
+        // 即使 config 中 star=true，跳过结果的 star 必须为 false，
+        // 防止跳过的数据项触发一票否决逻辑
+        ScorerConfig cfg = ScorerConfig.builder()
+                .metricName("必过项")
+                .star(true)
+                .condition(i -> false)
+                .build();
+        Scorer scorer = new Scorer(cfg) {
+            @Override
+            public ScorerResult eval(DataItem d) {
+                return null;
+            }
+        };
+        DataItem item = new DataItem();
+        item.setDataIndex(1L);
+
+        assertFalse(scorer.buildSkipResult(item).isStar());
+    }
+
+    @Test
+    void buildSkipResult_customSkipScore_writtenToResult() {
+        // skipScore 配置的自定义值应写入跳过结果的 score 字段
+        ScorerConfig cfg = ScorerConfig.builder()
+                .metricName("m")
+                .condition(i -> false)
+                .skipScore(0.5)
+                .build();
+        Scorer scorer = new Scorer(cfg) {
+            @Override
+            public ScorerResult eval(DataItem d) {
+                return null;
+            }
+        };
+        DataItem item = new DataItem();
+        item.setDataIndex(1L);
+
+        assertEquals(0.5, scorer.buildSkipResult(item).getScore(), 1e-6);
+    }
+
+    @Test
+    void buildSkipResult_scorerTypePreserved() {
+        // 跳过结果应携带 scorerType，便于报告层区分来源
+        Scorer scorer = buildScorer("m", 1.0, 0, false, 1.0);
+        DataItem item = new DataItem();
+        item.setDataIndex(1L);
+
+        ScorerResult skip = scorer.buildSkipResult(item);
+        assertNotNull(skip.getScorerType());
+        assertFalse(skip.getScorerType().isEmpty());
     }
 }

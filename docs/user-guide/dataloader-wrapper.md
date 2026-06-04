@@ -1,3 +1,10 @@
+---
+layout: default
+title: 数据装饰器（DataLoaderWrapper）
+parent: 用户指南
+nav_order: 4
+---
+
 # 数据装饰器（DataLoaderWrapper）
 
 数据装饰器用于在数据加载后、接口调用前，对测试数据进行**增强或变换**。典型用途包括：

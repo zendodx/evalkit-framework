@@ -1,3 +1,10 @@
+---
+layout: default
+title: 数据加载器（DataLoader）
+parent: 用户指南
+nav_order: 3
+---
+
 # 数据加载器（DataLoader）
 
 数据加载器负责将评测数据加载到工作流上下文中，是整个评测流程的第一个数据节点。

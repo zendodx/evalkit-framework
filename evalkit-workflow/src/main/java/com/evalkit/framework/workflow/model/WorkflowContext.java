@@ -20,7 +20,12 @@ public class WorkflowContext implements Cloneable {
 
     public void put(String key, Object value) {
         if (store == null) store = new ConcurrentHashMap<>();
-        store.put(key, value);
+        // ConcurrentHashMap 不允许 null value；value 为 null 等同于移除该 key
+        if (value == null) {
+            store.remove(key);
+        } else {
+            store.put(key, value);
+        }
     }
 
     public <T> T get(String key, Class<T> clazz) {

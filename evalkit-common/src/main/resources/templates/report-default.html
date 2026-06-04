@@ -16,20 +16,20 @@
     </th:block>
 
     <!-- 本页样式资源 - 按功能模块导入 -->
-    <!-- 1. 基础布局和颜色系统 -->
+    <!-- 1. 基础布局和颜色系统（主题专属） -->
     <th:block th:replace="~{default/fragments/css/layout :: layout}"/>
-    <!-- 2. 侧边栏相关样式 -->
+    <!-- 2. 侧边栏相关样式（主题专属） -->
     <th:block th:replace="~{default/fragments/css/sidebar :: sidebar}"/>
-    <!-- 3. 总览面板样式 -->
+    <!-- 3. 总览面板样式（主题专属） -->
     <th:block th:replace="~{default/fragments/css/overview :: overview}"/>
-    <!-- 4. 详情面板样式 -->
+    <!-- 4. 详情面板样式（主题专属） -->
     <th:block th:replace="~{default/fragments/css/detail :: detail}"/>
-    <!-- 5. 归因面板样式 -->
+    <!-- 5. 归因面板样式（主题专属） -->
     <th:block th:replace="~{default/fragments/css/attribution :: attribution}"/>
-    <!-- 6. 指标统计面板样式 -->
+    <!-- 6. 指标统计面板样式（主题专属） -->
     <th:block th:replace="~{default/fragments/css/metric :: metric}"/>
-    <!-- 7. 导出对话框样式 -->
-    <th:block th:replace="~{default/fragments/css/export :: export}"/>
+    <!-- 7. 导出对话框样式（通用） -->
+    <th:block th:replace="~{common/fragments/css/export :: export}"/>
 </head>
 <body>
 <!-- 侧边栏 -->
@@ -84,9 +84,9 @@
             </div>
             <div class="tip-body">
                 <p><code>#99</code> 序号含 99</p>
-                <p><code>超时 & 错误</code> 同时出现“超时”和“错误”</p>
-                <p><code>超时 | 错误</code> 出现“超时”或“错误”</p>
-                <p><code>!通过</code> 不含“通过”</p>
+                <p><code>超时 & 错误</code> 同时出现"超时"和"错误"</p>
+                <p><code>超时 | 错误</code> 出现"超时"或"错误"</p>
+                <p><code>!通过</code> 不含"通过"</p>
                 <p><code>(超时 | 错误) & #123</code> 括号组合</p>
             </div>
         </div>
@@ -265,22 +265,22 @@
     const metricCountResult = /*[[${metricCountResult}]]*/ {};
 </script>
 
-<!-- 业务脚本资源 - 按功能模块导入 -->
+<!-- 业务脚本资源 - 按功能模块导入（通用） -->
 <!-- 1. 核心状态管理和初始化 -->
-<th:block th:replace="~{default/fragments/js/core :: core}"/>
+<th:block th:replace="~{common/fragments/js/core :: core}"/>
 <!-- 2. 工具函数库 -->
-<th:block th:replace="~{default/fragments/js/utils :: utils}"/>
+<th:block th:replace="~{common/fragments/js/utils :: utils}"/>
 <!-- 3. 搜索和过滤逻辑 -->
-<th:block th:replace="~{default/fragments/js/search :: search}"/>
+<th:block th:replace="~{common/fragments/js/search :: search}"/>
 <!-- 4. 总览面板渲染 -->
-<th:block th:replace="~{default/fragments/js/render-overview :: renderOverview}"/>
+<th:block th:replace="~{common/fragments/js/render-overview :: renderOverview}"/>
 <!-- 5. 详情面板渲染 -->
-<th:block th:replace="~{default/fragments/js/render-detail :: renderDetail}"/>
+<th:block th:replace="~{common/fragments/js/render-detail :: renderDetail}"/>
 <!-- 6. 归因面板渲染 -->
-<th:block th:replace="~{default/fragments/js/render-attribution :: renderAttribution}"/>
+<th:block th:replace="~{common/fragments/js/render-attribution :: renderAttribution}"/>
 <!-- 7. 指标统计面板渲染 -->
-<th:block th:replace="~{default/fragments/js/render-metric :: renderMetric}"/>
-<!-- 8. 导出功能处理 -->
-<th:block th:replace="~{default/fragments/js/export :: export}"/>
+<th:block th:replace="~{common/fragments/js/render-metric :: renderMetric}"/>
+<!-- 8. 导出功能处理（通用） -->
+<th:block th:replace="~{common/fragments/js/export :: export}"/>
 </body>
 </html>

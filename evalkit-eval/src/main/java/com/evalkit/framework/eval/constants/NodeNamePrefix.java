@@ -8,6 +8,7 @@ public class NodeNamePrefix {
     public static final String DATA_LOADER = "dataLoader-";
     public static final String DATA_LOADER_WRAPPER = "dataLoaderWrapper-";
     public static final String API_COMPLETION = "apiCompletion-";
+    public static final String API_COMPLETION_WRAPPER = "apiCompletionWrapper-";
     public static final String SCORER = "scorer-";
     public static final String COUNTER = "counter-";
     public static final String REPORTER = "reporter-";

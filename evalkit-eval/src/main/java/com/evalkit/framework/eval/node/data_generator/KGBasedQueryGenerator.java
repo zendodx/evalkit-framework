@@ -232,6 +232,9 @@ public class KGBasedQueryGenerator extends DataGenerator {
                     .orElse(null);
 
             if (configTurn != null) {
+                // 注入场景与意图（来自模板对应轮次的配置）
+                generatedTurn.scenario = configTurn.scenario;
+                generatedTurn.intent = configTurn.intent;
                 generatedTurn.assertType = configTurn.assertType;
 
                 if (configTurn.expectedVars != null) {
@@ -266,7 +269,7 @@ public class KGBasedQueryGenerator extends DataGenerator {
                 // 将query和turn字段名称转为指定名称
                 for (Turn turn : testCase.getQueries()) {
                     queryMapList.add(convertTurnToMap(turn, config.getQueryFieldName(), config.getTurnFieldName(),
-                            config.getSessionIdFieldName()));
+                            config.getSessionIdFieldName(), config.getScenarioFieldName(), config.getIntentFieldName()));
                 }
                 testCaseMap.put("queries", queryMapList);
                 res.add(testCaseMap);
@@ -280,7 +283,8 @@ public class KGBasedQueryGenerator extends DataGenerator {
                     Map<String, Object> queryMap = new LinkedHashMap<>(testCaseMap);
                     // 存入单轮特有数据
                     Map<String, Object> turnMap = convertTurnToMap(turn, config.getQueryFieldName(),
-                            config.getTurnFieldName(), config.getSessionIdFieldName());
+                            config.getTurnFieldName(), config.getSessionIdFieldName(), config.getScenarioFieldName(),
+                            config.getIntentFieldName());
                     queryMap.putAll(turnMap);
                     res.add(queryMap);
                 }
@@ -290,17 +294,21 @@ public class KGBasedQueryGenerator extends DataGenerator {
         return res;
     }
 
-    protected Map<String, Object> convertTurnToMap(Turn turn, String queryFieldName, String turnFieldName, String sessionIdFieldName) {
+    protected Map<String, Object> convertTurnToMap(Turn turn, String queryFieldName, String turnFieldName,
+                                                    String sessionIdFieldName, String scenarioFieldName, String intentFieldName) {
         Map<String, Object> turnMap = MapUtils.beanToMap(turn);
-        // 删除原本的query和turn字段
+        // 删除原本的字段
         turnMap.remove("query");
         turnMap.remove("turn");
         turnMap.remove("sessionId");
-        // 添加会话ID字段
-        // 添加指定的turn和query字段
+        turnMap.remove("scenario");
+        turnMap.remove("intent");
+        // 添加指定名称的字段
         turnMap.put(queryFieldName, turn.query);
         turnMap.put(turnFieldName, turn.turn);
         turnMap.put(sessionIdFieldName, turn.sessionId);
+        turnMap.put(scenarioFieldName, turn.scenario);
+        turnMap.put(intentFieldName, turn.intent);
         return turnMap;
     }
 

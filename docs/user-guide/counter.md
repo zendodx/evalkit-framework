@@ -1,3 +1,10 @@
+---
+layout: default
+title: 统计器（Counter）
+parent: 用户指南
+nav_order: 12
+---
+
 # 统计器（Counter）
 
 统计器在所有评估器执行完毕后运行，负责对所有数据的评测结果进行**汇总统计**，并将统计结果存入上下文，供 Reporter 使用。

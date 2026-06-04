@@ -1027,6 +1027,7 @@ class RubricBasedScorerTest {
                 .criteriaThreadNum(2)
                 .enableRetry(false)
                 .normalizeScore(false)
+                .criteriaBatchSize(2)
                 .build();
 
         Scorer rubricScorer = new RubricBasedScorer(

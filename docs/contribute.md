@@ -1,3 +1,9 @@
+---
+layout: default
+title: 贡献指南
+nav_order: 5
+---
+
 # Git提交规范
 
 ## 提交信息结构

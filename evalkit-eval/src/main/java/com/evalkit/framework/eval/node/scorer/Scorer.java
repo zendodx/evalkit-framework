@@ -139,6 +139,41 @@ public abstract class Scorer extends WorkflowNode {
     }
 
     /**
+     * 判断当前数据项是否需要执行本 Scorer
+     * condition 为 null 时始终返回 true（不过滤，向前兼容）
+     *
+     * @param dataItem 待判断的数据项
+     * @return true 需要评估，false 跳过
+     */
+    protected boolean shouldEval(DataItem dataItem) {
+        java.util.function.Function<DataItem, Boolean> condition = config.getCondition();
+        return condition == null || Boolean.TRUE.equals(condition.apply(dataItem));
+    }
+
+    /**
+     * 构建跳过结果（条件不满足时返回）
+     * totalScore=0 不计入汇总，success=true pass=true 不影响通过率
+     *
+     * @param item 当前数据项
+     * @return 跳过结果
+     */
+    protected ScorerResult buildSkipResult(DataItem item) {
+        return ScorerResult.builder()
+                .dataIndex(item.getDataIndex())
+                .metric(config.getMetricName())
+                .score(config.getSkipScore())
+                .totalScore(0)
+                .reason("skipped by condition")
+                .success(true)
+                .pass(true)
+                .scoreRate(0)
+                .threshold(config.getThreshold())
+                .star(false)
+                .scorerType(this.scorerType)
+                .build();
+    }
+
+    /**
      * 构建评测失败的结果
      *
      * @param item 当前数据项
@@ -202,7 +237,9 @@ public abstract class Scorer extends WorkflowNode {
         if (CollectionUtils.isEmpty(dataItems)) {
             throw new EvalException("Data items is empty");
         }
-        List<ScorerResult> scorerResults = BatchRunner.runBatch(dataItems, this::evalWrapper, PoolName.SCORER, config.getThreadNum(), size -> size * SINGLE_TASK_TIMEOUT);
+        List<ScorerResult> scorerResults = BatchRunner.runBatch(dataItems,
+                item -> shouldEval(item) ? this.evalWrapper(item) : this.buildSkipResult(item),
+                PoolName.SCORER, config.getThreadNum(), size -> size * SINGLE_TASK_TIMEOUT);
         if (CollectionUtils.isEmpty(scorerResults)) {
             throw new EvalException("Scorer result is empty");
         }

@@ -1,3 +1,10 @@
+---
+layout: default
+title: 大模型服务（LLMService）
+parent: 用户指南
+nav_order: 2
+---
+
 # 大模型服务（LLMService）
 
 `LLMService` 是框架中调用大模型的统一接口，凡是需要 LLM 能力的节点（`PromptBasedScorer`、`AttributeCounter`、`PromptBasedQueryGenerator` 等）都依赖它。
