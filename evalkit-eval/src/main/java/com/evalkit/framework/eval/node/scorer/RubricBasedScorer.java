@@ -31,7 +31,8 @@ import java.util.stream.Collectors;
  * <p>
  * 核心设计要点：
  * <ul>
- *   <li>每个维度独立发起一次 LLM 调用，避免多维度共享 Prompt 时的注意力稀释和格式错误放大。</li>
+ *   <li>支持单维度模式（默认）与批量模式：{@code criteriaBatchSize=1} 时每个维度独立调用，
+ *       注意力最集中；{@code criteriaBatchSize>1} 时多维度合并为一次调用，节省 Token。</li>
  *   <li>Prompt 强制要求先推理后打分（Chain-of-Thought），防止 LLM 先锚定分数再补理由。</li>
  *   <li>各维度得分在聚合前先归一化到 [0, 1]，避免不同量程维度之间的量纲错乱。</li>
  *   <li>支持在每个维度配置 Few-shot 分值示例，校准中间分值漂移（可选）。</li>
@@ -76,22 +77,34 @@ public abstract class RubricBasedScorer extends Scorer {
 
     // ==================== extra 字段 Key ====================
 
-    /** 各维度原始分数，{@code Map<criteriaName, rawScore>} */
+    /**
+     * 各维度原始分数，{@code Map<criteriaName, rawScore>}
+     */
     public static final String EXTRA_KEY_CRITERIA_RAW_SCORES = "rubric_criteria_raw_scores";
 
-    /** 各维度归一化分数，{@code Map<criteriaName, normalizedScore>} */
+    /**
+     * 各维度归一化分数，{@code Map<criteriaName, normalizedScore>}
+     */
     public static final String EXTRA_KEY_CRITERIA_NORM_SCORES = "rubric_criteria_norm_scores";
 
-    /** 各维度打分理由，{@code Map<criteriaName, reason>} */
+    /**
+     * 各维度打分理由，{@code Map<criteriaName, reason>}
+     */
     public static final String EXTRA_KEY_CRITERIA_REASONS = "rubric_criteria_reasons";
 
-    /** 各维度推理过程，{@code Map<criteriaName, reasoning>} */
+    /**
+     * 各维度推理过程，{@code Map<criteriaName, reasoning>}
+     */
     public static final String EXTRA_KEY_CRITERIA_REASONINGS = "rubric_criteria_reasonings";
 
-    /** 各维度通过率阈值，{@code Map<criteriaName, passRate>}，用于报告层判断每个维度是否达标 */
+    /**
+     * 各维度通过率阈值，{@code Map<criteriaName, passRate>}，用于报告层判断每个维度是否达标
+     */
     public static final String EXTRA_KEY_CRITERIA_PASS_RATES = "rubric_criteria_pass_rates";
 
-    /** 最终合并策略名称 */
+    /**
+     * 最终合并策略名称
+     */
     public static final String EXTRA_KEY_MERGE_STRATEGY = "rubric_merge_strategy";
 
     public RubricBasedScorer(RubricBasedScorerConfig config) {
@@ -110,6 +123,10 @@ public abstract class RubricBasedScorer extends Scorer {
         }
         if (config.getSamplingTimes() < 1) {
             throw new IllegalArgumentException("[RubricBasedScorer] samplingTimes must >= 1");
+        }
+        if (config.getCriteriaBatchSize() != 1 && config.getCriteriaBatchSize() < 0) {
+            // <= 0 的值在运行时会被 clamp 为全量维度数，此处仅排除明确非法的负数（-1以下）
+            // 实际上 <= 0 统一视为「全量」，不抛异常
         }
         // 校验各维度参数合法性及名称唯一性
         Set<String> nameSet = new HashSet<>();
@@ -185,27 +202,41 @@ public abstract class RubricBasedScorer extends Scorer {
         // 对需要执行的维度发起并发 LLM 调用。
         // 使用独立的 SCORER_CRITERIA 线程池，避免与外层 SCORER 池形成嵌套死锁。
         if (!activeCriteria.isEmpty()) {
-            int criteriaThreadNum = Math.min(activeCriteria.size(), config.getCriteriaThreadNum());
-            List<CriteriaEvalResult> evalResults = BatchRunner.runBatch(
-                    activeCriteria,
-                    criteria -> evalSingleCriteria(criteria, userPrompt),
+            // 按 criteriaBatchSize 将维度分组，每组作为一次 LLM 调用任务
+            int batchSize = config.getCriteriaBatchSize();
+            if (batchSize <= 0) {
+                batchSize = activeCriteria.size(); // <= 0 视为全量合并为一次调用
+            }
+            List<List<RubricCriteria>> batches = partitionList(activeCriteria, batchSize);
+
+            int criteriaThreadNum = Math.min(batches.size(), config.getCriteriaThreadNum());
+            List<List<CriteriaEvalResult>> batchResults = BatchRunner.runBatch(
+                    batches,
+                    batch -> evalCriteriaBatch(batch, userPrompt),
                     PoolName.SCORER_CRITERIA,
                     criteriaThreadNum,
                     size -> size * SINGLE_TASK_TIMEOUT
             );
-            if (CollectionUtils.isEmpty(evalResults) || evalResults.size() != activeCriteria.size()) {
+            if (CollectionUtils.isEmpty(batchResults) || batchResults.size() != batches.size()) {
                 throw new EvalException("[RubricBasedScorer] Partial or all criteria eval failed, expected=" +
-                        activeCriteria.size() + ", actual=" + (evalResults == null ? 0 : evalResults.size()));
+                        batches.size() + " batches, actual=" + (batchResults == null ? 0 : batchResults.size()));
             }
-            for (int i = 0; i < activeCriteria.size(); i++) {
-                RubricCriteria criteria = activeCriteria.get(i);
-                CriteriaEvalResult result = evalResults.get(i);
-                rawScores.put(criteria.getName(), result.rawScore);
-                normalizedScores.put(criteria.getName(), result.normalizedScore);
-                reasons.put(criteria.getName(), result.reason);
-                reasonings.put(criteria.getName(), result.reasoning);
-                log.debug("[RubricBasedScorer] criteria={}, rawScore={}, normalizedScore={}, reason={}",
-                        criteria.getName(), result.rawScore, result.normalizedScore, result.reason);
+            // 将各批次结果打平，按 activeCriteria 顺序写入
+            int idx = 0;
+            for (int b = 0; b < batches.size(); b++) {
+                List<RubricCriteria> batch = batches.get(b);
+                List<CriteriaEvalResult> results = batchResults.get(b);
+                for (int j = 0; j < batch.size(); j++) {
+                    RubricCriteria criteria = batch.get(j);
+                    CriteriaEvalResult result = results.get(j);
+                    rawScores.put(criteria.getName(), result.rawScore);
+                    normalizedScores.put(criteria.getName(), result.normalizedScore);
+                    reasons.put(criteria.getName(), result.reason);
+                    reasonings.put(criteria.getName(), result.reasoning);
+                    log.debug("[RubricBasedScorer] criteria={}, rawScore={}, normalizedScore={}, reason={}",
+                            criteria.getName(), result.rawScore, result.normalizedScore, result.reason);
+                    idx++;
+                }
             }
         }
 
@@ -239,6 +270,35 @@ public abstract class RubricBasedScorer extends Scorer {
         scorerResult.addExtraItem(EXTRA_KEY_CRITERIA_REASONINGS, reasonings);
         scorerResult.addExtraItem(EXTRA_KEY_MERGE_STRATEGY, config.getMergeStrategy().name());
         return scorerResult;
+    }
+
+    // ==================== 维度评估调度 ====================
+
+    /**
+     * 将列表按 batchSize 均匀分组。
+     */
+    private static <T> List<List<T>> partitionList(List<T> list, int batchSize) {
+        List<List<T>> result = new ArrayList<>();
+        for (int i = 0; i < list.size(); i += batchSize) {
+            result.add(list.subList(i, Math.min(i + batchSize, list.size())));
+        }
+        return result;
+    }
+
+    /**
+     * 评估一批维度（大小可为 1 或 >1）。
+     * <p>
+     * 当批次大小为 1 时走单维度路径（兼容原行为）；否则走批量路径，将多个维度合并为一次 LLM 调用。
+     *
+     * @param batch      一批评估维度
+     * @param userPrompt 用户侧待评估文本
+     * @return 与 batch 顺序一一对应的评估结果列表
+     */
+    private List<CriteriaEvalResult> evalCriteriaBatch(List<RubricCriteria> batch, String userPrompt) {
+        if (batch.size() == 1) {
+            return Collections.singletonList(evalSingleCriteria(batch.get(0), userPrompt));
+        }
+        return evalMultiCriteria(batch, userPrompt);
     }
 
     // ==================== 单维度评估 ====================
@@ -314,7 +374,124 @@ public abstract class RubricBasedScorer extends Scorer {
                 criteria.getName(), lastEx != null ? lastEx.getMessage() : "unknown"));
     }
 
+    // ==================== 批量维度评估 ====================
+
+    /**
+     * 将多个维度合并为一次 LLM 调用进行评估，节省 Token。
+     * <p>
+     * LLM 被要求按维度顺序逐一输出 JSON 对象，整体包裹在 JSON 数组中。
+     * 若解析失败，将整批重试；若仍失败则对批次内每个维度降级为单独调用。
+     *
+     * @param batch      待评估的一批维度
+     * @param userPrompt 用户侧待评估文本
+     * @return 与 batch 顺序一一对应的评估结果列表
+     */
+    private List<CriteriaEvalResult> evalMultiCriteria(List<RubricCriteria> batch, String userPrompt) {
+        String prompt = buildBatchCriteriaPrompt(batch, userPrompt);
+
+        boolean enableRetry = config.isEnableRetry();
+        int maxRetry = config.getRetryTimes();
+        Exception lastEx = null;
+
+        for (int retry = 0; retry <= (enableRetry ? maxRetry : 0); retry++) {
+            try {
+                String reply = config.getLlmService().chat(prompt);
+                log.debug("[RubricBasedScorer] batch size={}, prompt={}, reply={}", batch.size(), prompt, reply);
+                List<CriteriaEvalResult> results = parseBatchCriteriaReply(batch, reply);
+                if (results.size() == batch.size()) {
+                    return results;
+                }
+                throw new EvalException(String.format(
+                        "[RubricBasedScorer] Batch reply size mismatch: expected=%d, got=%d",
+                        batch.size(), results.size()));
+            } catch (Exception e) {
+                lastEx = e;
+                log.warn("[RubricBasedScorer] batch retry={}/{} error={}", retry, maxRetry, e.getMessage());
+                if (retry < maxRetry) {
+                    try {
+                        Thread.sleep(config.getRetryTimeUnit().toMillis(config.getRetryInterval()));
+                    } catch (InterruptedException ignored) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+        }
+
+        // 整批重试耗尽后，降级为逐个单独调用
+        log.warn("[RubricBasedScorer] Batch eval failed after {} retries, falling back to single-criteria calls", maxRetry);
+        List<CriteriaEvalResult> fallbackResults = new ArrayList<>();
+        for (RubricCriteria criteria : batch) {
+            fallbackResults.add(evalSingleCriteria(criteria, userPrompt));
+        }
+        return fallbackResults;
+    }
+
     // ==================== Prompt 构建 ====================
+
+    /**
+     * 为多个维度构建批量 CoT Prompt，将所有维度合并为一次 LLM 调用。
+     * <p>
+     * LLM 被要求输出 JSON 数组，每个元素对应一个维度，顺序与 batch 一致。
+     *
+     * @param batch      待评估的一批维度
+     * @param userPrompt 用户侧待评估文本
+     * @return 完整的批量评估 Prompt
+     */
+    private String buildBatchCriteriaPrompt(List<RubricCriteria> batch, String userPrompt) {
+        StringBuilder sb = new StringBuilder();
+
+        // 系统角色
+        sb.append("你是一位严格、客观的量规评估专家，负责对指定内容按多个维度进行精确打分。\n\n");
+
+        // 逐维度说明
+        sb.append("【评估维度列表】\n");
+        for (int i = 0; i < batch.size(); i++) {
+            RubricCriteria c = batch.get(i);
+            sb.append(String.format("\n--- 维度 %d: %s ---\n", i + 1, c.getName()));
+            sb.append("定义: ").append(c.getDefinition()).append("\n");
+            if (c.getScoreType() == RubricScoreType.BINARY) {
+                sb.append("评分类型: 二元分（只能输出 0 或 1）\n");
+            } else {
+                sb.append("评分类型: 阶梯分（").append((int) c.getMinScore())
+                        .append(" ~ ").append((int) c.getMaxScore()).append(" 分）\n");
+            }
+            if (StringUtils.isNotBlank(c.getScoringGuide())) {
+                sb.append("打分标准: ").append(c.getScoringGuide()).append("\n");
+            }
+            if (CollectionUtils.isNotEmpty(c.getAnchors())) {
+                sb.append("分值锚点:\n");
+                for (RubricCriteria.ScoringAnchor anchor : c.getAnchors()) {
+                    sb.append(String.format("  %.0f 分示例: %s\n", anchor.getScore(), anchor.getDescription()));
+                }
+            }
+        }
+
+        // CoT 输出格式约束
+        sb.append("\n【输出要求】\n");
+        sb.append("请严格按照以下 JSON 数组格式输出，数组元素顺序必须与上方维度列表顺序完全一致，不要输出任何其他内容：\n");
+        sb.append("```json\n");
+        sb.append("[\n");
+        for (int i = 0; i < batch.size(); i++) {
+            sb.append("  {\n");
+            sb.append("    \"criteria\": \"").append(batch.get(i).getName()).append("\",\n");
+            sb.append("    \"reasoning\": \"<逐步分析待评估内容与该维度定义的匹配程度，给出具体依据，不超过300字>\",\n");
+            sb.append("    \"score\": <数值，根据推理过程得出的最终分数>,\n");
+            sb.append("    \"reason\": \"<一句话总结打分结论，不超过80字>\"\n");
+            sb.append(i < batch.size() - 1 ? "  },\n" : "  }\n");
+        }
+        sb.append("]\n");
+        sb.append("```\n");
+        sb.append("重要: 每个对象中 reasoning 字段必须先于 score 字段，先分析后打分，不得倒置顺序。\n");
+        sb.append("重要: JSON 字符串字段中如需使用双引号，必须用转义形式 \\\" 表示，不得使用未转义的 \"。\n");
+        sb.append("重要: 数组元素数量必须等于维度数量（").append(batch.size()).append(" 个），不得增减。\n");
+        sb.append("输出完成后请自检，确保 JSON 严格可解析。\n\n");
+
+        // 用户待评估数据
+        sb.append("----------以下是待评估内容----------\n");
+        sb.append(userPrompt);
+
+        return sb.toString();
+    }
 
     /**
      * 为单个维度构建 CoT Prompt。
@@ -380,6 +557,50 @@ public abstract class RubricBasedScorer extends Scorer {
     }
 
     // ==================== LLM 回复解析 ====================
+
+    /**
+     * 解析批量 LLM 回复（JSON 数组格式），与 batch 顺序一一对应。
+     *
+     * @param batch 评估维度列表
+     * @param reply LLM 原始回复文本
+     * @return 与 batch 顺序一一对应的评估结果列表
+     * @throws EvalException 回复格式无法解析时抛出
+     */
+    private List<CriteriaEvalResult> parseBatchCriteriaReply(List<RubricCriteria> batch, String reply) {
+        String jsonStr = RegexUtils.extractMarkdownJsonBlock(reply);
+        if (StringUtils.isEmpty(jsonStr)) {
+            jsonStr = reply;
+        }
+        List<CriteriaLLMOutput> outputs = JsonUtils.fromJsonToList(jsonStr, CriteriaLLMOutput.class);
+        if (CollectionUtils.isEmpty(outputs)) {
+            throw new EvalException("[RubricBasedScorer] Failed to parse batch LLM reply as JSON array, reply: " + reply);
+        }
+        if (outputs.size() != batch.size()) {
+            throw new EvalException(String.format(
+                    "[RubricBasedScorer] Batch reply count mismatch: expected=%d, got=%d, reply=%s",
+                    batch.size(), outputs.size(), reply));
+        }
+        List<CriteriaEvalResult> results = new ArrayList<>();
+        for (int i = 0; i < batch.size(); i++) {
+            RubricCriteria criteria = batch.get(i);
+            CriteriaLLMOutput output = outputs.get(i);
+            if (output == null || output.getScore() == null) {
+                throw new EvalException("[RubricBasedScorer] Null score in batch reply for criteria: " + criteria.getName());
+            }
+            double rawScore = output.getScore();
+            if (criteria.getScoreType() == RubricScoreType.BINARY) {
+                rawScore = rawScore > 0 ? 1.0 : 0.0;
+            }
+            double normalizedScore = criteria.normalize(rawScore);
+            results.add(new CriteriaEvalResult(
+                    rawScore,
+                    normalizedScore,
+                    output.getReason() != null ? output.getReason() : "",
+                    output.getReasoning() != null ? output.getReasoning() : ""
+            ));
+        }
+        return results;
+    }
 
     /**
      * 解析单维度 LLM 回复，提取原始分和归一化分。
@@ -614,11 +835,17 @@ public abstract class RubricBasedScorer extends Scorer {
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class CriteriaLLMOutput {
-        /** 推理过程（Chain-of-Thought，先于 score 输出） */
+        /**
+         * 推理过程（Chain-of-Thought，先于 score 输出）
+         */
         private String reasoning;
-        /** 最终分数 */
+        /**
+         * 最终分数
+         */
         private Double score;
-        /** 一句话结论 */
+        /**
+         * 一句话结论
+         */
         private String reason;
     }
 }

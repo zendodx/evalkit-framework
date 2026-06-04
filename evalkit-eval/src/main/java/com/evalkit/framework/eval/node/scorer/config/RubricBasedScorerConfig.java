@@ -44,6 +44,21 @@ public class RubricBasedScorerConfig extends PromptBasedScorerConfig {
     private int criteriaThreadNum = 1;
 
     /**
+     * 每次 LLM 调用评估的维度数量，默认 1（每个维度独立调用）。
+     * <p>
+     * 设置 > 1 时，框架将多个维度合并进同一个 Prompt 一次性评估，可显著节省 Token 和调用次数。
+     * <ul>
+     *   <li>{@code 1}（默认）：每个维度独立调用，注意力最集中，打分最准确，推荐高精度场景使用。</li>
+     *   <li>{@code 2~5}：适度批量，Token 成本与准确性之间的平衡点。</li>
+     *   <li>{@code <= 0} 或超出实际维度数：自动降为实际维度总数（全部合并为一次调用）。</li>
+     * </ul>
+     * 注意：批量模式下，LLM 需同时输出多个维度的 JSON 对象数组，对模型指令跟随能力要求较高；
+     * 若 LLM 回复格式不符，框架会对失败批次整体重试（不会单独重试批次内某个维度）。
+     */
+    @Builder.Default
+    private int criteriaBatchSize = 1;
+
+    /**
      * 是否对各维度原始分数归一化到 [0,1] 后再合并，默认 true（推荐开启）。
      * <p>
      * 开启时（默认）：各维度得分先通过 {@code (score - minScore) / (maxScore - minScore)} 映射到 [0,1]，
