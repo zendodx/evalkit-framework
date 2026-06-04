@@ -3,6 +3,7 @@ layout: default
 title: 概述与快速开始
 parent: 用户指南
 nav_order: 1
+has_toc: true
 ---
 
 # 概述与快速开始
@@ -38,7 +39,6 @@ EvalKit Framework 是一个基于 Java 的 **自动化 AI 评测框架**，以 D
 
 > 最新版本见 [发版历史](../changelog.md)
 
----
 
 ## 整体架构
 
@@ -56,7 +56,6 @@ Begin（全局配置）
                                      └─ End（收尾操作）
 ```
 
----
 
 ## 快速开始
 
@@ -205,7 +204,6 @@ public class QuickStartDemo {
 {"passRate":1.0,"avgScore":1.0,"completionSuccessRate":1.0,...}
 ```
 
----
 
 ## 节点连接规则
 

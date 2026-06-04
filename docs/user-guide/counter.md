@@ -3,13 +3,13 @@ layout: default
 title: 统计器（Counter）
 parent: 用户指南
 nav_order: 12
+has_toc: true
 ---
 
 # 统计器（Counter）
 
 统计器在所有评估器执行完毕后运行，负责对所有数据的评测结果进行**汇总统计**，并将统计结果存入上下文，供 Reporter 使用。
 
----
 
 ## 体系结构
 
@@ -21,7 +21,6 @@ Counter（抽象基类）
 └── AttributeCounterV2   LLM归因分析 V2（带类别、情感极性、置信度）
 ```
 
----
 
 ## BasicCounter
 
@@ -72,7 +71,6 @@ BasicCounter counter = new BasicCounter();
 
 就这一行！无需任何配置，把它放在所有 Scorer 之后即可。
 
----
 
 ## MetricCounter
 
@@ -111,7 +109,6 @@ MetricCounter metricCounter = new MetricCounter() {
 };
 ```
 
----
 
 ## AttributeCounter（归因分析 V1）
 
@@ -152,7 +149,6 @@ AttributeCounter attributeCounter = new AttributeCounter(myLLMService);
 }
 ```
 
----
 
 ## AttributeCounterV2（归因分析 V2）
 
@@ -208,7 +204,6 @@ AttributeCounterV2 attributeCounterV2 = new AttributeCounterV2(myLLMService);
 }
 ```
 
----
 
 ## 自定义统计器
 
@@ -238,7 +233,6 @@ Counter customCounter = new Counter() {
 };
 ```
 
----
 
 ## 典型用法：组合多个统计器
 

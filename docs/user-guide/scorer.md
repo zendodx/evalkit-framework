@@ -3,13 +3,13 @@ layout: default
 title: 评估器（Scorer）
 parent: 用户指南
 nav_order: 10
+has_toc: true
 ---
 
 # 评估器（Scorer）
 
 评估器是框架的核心节点，负责对接口返回结果进行**打分**。多个评估器可以并行执行，最终分数由 `Begin` 节点配置的打分策略汇总。
 
----
 
 ## 体系结构
 
@@ -25,7 +25,6 @@ Scorer（抽象基类）
 └── DifyWorkflowScorer（抽象）   调用 Dify 工作流打分
 ```
 
----
 
 ## Scorer（基类）
 
@@ -100,7 +99,6 @@ Scorer keywordScorer = new Scorer(
 };
 ```
 
----
 
 ## VectorSimilarityScorer
 
@@ -137,7 +135,6 @@ VectorSimilarityScorer similarityScorer = new VectorSimilarityScorer(
 };
 ```
 
----
 
 ## PromptBasedScorer
 
@@ -199,7 +196,6 @@ PromptBasedScorer customLLMScorer = new PromptBasedScorer(
 };
 ```
 
----
 
 ## AnswerRelevancyScorer
 
@@ -235,7 +231,6 @@ AnswerRelevancyScorer relevancyScorer = new AnswerRelevancyScorer(
 - 0.5~0.7 分：基本回应但有冗余
 - 0.8~1.0 分：精准、无冗余
 
----
 
 ## SemanticConsistencyScorer
 
@@ -267,7 +262,6 @@ SemanticConsistencyScorer consistencyScorer = new SemanticConsistencyScorer(
 };
 ```
 
----
 
 ## SecurityScorer
 
@@ -294,7 +288,6 @@ SecurityScorer securityScorer = new SecurityScorer(
 };
 ```
 
----
 
 ## GSBScorer
 
@@ -332,7 +325,6 @@ GSBScorer gsbScorer = new GSBScorer(
 };
 ```
 
----
 
 ## DifyWorkflowScorer
 
@@ -384,7 +376,6 @@ DifyWorkflowScorer difyScorer = new DifyWorkflowScorer(
 };
 ```
 
----
 
 ## RubricBasedScorer
 
@@ -597,7 +588,6 @@ RubricBasedScorerConfig config = RubricBasedScorerConfig.builder()
 | `criteria_reasonings` | `Map<String, String>` | 各维度 CoT 推理过程 |
 | `merge_strategy` | `String` | 本次使用的合并策略名 |
 
----
 
 ## MultiCheckerBasedScorer
 
@@ -621,7 +611,6 @@ MultiCheckerBasedScorer multiChecker = new MultiCheckerBasedScorer(
 };
 ```
 
----
 
 ## 打分策略
 
@@ -664,7 +653,6 @@ Scorer safetyScorer = new Scorer(
                 .build()
 ) { ... };
 
----
 
 ## RubricBasedScorer（量规评估器）
 

@@ -3,6 +3,7 @@ layout: default
 title: 增量评测技术说明
 parent: 开发指南
 nav_order: 1
+has_toc: true
 ---
 
 # 增量评测技术说明

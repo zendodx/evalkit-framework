@@ -3,13 +3,13 @@ layout: default
 title: 数据加载器（DataLoader）
 parent: 用户指南
 nav_order: 3
+has_toc: true
 ---
 
 # 数据加载器（DataLoader）
 
 数据加载器负责将评测数据加载到工作流上下文中，是整个评测流程的第一个数据节点。
 
----
 
 ## 体系结构
 
@@ -24,7 +24,6 @@ DataLoader（抽象基类）
 └── MultiDataLoader     聚合多个加载器
 ```
 
----
 
 ## DataLoader（基类）
 
@@ -81,7 +80,6 @@ DataLoader dataLoader = new JsonFileDataLoader(
 );
 ```
 
----
 
 ## ExcelDataLoader
 
@@ -127,7 +125,6 @@ ExcelDataLoader loader3 = new ExcelDataLoader(
 );
 ```
 
----
 
 ## CsvDataLoader
 
@@ -159,7 +156,6 @@ CsvDataLoader loader = new CsvDataLoader(
 );
 ```
 
----
 
 ## JsonFileDataLoader
 
@@ -196,7 +192,6 @@ JsonFileDataLoader loader2 = new JsonFileDataLoader(
 );
 ```
 
----
 
 ## JsonTextDataLoader
 
@@ -221,7 +216,6 @@ JsonTextDataLoader loader = new JsonTextDataLoader() {
 };
 ```
 
----
 
 ## ApiDataLoader
 
@@ -279,7 +273,6 @@ ApiDataLoader loader = new ApiDataLoader(
 };
 ```
 
----
 
 ## JdbcDataLoader
 
@@ -321,7 +314,6 @@ JdbcDataLoader loader = new JdbcDataLoader(
 };
 ```
 
----
 
 ## MultiDataLoader
 
@@ -345,7 +337,6 @@ MultiDataLoader multiLoader = new MultiDataLoader(
 );
 ```
 
----
 
 ## 常见问题
 

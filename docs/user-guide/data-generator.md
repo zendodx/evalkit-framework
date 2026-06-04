@@ -3,6 +3,7 @@ layout: default
 title: 数据生成器（DataGenerator）
 parent: 用户指南
 nav_order: 7
+has_toc: true
 ---
 
 # 数据生成器（DataGenerator）
@@ -15,7 +16,6 @@ nav_order: 7
 
 `DataGenerator` 继承自 `DataLoader`，也是工作流中的一个节点，它在执行时**生成数据**并将结果注入到工作流上下文，后续节点（如评估器）可以直接使用这些数据。
 
----
 
 ## 类继承关系
 
@@ -28,7 +28,6 @@ DataLoader（数据加载器）
     └── MultiDataGenerator            多源数据生成器（组合多个生成器）
 ```
 
----
 
 ## 公共配置（`DataGeneratorConfig`）
 
@@ -42,7 +41,6 @@ DataLoader（数据加载器）
 | `genDataExporterList` | `List<GenDataExporter>` | `[ExcelGenDataExporter]` | 导出器列表，默认导出 Excel |
 | `threadNum` | Integer | 1 | 并发生成的线程数 |
 
----
 
 ## 数据导出器（GenDataExporter）
 
@@ -69,7 +67,6 @@ DataGeneratorConfig config = EvalCaseDataGeneratorConfig.builder()
     .build();
 ```
 
----
 
 ## 内置实现详解
 
@@ -168,7 +165,6 @@ public class HotelEvalCaseGenerator extends EvalCaseDataGenerator {
 }
 ```
 
----
 
 ### 2. LoaderBasedDataGenerator — 基于数据加载器的生成器（抽象类）
 
@@ -217,7 +213,6 @@ public class ProductQueryGenerator extends LoaderBasedDataGenerator {
 }
 ```
 
----
 
 ### 3. KGBasedQueryGenerator — 基于知识图谱的数据生成器
 
@@ -402,7 +397,6 @@ Workflow workflow = Workflow.builder()
     .build();
 ```
 
----
 
 ### 4. MultiDataGenerator — 多源数据生成器
 
@@ -420,7 +414,6 @@ MultiDataGeneratorConfig config = MultiDataGeneratorConfig.builder()
 MultiDataGenerator generator = new MultiDataGenerator(config);
 ```
 
----
 
 ## 数据生成器 vs 数据加载器
 
@@ -431,7 +424,6 @@ MultiDataGenerator generator = new MultiDataGenerator(config);
 | 是否依赖外部存储 | 是（文件、数据库等） | 否（可完全通过代码生成） |
 | 支持断点续评 | 不直接支持 | 不直接支持（需配合 `DeltaEvalFacade`） |
 
----
 
 ## 完整流程示例：自动构建评测数据集
 

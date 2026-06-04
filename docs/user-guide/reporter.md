@@ -3,6 +3,7 @@ layout: default
 title: 结果上报器（Reporter）
 parent: 用户指南
 nav_order: 13
+has_toc: true
 ---
 
 # 结果上报器（Reporter）
@@ -13,7 +14,6 @@ nav_order: 13
 
 `Reporter` 是 EvalKit 框架工作流中的最后一个处理节点，负责将评测结果以各种形式输出：打印到控制台、写入文件（Excel/CSV/JSON/HTML）、存入数据库、或发送到远程 API。
 
----
 
 ## 类继承关系
 
@@ -29,7 +29,6 @@ Reporter（抽象基类）
 └── ApiReporter（抽象）          HTTP API 上报基类
 ```
 
----
 
 ## 生命周期钩子
 
@@ -44,7 +43,6 @@ Reporter（抽象基类）
 
 > ⚠️ 重要：上报过程中抛出的异常**不会阻塞**整个工作流的运行，框架会记录错误日志后继续执行。
 
----
 
 ## 上报数据结构（ReportData）
 
@@ -55,7 +53,6 @@ Reporter（抽象基类）
 | `dataItems` | `List<DataItem>` | 所有评测数据项，包含输入、接口返回结果、评分等 |
 | `countResultMap` | `Map<String, String>` | 各统计器的输出结果，key 为统计器名称，value 为 JSON 字符串 |
 
----
 
 ## 内置实现详解
 
@@ -83,7 +80,6 @@ Workflow reportWorkflow = Workflow.builder()
     .build();
 ```
 
----
 
 ### 2. ExcelReporter — Excel 文件上报
 
@@ -118,7 +114,6 @@ Workflow reportWorkflow = Workflow.builder()
     .build();
 ```
 
----
 
 ### 3. CsvReporter — CSV 文件上报
 
@@ -140,7 +135,6 @@ new CsvReporter("my_eval_report", "\t", "output/");
 | `delimiter` | 分隔符 | `,`（逗号） |
 | `parentDir` | 输出文件夹路径 | `attachments` |
 
----
 
 ### 4. JsonReporter — JSON 文件上报
 
@@ -164,7 +158,6 @@ new JsonReporter("my_eval_report", "output/json");
 
 > 💡 `JsonReporter` 的输出格式与 `JsonFileDebugger` 的输入格式完全匹配，可以配合使用实现"生产数据→保存→调试重播"的工作流。
 
----
 
 ### 5. HtmlReporter — HTML 可视化报告
 
@@ -202,7 +195,6 @@ Workflow reportWorkflow = Workflow.builder()
     .build();
 ```
 
----
 
 ### 6. JdbcReport — 数据库上报（抽象类）
 
@@ -243,7 +235,6 @@ public class MyMysqlReporter extends JdbcReport {
 }
 ```
 
----
 
 ### 7. ApiReporter — HTTP API 上报（抽象类）
 
@@ -296,7 +287,6 @@ public class MyApiReporter extends ApiReporter {
 }
 ```
 
----
 
 ## 自定义上报器
 
@@ -335,7 +325,6 @@ public class MyCustomReporter extends Reporter {
 }
 ```
 
----
 
 ## 多个上报器同时使用
 
@@ -350,7 +339,6 @@ Workflow reportWorkflow = Workflow.builder()
     .build();
 ```
 
----
 
 ## 与统计器（Counter）配合使用
 
@@ -365,7 +353,6 @@ Workflow reportWorkflow = Workflow.builder()
     .build();
 ```
 
----
 
 ## 文件输出路径说明
 

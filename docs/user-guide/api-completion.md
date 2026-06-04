@@ -3,13 +3,13 @@ layout: default
 title: 接口调用器（ApiCompletion）
 parent: 用户指南
 nav_order: 8
+has_toc: true
 ---
 
 # 接口调用器（ApiCompletion）
 
 接口调用器负责对每条测试数据**调用被测的业务接口**，并将返回结果存入 `DataItem` 的 `apiCompletionResult` 字段，供后续评估器使用。
 
----
 
 ## 体系结构
 
@@ -19,7 +19,6 @@ ApiCompletion（抽象基类）
 └── OrderedApiCompletion（抽象）  保证同一会话内的请求按序执行
 ```
 
----
 
 ## ApiCompletion（基类）
 
@@ -107,7 +106,6 @@ public ScorerResult eval(DataItem dataItem) {
 }
 ```
 
----
 
 ## HttpApiCompletion
 
@@ -181,7 +179,6 @@ HttpApiCompletion httpApiCompletion = new HttpApiCompletion(
 };
 ```
 
----
 
 ## OrderedApiCompletion
 
@@ -244,7 +241,6 @@ OrderedApiCompletion orderedApiCompletion = new OrderedApiCompletion(
 | 并发方式 | 所有数据完全并行 | 不同会话并行，同会话串行 |
 | 需实现方法 | `invoke()` | `invoke()` + `prepareOrderKey()` + `prepareComparator()` |
 
----
 
 ## 注意事项
 

@@ -3,13 +3,13 @@ layout: default
 title: 检查器（Checker）
 parent: 用户指南
 nav_order: 11
+has_toc: true
 ---
 
 # 检查器（Checker）
 
 检查器是 `MultiCheckerBasedScorer` 的内部组件，负责对评测数据进行**单个维度的细粒度检查**，每个检查器包含若干个**检查项（CheckItem）**，最终分数由所有检查项的结果汇总而来。
 
----
 
 ## 核心概念
 
@@ -28,7 +28,6 @@ MultiCheckerBasedScorer
 - `Checker`（检查器）包含多个 `CheckItem`（检查项）
 - `CheckItem` 是最小的打分单元
 
----
 
 ## CheckItem（检查项）
 
@@ -91,7 +90,6 @@ CheckItem llmItem = CheckItem.builder()
         .build();
 ```
 
----
 
 ## Checker 接口
 
@@ -108,7 +106,6 @@ public interface Checker {
 }
 ```
 
----
 
 ## AbstractChecker（抽象基类）
 
@@ -133,7 +130,6 @@ public interface Checker {
 | `MinCheckItemScoreMergeStrategy` | 取最小检查项得分 |
 | 自定义 | 实现 `CheckItemScoreMergeStrategy` 接口 |
 
----
 
 ## 示例：规则检查器
 
@@ -211,7 +207,6 @@ public class RequiredFieldsChecker extends AbstractChecker {
 }
 ```
 
----
 
 ## 示例：LLM 检查器
 
@@ -279,7 +274,6 @@ public class QualityChecker extends LLMBasedChecker {
 }
 ```
 
----
 
 ## 多轮对话检查（LLMBasedChecker 高级用法）
 
@@ -316,7 +310,6 @@ public class MultiTurnChecker extends LLMBasedChecker {
 }
 ```
 
----
 
 ## 完整示例：组合多个检查器
 

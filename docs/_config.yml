@@ -4,7 +4,13 @@ baseurl: "/evalkit-framework"
 url: "https://zendodx.github.io"
 
 # just-the-docs 主题
-remote_theme: just-the-docs/just-the-docs@v0.10.0
+theme: just-the-docs
+
+# 导航：默认展开所有子菜单，不折叠
+nav_fold: false
+
+# 页内目录（右侧 TOC）：自动为 h2/h3 标题生成锚点
+heading_anchors: true
 
 # 全文搜索
 search_enabled: true
@@ -57,6 +63,10 @@ kramdown:
   syntax_highlighter_opts:
     block:
       line_numbers: false
+
+# Jekyll 插件
+plugins:
+  - jekyll-seo-tag
 
 # 排除不需要渲染的目录
 exclude:

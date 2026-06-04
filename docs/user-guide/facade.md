@@ -3,6 +3,7 @@ layout: default
 title: 评测门面（EvalFacade）
 parent: 用户指南
 nav_order: 14
+has_toc: true
 ---
 
 # 评测门面（EvalFacade）
@@ -13,7 +14,6 @@ nav_order: 14
 
 你只需要配置好评测门面，调用 `run()` 方法，框架就会自动完成所有步骤。
 
----
 
 ## 三种评测模式
 
@@ -23,7 +23,6 @@ nav_order: 14
 | **增量评测** | `DeltaEvalFacade` | 数据量大、需要断点续评、支持周期上报进度 |
 | **有序增量评测** | `OrderedDeltaEvalFacade` | 在增量评测基础上，保证同组数据（如同一会话）按顺序处理 |
 
----
 
 ## 通用生命周期
 
@@ -50,7 +49,6 @@ run()
         └── afterExecute()      执行后钩子
 ```
 
----
 
 ## 公共基础配置（`EvalConfig`）
 
@@ -73,7 +71,6 @@ run()
 
 > 💡 **环境变量覆盖**：所有配置参数都可以通过 JVM 系统属性覆盖，例如 `-DthreadNum=8 -DpassScore=0.7`，方便在不修改代码的情况下动态调整配置。
 
----
 
 ## 模式一：全量评测（FullEvalFacade）
 
@@ -140,7 +137,6 @@ FullEvalConfig config = FullEvalConfig.builder()
 new FullEvalFacade(config).run();
 ```
 
----
 
 ## 模式二：增量评测（DeltaEvalFacade）
 
@@ -253,7 +249,6 @@ eval_cache_data/
 └── {taskNameUuid}.db   # SQLite数据库文件
 ```
 
----
 
 ## 模式三：有序增量评测（OrderedDeltaEvalFacade）
 
@@ -318,7 +313,6 @@ DeltaEvalConfig config = DeltaEvalConfig.builder()
 new OrderedHotelEvalFacade(config).run();
 ```
 
----
 
 ## 三种模式选择指南
 
@@ -336,7 +330,6 @@ new OrderedHotelEvalFacade(config).run();
     → 使用 DeltaEvalFacade
 ```
 
----
 
 ## 进度监控
 
@@ -362,7 +355,6 @@ new Thread(() -> {
 deltaFacade.run();
 ```
 
----
 
 ## 注意事项
 
