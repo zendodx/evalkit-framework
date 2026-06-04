@@ -3,13 +3,13 @@ layout: default
 title: 大模型服务（LLMService）
 parent: 用户指南
 nav_order: 2
+has_toc: true
 ---
 
 # 大模型服务（LLMService）
 
 `LLMService` 是框架中调用大模型的统一接口，凡是需要 LLM 能力的节点（`PromptBasedScorer`、`AttributeCounter`、`PromptBasedQueryGenerator` 等）都依赖它。
 
----
 
 ## 接口定义
 
@@ -23,7 +23,6 @@ public interface LLMService {
 }
 ```
 
----
 
 ## 内置实现
 
@@ -35,7 +34,6 @@ public interface LLMService {
 | DeepSeek | `LLMServiceFactory.createDeepSeekService(...)` |
 | 自定义（任意 HTTP） | 实现 `LLMService` 接口 |
 
----
 
 ## 配置参数（LLMServiceConfig）
 
@@ -54,7 +52,6 @@ public interface LLMService {
 | `inPrice` | 输入 Token 价格（每百万 Token） | 0.0 |
 | `outPrice` | 输出 Token 价格（每百万 Token） | 0.0 |
 
----
 
 ## 使用示例
 
@@ -121,7 +118,6 @@ public class MyPrivateLLMService implements LLMService {
 }
 ```
 
----
 
 ## Token 计费统计
 
@@ -143,7 +139,6 @@ public class MyPrivateLLMService implements LLMService {
 }
 ```
 
----
 
 ## 注意事项
 

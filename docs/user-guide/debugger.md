@@ -3,6 +3,7 @@ layout: default
 title: 调试器（Debugger）
 parent: 用户指南
 nav_order: 15
+has_toc: true
 ---
 
 # 调试器（Debugger）
@@ -18,7 +19,6 @@ nav_order: 15
 - 你想修改统计逻辑后重新统计，但不想再次调用耗时的接口
 - 此时用 `JsonFileDebugger` 加载上次的结果，直接跳到统计和上报步骤即可
 
----
 
 ## 类继承关系
 
@@ -29,7 +29,6 @@ WorkflowNode（工作流节点）
     └── JsonStringDebugger  从 JSON 字符串加载数据并注入上下文
 ```
 
----
 
 ## 核心机制
 
@@ -40,7 +39,6 @@ WorkflowNode（工作流节点）
 3. 将数据注入到工作流上下文（`WorkflowContext`）中
 4. 后续节点（如统计器、上报器）直接使用注入的数据，无需再走数据加载和接口调用
 
----
 
 ## 调试器参数说明
 
@@ -57,7 +55,6 @@ WorkflowNode（工作流节点）
 - **`true`（默认）**：保留 JSON 数据中已有的评测结果，适合"只重新统计、不重新评测"的场景
 - **`false`**：清空 JSON 数据中的评测结果，重新初始化一个空的 `EvalResult`，适合"数据已有接口调用结果，需要重新评测打分"的场景
 
----
 
 ## 内置实现
 
@@ -104,7 +101,6 @@ new FullEvalFacade(config).run();
 
 > 💡 **最佳实践**：通常将调试器直接放在 `evalWorkflow` 的第一个节点，它会覆盖 `loadData()` 阶段加载的数据，或者更简单地，专门构建一个只含调试器和后续处理节点的工作流。
 
----
 
 ### 2. JsonStringDebugger — 从 JSON 字符串加载
 
@@ -172,7 +168,6 @@ public void testBasicCounter() {
 }
 ```
 
----
 
 ## 调试数据的 JSON 格式
 
@@ -219,7 +214,6 @@ public void testBasicCounter() {
 }
 ```
 
----
 
 ## 典型使用场景
 
@@ -294,7 +288,6 @@ public void testPromptBasedScorer() {
 }
 ```
 
----
 
 ## 调试器 vs 数据加载器
 
@@ -306,7 +299,6 @@ public void testPromptBasedScorer() {
 | **是否包含评测结果** | 可以包含（可配置） | 通常不包含 |
 | **推荐使用场景** | 调试、单元测试、重新统计 | 正式评测 |
 
----
 
 ## 注意事项
 

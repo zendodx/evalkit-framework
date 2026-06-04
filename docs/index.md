@@ -8,7 +8,7 @@ nav_order: 1
 
 > 基于 Java 的自动化 AI 评测框架，以 DAG 工作流为核心，快速完成对大模型或 AI 业务接口的自动化评测。
 
-[快速开始](./user-guide/overview){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
+[快速开始]({{ site.baseurl }}/user-guide/overview){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
 [查看 GitHub](https://github.com/zendodx/evalkit-framework){: .btn .fs-5 .mb-4 .mb-md-0 }
 
 ---
@@ -25,8 +25,8 @@ nav_order: 1
 
 ## 快速导航
 
-- 📖 [用户指南](./user-guide/) — 框架各模块完整使用说明
-- 🛠️ [开发指南](./dev-guide/) — 框架内部设计与扩展开发
-- 📋 [ChangeLog](./changelog) — 版本更新记录
-- 🤝 [贡献指南](./contribute) — 提交规范与贡献流程
+- 📖 [用户指南]({{ site.baseurl }}/user-guide/) — 框架各模块完整使用说明
+- 🛠️ [开发指南]({{ site.baseurl }}/dev-guide/) — 框架内部设计与扩展开发
+- 📋 [ChangeLog]({{ site.baseurl }}/changelog) — 版本更新记录
+- 🤝 [贡献指南]({{ site.baseurl }}/contribute) — 提交规范与贡献流程
 

@@ -3,29 +3,26 @@ layout: default
 title: 数据装饰器（DataLoaderWrapper）
 parent: 用户指南
 nav_order: 4
+has_toc: true
 ---
 
 # 数据装饰器（DataLoaderWrapper）
 
 数据装饰器用于在数据加载后、接口调用前，对测试数据进行**增强或变换**。典型用途包括：
 
-- **Mock 数据替换**：把数据中的 `{{holiday}}`、`{{city}}` 等占位符替换成真实随机值
+- **Mock 数据替换**：把数据中的占位符（格式：`双花括号包裹规则名和参数`，如 `holiday`、`city 四川省`）替换成真实随机值
 - **LLM 润色**：用大模型把原始 query 改写成更自然、口语化的表达
 - **自定义增强**：在每条数据上追加字段、调用外部接口补充信息等
-
----
 
 ## 体系结构
 
 ```
 DataLoaderWrapper（抽象基类）
-├── MockDataLoaderWrapper         替换 {{占位符}} 为随机值
+├── MockDataLoaderWrapper         替换 占位符 为随机值
 ├── PromptDataLoaderWrapper（抽象） 用 LLM Prompt 增强数据
 │   └── PolishDataLoaderWrapper（抽象） 专门做口语润色
 └── （自定义继承 DataLoaderWrapper）
 ```
-
----
 
 ## DataLoaderWrapper（基类）
 
@@ -54,11 +51,9 @@ DataLoaderWrapper wrapper = new DataLoaderWrapper(
 };
 ```
 
----
-
 ## MockDataLoaderWrapper
 
-用于替换数据中的**占位符**（格式：`{{规则名 参数}}`），框架内置了多种 Mock 数据生成规则。
+用于替换数据中的**占位符**，框架内置了多种 Mock 数据生成规则，详细规则见 [mocker.md](./mocker)。
 
 ### 配置项
 
@@ -85,12 +80,10 @@ MockDataLoaderWrapper mockWrapper = new MockDataLoaderWrapper() {
 
 ```
 // 数据中 query 字段的值：
-"{{future_date 3 7}}从北京去{{city}}，帮我订{{holiday}}特价机票"
+"future_date 3 7从北京去city，帮我订holiday特价机票"
 // 替换后示例结果：
 "2026-06-03从北京去广州，帮我订端午节特价机票"
 ```
-
----
 
 ## 内置 Mock 规则详解
 
@@ -98,54 +91,52 @@ MockDataLoaderWrapper mockWrapper = new MockDataLoaderWrapper() {
 
 | 规则 | 说明 | 示例 |
 |------|------|------|
-| `{{date}}` | 当前时间（默认格式 `yyyy-MM-dd HH:mm:ss`） | `2026-05-26 10:30:00` |
-| `{{date yyyy/MM/dd}}` | 当前时间（自定义格式） | `2026/05/26` |
-| `{{future_date 7}}` | 未来 0~7 天内随机日期 | `2026-05-29` |
-| `{{future_date 3 14}}` | 未来 3~14 天内随机日期 | `2026-06-03` |
-| `{{future_date 3 14 yyyy/MM/dd}}` | 未来 3~14 天内随机日期（自定义格式） | `2026/06/03` |
-| `{{past_date 7}}` | 过去 0~7 天内随机日期 | `2026-05-20` |
-| `{{past_date 14 365}}` | 过去 14~365 天内随机日期 | `2026-01-15` |
+| `date` | 当前时间（默认格式 `yyyy-MM-dd HH:mm:ss`） | `2026-05-26 10:30:00` |
+| `date yyyy/MM/dd` | 当前时间（自定义格式） | `2026/05/26` |
+| `future_date 7` | 未来 0~7 天内随机日期 | `2026-05-29` |
+| `future_date 3 14` | 未来 3~14 天内随机日期 | `2026-06-03` |
+| `future_date 3 14 yyyy/MM/dd` | 未来 3~14 天内随机日期（自定义格式） | `2026/06/03` |
+| `past_date 7` | 过去 0~7 天内随机日期 | `2026-05-20` |
+| `past_date 14 365` | 过去 14~365 天内随机日期 | `2026-01-15` |
 
 ### HolidayMocker（节假日）
 
 | 规则 | 说明 |
 |------|------|
-| `{{holiday}}` | 随机返回一个公历或农历节假日名称 |
-| `{{local_holiday}}` | 随机公历节假日（元旦、春节、清明…） |
-| `{{chinese_holiday}}` | 随机农历节假日 |
-| `{{future_holiday}}` | 将来的某个节假日 |
-| `{{future_holiday 20250815}}` | 2025-08-15 之后的节假日 |
-| `{{past_holiday}}` | 过去的某个节假日 |
-| `{{between_holiday 20250101 20251231}}` | 2025 年内的某个节假日 |
+| `holiday` | 随机返回一个公历或农历节假日名称 |
+| `local_holiday` | 随机公历节假日（元旦、春节、清明…） |
+| `chinese_holiday` | 随机农历节假日 |
+| `future_holiday` | 将来的某个节假日 |
+| `future_holiday 20250815` | 2025-08-15 之后的节假日 |
+| `past_holiday` | 过去的某个节假日 |
+| `between_holiday 20250101 20251231` | 2025 年内的某个节假日 |
 
 ### ChinaAddressMocker（中国行政区划）
 
 | 规则 | 说明 | 示例 |
 |------|------|------|
-| `{{province}}` | 随机省份 | `广东省` |
-| `{{city}}` | 随机地级市 | `成都市` |
-| `{{city 四川省}}` | 四川省下辖某个市 | `绵阳市` |
-| `{{area}}` | 随机区/县 | `天府新区` |
-| `{{area 四川省 成都市}}` | 成都市下辖某个区 | `武侯区` |
-| `{{street}}` | 随机街道/乡镇 | `九眼桥街道` |
-| `{{street 四川省 成都市 武侯区}}` | 武侯区下辖某个街道 | `望江路街道` |
+| `province` | 随机省份 | `广东省` |
+| `city` | 随机地级市 | `成都市` |
+| `city 四川省` | 四川省下辖某个市 | `绵阳市` |
+| `area` | 随机区/县 | `天府新区` |
+| `area 四川省 成都市` | 成都市下辖某个区 | `武侯区` |
+| `street` | 随机街道/乡镇 | `九眼桥街道` |
+| `street 四川省 成都市 武侯区` | 武侯区下辖某个街道 | `望江路街道` |
 
 ### ChinaPOIMocker（景区）
 
 | 规则 | 说明 | 示例 |
 |------|------|------|
-| `{{scenic}}` | 随机景区名称 | `故宫博物院` |
-| `{{scenic 四川省}}` | 四川省某景区 | `九寨沟风景区` |
-| `{{scenic 四川省 成都市}}` | 成都市某景区 | `大熊猫繁育研究基地` |
+| `scenic` | 随机景区名称 | `故宫博物院` |
+| `scenic 四川省` | 四川省某景区 | `九寨沟风景区` |
+| `scenic 四川省 成都市` | 成都市某景区 | `大熊猫繁育研究基地` |
 
 ### NumberMocker（数字）
 
 | 规则 | 说明 | 示例 |
 |------|------|------|
-| `{{int 1 10}}` | 1~10 之间的随机整数 | `7` |
-| `{{float 0.5 5.0}}` | 0.5~5.0 之间的随机小数 | `3.14` |
-
----
+| `int 1 10` | 1~10 之间的随机整数 | `7` |
+| `float 0.5 5.0` | 0.5~5.0 之间的随机小数 | `3.14` |
 
 ## PromptDataLoaderWrapper
 
@@ -173,8 +164,6 @@ PromptDataLoaderWrapper promptWrapper = new PromptDataLoaderWrapper(
     }
 };
 ```
-
----
 
 ## PolishDataLoaderWrapper
 
@@ -216,8 +205,6 @@ PolishDataLoaderWrapper polishWrapper = new PolishDataLoaderWrapper(
 "我明天要去上海出差，能帮我查下从北京出发的高铁，最好早上出发的"
 ```
 
----
-
 ## 自定义 Mock 规则
 
 如果内置的 Mock 规则不满足需求，可以实现 `Mocker` 接口自定义规则：
@@ -258,11 +245,9 @@ MockDataLoaderWrapper mockWrapper = new MockDataLoaderWrapper() {
 };
 
 // 使用示例：
-// 输入：  "帮我查{{flight}}航班的剩余座位"
+// 输入：  "帮我查flight航班的剩余座位"
 // 输出：  "帮我查CA7823航班的剩余座位"
 ```
-
----
 
 ## 同名占位符 sameMock
 
@@ -270,12 +255,12 @@ MockDataLoaderWrapper mockWrapper = new MockDataLoaderWrapper() {
 
 ```
 // 场景：往返机票，出发地和目的地的城市不能相同
-// query = "帮我订从{{city}}到{{city}}的机票"
+// query = "帮我订从city到city的机票"
 
-// sameMock=false（默认）：两个 {{city}} 分别独立 Mock，可能生成两个不同城市
+// sameMock=false（默认）：两个 city 分别独立 Mock，可能生成两个不同城市
 // 输出：  "帮我订从北京到上海的机票"  ✓
 
-// sameMock=true：两个 {{city}} 生成同一个城市
+// sameMock=true：两个 city 生成同一个城市
 // 输出：  "帮我订从北京到北京的机票"  ✗（不合理）
 ```
 

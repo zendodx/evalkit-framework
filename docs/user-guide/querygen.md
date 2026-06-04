@@ -3,6 +3,7 @@ layout: default
 title: Query 生成器（QueryGenerator）
 parent: 用户指南
 nav_order: 6
+has_toc: true
 ---
 
 # Query 生成器（QueryGenerator）
@@ -19,7 +20,6 @@ List<String> generate();
 
 调用后返回一批生成好的 Query 字符串列表。
 
----
 
 ## 接口定义
 
@@ -29,7 +29,6 @@ public interface QueryGenerator {
 }
 ```
 
----
 
 ## 内置实现
 
@@ -89,7 +88,6 @@ EvalCaseDataGenerator generator = new EvalCaseDataGenerator(config);
 | `genCount` | int | 1 | 每次生成 Query 的数量 |
 | `fillEmptyStringOnMockFail` | boolean | false | Mock 规则执行失败时，是否用空字符串填充（false 则抛异常） |
 
----
 
 ### 2. PromptBasedQueryGenerator（基于大模型生成）
 
@@ -140,7 +138,6 @@ QueryGenerator queryGenerator = new PromptBasedQueryGenerator(config);
 - 不得出现符号、emoji
 - 输出纯文本，一行一条，不加序号
 
----
 
 ## 自定义 QueryGenerator
 
@@ -184,7 +181,6 @@ public class FileBasedQueryGenerator implements QueryGenerator {
 }
 ```
 
----
 
 ## 使用场景对比
 
@@ -194,7 +190,6 @@ public class FileBasedQueryGenerator implements QueryGenerator {
 | `PromptBasedQueryGenerator` | 需要语义自然、贴近真实用户的 Query | 质量高，但需要调用 LLM，耗时较长 |
 | 自定义实现 | 从现有数据集中采样，或有特殊生成逻辑 | 灵活，完全自定义 |
 
----
 
 ## 完整使用示例
 

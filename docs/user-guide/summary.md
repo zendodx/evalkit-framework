@@ -7,8 +7,6 @@ nav_order: 16
 
 # EvalKit Framework 全模块汇总导览
 
-> 版本：1.4.x | 最后更新：2026-06-04
-
 ---
 
 ## 一、框架全景
@@ -43,7 +41,7 @@ QueryGenerator
 | | `JdbcDataLoader` | 从 MySQL 等数据库加载（抽象） | |
 | | `MultiDataLoader` | 合并多个加载器的数据 | |
 | **数据装饰器** | `DataLoaderWrapper` | 数据加载后的增强处理基类 | [dataloader-wrapper.md](./dataloader-wrapper.md) |
-| | `MockDataLoaderWrapper` | 替换 `{{占位符}}` 为随机 Mock 值 | |
+| | `MockDataLoaderWrapper` | 替换 `占位符` 为随机 Mock 值 | |
 | | `PromptDataLoaderWrapper` | 用 LLM 对字段进行增强（抽象） | |
 | | `PolishDataLoaderWrapper` | 将 query 改写为口语化表达（抽象） | |
 | **Query 生成器** | `QueryGenerator`（接口） | 生成测试用 Query 字符串 | [querygen.md](./querygen.md) |
@@ -248,31 +246,31 @@ JsonFileDebugger（注入上次结果）
 
 ## 六、内置 Mocker 规则速查
 
-框架内置 6 种 Mocker，占位符格式统一为 `{{规则名 参数1 参数2 ...}}`，详细规则说明见 [mocker.md](./mocker.md)。
+框架内置 6 种 Mocker，占位符格式为`双花括号包裹规则名和参数`，下表中规则列省略花括号，实际使用时需加上。详细规则说明见 [mocker.md](./mocker)。
 
 | 分类 | 常用规则示例 | 示例结果 |
 |---|---|---|
-| **精确日期** | `{{date}}` | `2026-05-26 10:30:00` |
-| | `{{date yyyy-MM-dd}}` | `2026-05-26` |
-| | `{{future_date 3 14}}` | `2026-06-03 10:30:00` |
-| | `{{future_date 3 14 yyyy-MM-dd}}` | `2026-06-03` |
-| | `{{past_date 14 365}}` | `2026-01-15 10:30:00` |
-| **模糊日期** | `{{fuzzy_date}}` | `下周` / `月底` / `去年` |
-| | `{{fuzzy_date week future}}` | `下周` / `周末` / `未来一周` |
-| | `{{fuzzy_date year past}}` | `去年` / `前年` / `往年` |
-| | `{{fuzzy_date human future}}` | `过两天` / `赶明儿` |
-| **节假日** | `{{holiday}}` | `端午节` |
-| | `{{future_holiday}}` | `中秋节` |
-| | `{{solr_term_holiday}}` | `清明` |
-| | `{{between_holiday 20260101 20261231}}` | `元宵节` |
-| **行政区划** | `{{province}}` | `广东省` |
-| | `{{city}}` / `{{city 四川省}}` | `成都市` |
-| | `{{area 四川省 成都市}}` | `武侯区` |
-| | `{{street 四川省 成都市 武侯区}}` | `玉林街道` |
-| **景区 POI** | `{{scenic}}` | `故宫博物院` |
-| | `{{scenic 四川省 成都市}}` | `大熊猫繁育研究基地` |
-| **数字** | `{{int 1 100}}` | `42` |
-| | `{{float 0.5 5.0}}` | `3.14` |
+| **精确日期** | `date` | `2026-05-26 10:30:00` |
+| | `date yyyy-MM-dd` | `2026-05-26` |
+| | `future_date 3 14` | `2026-06-03 10:30:00` |
+| | `future_date 3 14 yyyy-MM-dd` | `2026-06-03` |
+| | `past_date 14 365` | `2026-01-15 10:30:00` |
+| **模糊日期** | `fuzzy_date` | `下周` / `月底` / `去年` |
+| | `fuzzy_date week future` | `下周` / `周末` / `未来一周` |
+| | `fuzzy_date year past` | `去年` / `前年` / `往年` |
+| | `fuzzy_date human future` | `过两天` / `赶明儿` |
+| **节假日** | `holiday` | `端午节` |
+| | `future_holiday` | `中秋节` |
+| | `solr_term_holiday` | `清明` |
+| | `between_holiday 20260101 20261231` | `元宵节` |
+| **行政区划** | `province` | `广东省` |
+| | `city` / `city 四川省` | `成都市` |
+| | `area 四川省 成都市` | `武侯区` |
+| | `street 四川省 成都市 武侯区` | `玉林街道` |
+| **景区 POI** | `scenic` | `故宫博物院` |
+| | `scenic 四川省 成都市` | `大熊猫繁育研究基地` |
+| **数字** | `int 1 100` | `42` |
+| | `float 0.5 5.0` | `3.14` |
 
 ---
 
