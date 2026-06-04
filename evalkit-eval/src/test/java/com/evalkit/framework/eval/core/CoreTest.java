@@ -6,6 +6,7 @@ import com.evalkit.framework.common.utils.list.ListUtils;
 import com.evalkit.framework.common.utils.time.DateUtils;
 import com.evalkit.framework.eval.model.*;
 import com.evalkit.framework.eval.node.api.ApiCompletion;
+import com.evalkit.framework.eval.node.api_wrapper.ApiCompletionWrapper;
 import com.evalkit.framework.eval.node.begin.Begin;
 import com.evalkit.framework.eval.node.begin.config.BeginConfig;
 import com.evalkit.framework.eval.node.counter.*;
@@ -58,6 +59,7 @@ public class CoreTest {
     DataLoader dataLoader;
     DataLoaderWrapper dataLoaderWrapper;
     ApiCompletion apiCompletion;
+    ApiCompletionWrapper apiCompletionWrapper;
     Scorer scorer1;
     Scorer scorer2;
     Scorer scorer3;
@@ -130,6 +132,16 @@ public class CoreTest {
                 r.put("response", "Mock response for " + query);
                 Map<String, Object> result = new HashMap<>(r);
                 return new ApiCompletionResult(result);
+            }
+        };
+
+        apiCompletionWrapper = new ApiCompletionWrapper() {
+            @Override
+            protected void wrapper(DataItem dataItem) {
+                ApiCompletionResult apiCompletionResult = dataItem.getApiCompletionResult();
+                String rawResponse = apiCompletionResult.get("response", "");
+                String wrappedResponse = "Wrapped: " + rawResponse;
+                apiCompletionResult.set("wrapped", wrappedResponse);
             }
         };
 
@@ -245,7 +257,7 @@ public class CoreTest {
         List<Reporter> reporters = ListUtils.of(reporter, htmlReporter, csvReporter, excelReporter, jsonReporter);
         List<Counter> counters = ListUtils.of(basicCounter, metricCounter);
         new WorkflowBuilder()
-                .link(begin, dataLoader, dataLoaderWrapper, apiCompletion, scorers, counters, reporters, end)
+                .link(begin, dataLoader, dataLoaderWrapper, apiCompletion, apiCompletionWrapper, scorers, counters, reporters, end)
                 .build()
                 .execute();
     }
@@ -256,7 +268,7 @@ public class CoreTest {
         List<Reporter> reporters = ListUtils.of(reporter, htmlReporter, csvReporter, excelReporter, jsonReporter);
         List<Counter> counters = ListUtils.of(attributeCounter, attributeCounterV2, basicCounter, metricCounter);
         new WorkflowBuilder()
-                .link(begin, dataLoader, dataLoaderWrapper, apiCompletion, scorers, counters, reporters, end)
+                .link(begin, dataLoader, dataLoaderWrapper, apiCompletion, apiCompletionWrapper, scorers, counters, reporters, end)
                 .build()
                 .execute();
     }
@@ -267,7 +279,7 @@ public class CoreTest {
         List<Reporter> reporters = ListUtils.of(reporter, htmlReporter, csvReporter, excelReporter, jsonReporter);
         List<Counter> counters = ListUtils.of(basicCounter, metricCounter);
         new WorkflowBuilder()
-                .link(begin, dataGenerator, apiCompletion, scorers, counters, reporters, end)
+                .link(begin, dataGenerator, apiCompletion, apiCompletionWrapper, scorers, counters, reporters, end)
                 .build()
                 .execute();
     }
