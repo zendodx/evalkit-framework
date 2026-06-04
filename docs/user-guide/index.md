@@ -26,6 +26,7 @@
 | 文档 | 说明 |
 |------|------|
 | [接口调用器（ApiCompletion）](./api-completion.md) | 调用被测业务接口，支持 HTTP、有序多轮调用 |
+| [接口结果装饰器（ApiCompletionWrapper）](./api-completion-wrapper.md) | 在评估前对接口返回结果进行转化、清洗或 LLM 二次处理 |
 | [评估器（Scorer）](./scorer.md) | 对接口返回结果进行打分，内置向量相似度、LLM 评分等多种策略 |
 | [检查器（Checker）](./checker.md) | 细粒度规则检查，配合 MultiCheckerBasedScorer 使用 |
 
@@ -77,6 +78,7 @@ Counter → Reporter
 - 自动生成测试数据 → [DataGenerator](./data-generator.md)
 - 查询 Mock 占位符规则 → [Mocker](./mocker.md)
 - 调用被测接口 → [ApiCompletion](./api-completion.md)
+- 转化接口返回格式 → [ApiCompletionWrapper](./api-completion-wrapper.md)
 - 打分评估接口质量 → [Scorer](./scorer.md)
 - 细粒度检查多个条件 → [Checker](./checker.md)
 - 统计通过率、错误归因 → [Counter](./counter.md)

@@ -1,6 +1,6 @@
 # EvalKit Framework 全模块汇总导览
 
-> 版本：1.2.3 | 最后更新：2026-05-26
+> 版本：1.4.x | 最后更新：2026-06-04
 
 ---
 
@@ -63,6 +63,7 @@ QueryGenerator
 | | `SecurityScorer` | LLM 内容安全检测（抽象） | |
 | | `GSBScorer` | 多维度综合打分，A/B 实验对比（抽象） | |
 | | `DifyWorkflowScorer` | 调用 Dify 平台工作流打分（抽象） | |
+| | `RubricBasedScorer` | 多维度量规评估，每维度独立 LLM 调用 + CoT（抽象） | |
 | | `MultiCheckerBasedScorer` | 组合多个 Checker 打分（抽象） | |
 | **检查器** | `AbstractChecker` | 细粒度规则检查基类 | [checker.md](./checker.md) |
 | | `LLMBasedChecker` | LLM 驱动的检查器（抽象） | |
@@ -128,7 +129,17 @@ DataLoader → DataLoaderWrapper → ApiCompletion
 
 ---
 
-### 场景 C：大规模多轮对话增量评测（生产级）
+### 场景 C：量规多维度评估
+
+```
+DataLoader → ApiCompletion → RubricBasedScorer（Safety★ + Accuracy + Fluency）→ BasicCounter → HtmlReporter
+```
+
+适用：需要从安全性、准确性、流畅性等多角度系统评估模型输出，且评分维度不同量程时。
+
+---
+
+### 场景 D：大规模多轮对话增量评测（生产级）
 
 ```
 KGBasedQueryGenerator（生成数据）
@@ -145,7 +156,7 @@ OrderedDeltaEvalFacade
 
 ---
 
-### 场景 D：调试重跑（不重新调接口）
+### 场景 E：调试重跑（不重新调接口）
 
 ```
 JsonFileDebugger（注入上次结果）
@@ -188,6 +199,26 @@ JsonFileDebugger（注入上次结果）
 | `threshold` | 该指标通过的最低分数 |
 | `star=true` | 必过指标——此项不过则整体不通过 |
 | `dynamicTotalScore=true` | 总分由运行时动态决定（如 MultiCheckerBasedScorer） |
+
+### RubricBasedScorer 关键配置
+
+| 参数 | 说明 | 默认值 |
+|---|---|---|
+| `criteria` | 评估维度列表（`RubricCriteria`） | 必填 |
+| `mergeStrategy` | 维度分数合并策略（见下表） | `WEIGHTED_AVERAGE` |
+| `normalizeScore` | 是否将维度分归一化到 [0,1] 后再合并 | `true` |
+| `criteriaThreadNum` | 维度并发 LLM 调用线程数 | 3 |
+| `sampleTimes` | 每维度多次采样取均值 | 1 |
+
+`RubricCriteria` 关键字段：`name`（维度名）、`definition`（定义）、`scoreType`（`STEPPED`/`BINARY`）、`maxScore`、`passScore`、`weight`、`star`（一票否决）、`condition`（条件执行函数）、`skipScore`（跳过时默认分）。
+
+| 合并策略 | 说明 |
+|---|---|
+| `WEIGHTED_AVERAGE` | 加权平均（默认） |
+| `SIMPLE_AVERAGE` | 简单平均 |
+| `LOGICAL_AND` | 任意维度不达标则取最差维度得分 |
+| `STAR_GATE` | star 维度不过则整体为 0，否则加权平均 |
+| `COMPLETION_RATE` | 达标维度数 / 总维度数 |
 
 ---
 
@@ -317,7 +348,7 @@ Maven 引入（只需引入 evalkit-eval，其余自动传递依赖）：
 <dependency>
     <groupId>io.github.zendodx</groupId>
     <artifactId>evalkit-eval</artifactId>
-    <version>1.2.2</version>
+    <version>1.4.0</version>
 </dependency>
 ```
 
@@ -338,6 +369,7 @@ Maven 引入（只需引入 evalkit-eval，其余自动传递依赖）：
 | 计算语义相似度（不用 LLM） | `VectorSimilarityScorer` |
 | 用 LLM 判断答案质量 | `AnswerRelevancyScorer` / `GSBScorer` / `PromptBasedScorer` |
 | 检查内容安全 | `SecurityScorer` |
+| 多维度量规评估（每维度独立打分 + CoT） | `RubricBasedScorer` |
 | 多维度细粒度检查（规则 + LLM 混合） | `MultiCheckerBasedScorer` + `AbstractChecker` |
 | 统计通过率、耗时、分数分布 | `BasicCounter` |
 | 对失败案例做根因分析 | `AttributeCounterV2` |

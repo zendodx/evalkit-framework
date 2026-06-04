@@ -42,10 +42,11 @@ Begin（全局配置）
   └─ DataLoader（加载评测数据）
        └─ [DataLoaderWrapper]（可选：Mock/润色数据）
             └─ ApiCompletion（调用被测接口）
-                 └─ Scorer × N（并行打分）
-                      └─ Counter（统计汇总）
-                           └─ Reporter × N（输出结果）
-                                └─ End（收尾操作）
+                 └─ [ApiCompletionWrapper]（可选：转化/清洗接口返回结果）
+                      └─ Scorer × N（并行打分）
+                           └─ Counter（统计汇总）
+                                └─ Reporter × N（输出结果）
+                                     └─ End（收尾操作）
 ```
 
 ---
