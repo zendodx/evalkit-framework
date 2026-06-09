@@ -205,16 +205,23 @@
     }
 
     /* ========================================
-       样本明细表格渲染（可下钻跳转）
+       样本明细表格渲染（可下钻跳转 + 筛选）
        ======================================== */
     function renderDataPointsTable(dataPoints, gIdx, cIdx) {
         if (dataPoints.length === 0) return '<div class="rubric-no-data">无样本数据</div>';
-        const rows = dataPoints.map(dp => {
+
+        const key = `${gIdx}_${cIdx}`;
+        const rows = dataPoints.map((dp, rowIdx) => {
             const passClass = dp.passed ? 'good' : 'bad';
-            const passText = dp.passed ? '✓ 通过' : '✗ 失败';
+            const passText  = dp.passed ? '✓ 通过' : '✗ 失败';
             const safeReason = typeof dp.reason === 'string' ? escapeHtml(dp.reason) : '-';
+            // data-* 属性供筛选函数使用
             return `
-                <tr class="rubric-drill-data-row">
+                <tr class="rubric-drill-data-row"
+                    data-raw="${dp.rawScore != null ? dp.rawScore : ''}"
+                    data-norm="${dp.normScore != null ? dp.normScore : ''}"
+                    data-passed="${dp.passed ? '1' : '0'}"
+                    data-reason="${safeReason}">
                     <td>
                         <a class="rubric-case-link" onclick="jumpToCase(${dp.dataIndex})">#${dp.dataIndex}</a>
                     </td>
@@ -226,8 +233,45 @@
         }).join('');
 
         return `
+            <div class="rubric-drill-filter-bar" id="rubricFilter_${key}">
+                <div class="rubric-filter-row">
+                    <label class="rubric-filter-label">原始分</label>
+                    <input class="rubric-filter-input rubric-filter-num" type="number" step="any"
+                           id="rubricFRawMin_${key}" placeholder="最小值"
+                           oninput="applyDrillFilter('${key}')"/>
+                    <span class="rubric-filter-sep">~</span>
+                    <input class="rubric-filter-input rubric-filter-num" type="number" step="any"
+                           id="rubricFRawMax_${key}" placeholder="最大值"
+                           oninput="applyDrillFilter('${key}')"/>
+
+                    <label class="rubric-filter-label" style="margin-left:10px;">归一化分</label>
+                    <input class="rubric-filter-input rubric-filter-num" type="number" step="any" min="0" max="1"
+                           id="rubricFNormMin_${key}" placeholder="最小值"
+                           oninput="applyDrillFilter('${key}')"/>
+                    <span class="rubric-filter-sep">~</span>
+                    <input class="rubric-filter-input rubric-filter-num" type="number" step="any" min="0" max="1"
+                           id="rubricFNormMax_${key}" placeholder="最大值"
+                           oninput="applyDrillFilter('${key}')"/>
+
+                    <label class="rubric-filter-label" style="margin-left:10px;">是否通过</label>
+                    <select class="rubric-filter-select" id="rubricFPass_${key}"
+                            onchange="applyDrillFilter('${key}')">
+                        <option value="">全部</option>
+                        <option value="1">✓ 通过</option>
+                        <option value="0">✗ 失败</option>
+                    </select>
+
+                    <label class="rubric-filter-label" style="margin-left:10px;">打分理由</label>
+                    <input class="rubric-filter-input rubric-filter-text" type="text"
+                           id="rubricFReason_${key}" placeholder="模糊搜索…"
+                           oninput="applyDrillFilter('${key}')"/>
+
+                    <button class="rubric-filter-reset-btn" onclick="resetDrillFilter('${key}')" title="重置筛选">重置</button>
+                </div>
+                <div class="rubric-filter-stat" id="rubricFilterStat_${key}">共 ${dataPoints.length} 条</div>
+            </div>
             <div class="rubric-drill-table-wrapper">
-                <table class="rubric-drill-table">
+                <table class="rubric-drill-table" id="rubricDrillTable_${key}">
                     <thead>
                         <tr>
                             <th>用例</th>
@@ -240,6 +284,54 @@
                     <tbody>${rows}</tbody>
                 </table>
             </div>`;
+    }
+
+    /* ========================================
+       样本明细筛选逻辑
+       ======================================== */
+    function applyDrillFilter(key) {
+        const table  = document.getElementById(`rubricDrillTable_${key}`);
+        const stat   = document.getElementById(`rubricFilterStat_${key}`);
+        if (!table) return;
+
+        const rawMin    = parseFloat(document.getElementById(`rubricFRawMin_${key}`)?.value);
+        const rawMax    = parseFloat(document.getElementById(`rubricFRawMax_${key}`)?.value);
+        const normMin   = parseFloat(document.getElementById(`rubricFNormMin_${key}`)?.value);
+        const normMax   = parseFloat(document.getElementById(`rubricFNormMax_${key}`)?.value);
+        const passVal   = document.getElementById(`rubricFPass_${key}`)?.value ?? '';
+        const reasonKw  = (document.getElementById(`rubricFReason_${key}`)?.value ?? '').trim().toLowerCase();
+
+        let visible = 0;
+        table.querySelectorAll('tbody tr.rubric-drill-data-row').forEach(tr => {
+            const raw    = parseFloat(tr.dataset.raw);
+            const norm   = parseFloat(tr.dataset.norm);
+            const passed = tr.dataset.passed;  // '1' or '0'
+            const reason = (tr.dataset.reason || '').toLowerCase();
+
+            let show = true;
+            if (!isNaN(rawMin)  && raw  < rawMin)  show = false;
+            if (!isNaN(rawMax)  && raw  > rawMax)  show = false;
+            if (!isNaN(normMin) && norm < normMin) show = false;
+            if (!isNaN(normMax) && norm > normMax) show = false;
+            if (passVal !== '' && passed !== passVal) show = false;
+            if (reasonKw && !reason.includes(reasonKw)) show = false;
+
+            tr.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+
+        const total = table.querySelectorAll('tbody tr.rubric-drill-data-row').length;
+        if (stat) stat.textContent = visible === total ? `共 ${total} 条` : `${visible} / ${total} 条`;
+    }
+
+    function resetDrillFilter(key) {
+        const ids = [`rubricFRawMin_${key}`, `rubricFRawMax_${key}`,
+                     `rubricFNormMin_${key}`, `rubricFNormMax_${key}`,
+                     `rubricFReason_${key}`];
+        ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        const sel = document.getElementById(`rubricFPass_${key}`);
+        if (sel) sel.value = '';
+        applyDrillFilter(key);
     }
 
     /* ========================================

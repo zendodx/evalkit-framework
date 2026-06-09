@@ -376,5 +376,102 @@
     .good    { color: #1a7f37; font-weight: 600; }
     .warning { color: #9e6a03; font-weight: 600; }
     .bad     { color: #cf222e; font-weight: 600; }
+
+    /* ========================================
+       样本明细筛选栏（GitHub 配色）
+       ======================================== */
+    .rubric-drill-filter-bar {
+        padding: 8px 12px 6px;
+        background: #f6f8fa;
+        border-bottom: 1px solid #d0d7de;
+    }
+
+    .rubric-filter-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .rubric-filter-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: #57606a;
+        white-space: nowrap;
+        margin-right: 2px;
+    }
+
+    .rubric-filter-input {
+        height: 24px;
+        font-size: 11px;
+        border: 1px solid #d0d7de;
+        border-radius: 6px;
+        padding: 0 6px;
+        outline: none;
+        background: #ffffff;
+        color: #24292f;
+        transition: border-color .15s, box-shadow .15s;
+    }
+
+    .rubric-filter-input:focus {
+        border-color: #0969da;
+        box-shadow: 0 0 0 3px rgba(9, 105, 218, .1);
+    }
+
+    .rubric-filter-num {
+        width: 76px;
+    }
+
+    .rubric-filter-text {
+        width: 140px;
+    }
+
+    .rubric-filter-sep {
+        font-size: 11px;
+        color: #57606a;
+        padding: 0 1px;
+    }
+
+    .rubric-filter-select {
+        height: 24px;
+        font-size: 11px;
+        border: 1px solid #d0d7de;
+        border-radius: 6px;
+        padding: 0 4px;
+        outline: none;
+        background: #ffffff;
+        color: #24292f;
+        cursor: pointer;
+        transition: border-color .15s;
+    }
+
+    .rubric-filter-select:focus {
+        border-color: #0969da;
+        box-shadow: 0 0 0 3px rgba(9, 105, 218, .1);
+    }
+
+    .rubric-filter-reset-btn {
+        height: 24px;
+        padding: 0 10px;
+        font-size: 11px;
+        border: 1px solid #d0d7de;
+        border-radius: 6px;
+        background: #f6f8fa;
+        color: #24292f;
+        cursor: pointer;
+        transition: background .15s;
+        margin-left: 6px;
+        white-space: nowrap;
+    }
+
+    .rubric-filter-reset-btn:hover {
+        background: #eaeef2;
+    }
+
+    .rubric-filter-stat {
+        font-size: 11px;
+        color: #57606a;
+        margin-top: 4px;
+    }
 </style>
 
