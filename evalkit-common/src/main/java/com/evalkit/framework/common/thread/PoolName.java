@@ -27,7 +27,7 @@ public enum PoolName {
      */
     DATA_GENERATOR,
     /**
-     * 归因统计器线程池（AttributeCounterV2 提取 & 摘要并行调用 LLM 专用）
+     * 归因统计器线程池
      */
     ATTRIBUTE_COUNTER
 }

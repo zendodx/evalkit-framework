@@ -80,7 +80,7 @@ public class AttributeCounterV2 extends Counter {
     /**
      * 完整构造：通过 config 传入所有选项
      *
-     * @param config 归因配置，{@link AttributeCounterV2Config#builder()} 构建，未设置的选项自动使用默认值
+     * @param config 归因配置，未设置的选项自动使用默认值
      */
     public AttributeCounterV2(AttributeCounterV2Config config) {
         if (config == null || config.getLlmService() == null) {
