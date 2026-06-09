@@ -1,0 +1,380 @@
+<!-- Rubric 指标统计面板样式 - GitHub 风格 -->
+<style th:fragment="rubric">
+    /* ========================================
+       面板主体
+       ======================================== */
+    #rubricCountPanel {
+        flex: 1;
+        padding: 6px;
+        overflow-y: auto;
+        background: #f6f8fa;
+    }
+
+    .rubric-container {
+        padding: 16px;
+    }
+
+    .rubric-no-data {
+        padding: 40px;
+        text-align: center;
+        color: var(--color-text-placeholder);
+        font-size: 13px;
+    }
+
+    /* ========================================
+       页头
+       ======================================== */
+    .rubric-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .rubric-header h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--color-text-primary);
+    }
+
+    .rubric-header-stat {
+        font-size: 13px;
+        color: var(--color-text-placeholder);
+        margin-left: 16px;
+    }
+
+    /* ========================================
+       区块标题
+       ======================================== */
+    .rubric-section-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--color-text-primary);
+        margin-bottom: 12px;
+        padding-left: 10px;
+        border-left: 3px solid var(--color-primary);
+    }
+
+    /* ========================================
+       汇总表格
+       ======================================== */
+    .rubric-summary-section {
+        margin-bottom: 24px;
+    }
+
+    .rubric-table-wrapper {
+        background: var(--color-bg-primary);
+        border: 1px solid var(--color-border);
+        border-radius: var(--border-radius-base);
+        overflow-x: auto;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .rubric-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        text-align: left;
+    }
+
+    .rubric-table th,
+    .rubric-table td {
+        padding: 10px 14px;
+        border: 1px solid var(--color-border);
+    }
+
+    .rubric-table th {
+        background: var(--color-bg-secondary);
+        font-weight: 600;
+        color: var(--color-text-primary);
+    }
+
+    .rubric-table tbody tr:nth-child(even) {
+        background: var(--color-bg-secondary);
+    }
+
+    .rubric-table tbody tr:hover {
+        background: #f0f6fc;
+    }
+
+    /* ========================================
+       评估器卡片列表
+       ======================================== */
+    .rubric-metric-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .rubric-metric-card {
+        background: var(--color-bg-primary);
+        border: 1px solid var(--color-border);
+        border-radius: var(--border-radius-base);
+        overflow: hidden;
+        transition: border-color .2s, box-shadow .2s;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .rubric-metric-card:hover {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.1);
+    }
+
+    /* ========================================
+       卡片头部
+       ======================================== */
+    .rubric-card-header {
+        display: flex;
+        align-items: center;
+        padding: 12px 16px;
+        background: var(--color-bg-secondary);
+        cursor: pointer;
+        user-select: none;
+        border-bottom: 1px solid var(--color-border);
+        gap: 12px;
+    }
+
+    .rubric-card-header:hover {
+        background: #f0f6fc;
+    }
+
+    .rubric-card-title {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .rubric-card-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--color-text-primary);
+    }
+
+    .rubric-card-badge {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 12px;
+        background: var(--color-bg-primary);
+        color: var(--color-text-placeholder);
+        border: 1px solid var(--color-border);
+    }
+
+    .rubric-card-badge.good    { background: #dafbe1; color: #1a7f37; border-color: #aceebb; }
+    .rubric-card-badge.warning { background: #fff8c5; color: #9e6a03; border-color: #f2cc60; }
+    .rubric-card-badge.bad     { background: #ffebe9; color: #cf222e; border-color: #ffbdbd; }
+
+    .rubric-card-sub {
+        font-size: 11px;
+        color: var(--color-text-placeholder);
+    }
+
+    .rubric-card-stats {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .rubric-stat-chip {
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 12px;
+        background: var(--color-bg-secondary);
+        color: var(--color-text-secondary);
+        border: 1px solid var(--color-border);
+    }
+
+    .rubric-stat-chip.bad {
+        background: #ffebe9;
+        color: #cf222e;
+        border-color: #ffbdbd;
+    }
+
+    .rubric-card-toggle {
+        font-size: 11px;
+        color: var(--color-text-placeholder);
+        width: 18px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+
+    /* ========================================
+       卡片体
+       ======================================== */
+    .rubric-card-body {
+        padding: 16px;
+    }
+
+    .rubric-no-criteria {
+        color: var(--color-text-placeholder);
+        font-size: 12px;
+        text-align: center;
+        padding: 20px;
+    }
+
+    /* ========================================
+       图表行（雷达图 + 柱状图并排）
+       ======================================== */
+    .rubric-charts-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .rubric-chart-box {
+        background: var(--color-bg-secondary);
+        border: 1px solid var(--color-border);
+        border-radius: var(--border-radius-base);
+        padding: 12px;
+        min-height: 260px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .rubric-chart-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--color-text-primary);
+        margin-bottom: 10px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    .rubric-chart-box canvas {
+        flex: 1;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 200px;
+    }
+
+    /* ========================================
+       维度明细表格
+       ======================================== */
+    .rubric-criteria-section {
+        margin-top: 8px;
+    }
+
+    .rubric-criteria-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--color-text-primary);
+        margin-bottom: 10px;
+    }
+
+    .rubric-criteria-table-wrapper {
+        overflow-x: auto;
+        border: 1px solid var(--color-border);
+        border-radius: var(--border-radius-base);
+    }
+
+    .rubric-criteria-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        text-align: left;
+    }
+
+    .rubric-criteria-table th,
+    .rubric-criteria-table td {
+        padding: 8px 12px;
+        border: 1px solid var(--color-border);
+    }
+
+    .rubric-criteria-table th {
+        background: var(--color-bg-secondary);
+        font-weight: 600;
+        color: var(--color-text-primary);
+    }
+
+    .rubric-criteria-table tbody tr:nth-child(even) {
+        background: var(--color-bg-secondary);
+    }
+
+    .rubric-criteria-table tbody tr:hover {
+        background: #f0f6fc;
+    }
+
+    /* ========================================
+       下钻样本明细
+       ======================================== */
+    .rubric-drill-btn {
+        font-size: 11px;
+        padding: 3px 10px;
+        border-radius: 6px;
+        border: 1px solid var(--color-primary);
+        background: transparent;
+        color: var(--color-primary);
+        cursor: pointer;
+        transition: background .15s;
+    }
+
+    .rubric-drill-btn:hover {
+        background: rgba(9, 105, 218, 0.06);
+    }
+
+    .rubric-drill-cell {
+        padding: 0 !important;
+        background: #f6f8fa;
+    }
+
+    .rubric-drill-table-wrapper {
+        padding: 8px 14px;
+        overflow-x: auto;
+    }
+
+    .rubric-drill-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 11px;
+        text-align: left;
+    }
+
+    .rubric-drill-table th,
+    .rubric-drill-table td {
+        padding: 5px 10px;
+        border: 1px solid var(--color-border);
+    }
+
+    .rubric-drill-table th {
+        background: var(--color-bg-secondary);
+        font-weight: 600;
+        color: var(--color-text-primary);
+    }
+
+    .rubric-drill-data-row:nth-child(even) {
+        background: var(--color-bg-secondary);
+    }
+
+    .rubric-drill-data-row:hover {
+        background: #f0f6fc;
+    }
+
+    .rubric-case-link {
+        color: var(--color-primary);
+        cursor: pointer;
+        text-decoration: underline;
+        font-weight: 600;
+    }
+
+    .rubric-case-link:hover {
+        color: #0550ae;
+    }
+
+    .rubric-reason-cell {
+        max-width: 340px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* ========================================
+       颜色工具类（GitHub 配色）
+       ======================================== */
+    .good    { color: #1a7f37; font-weight: 600; }
+    .warning { color: #9e6a03; font-weight: 600; }
+    .bad     { color: #cf222e; font-weight: 600; }
+</style>
+
