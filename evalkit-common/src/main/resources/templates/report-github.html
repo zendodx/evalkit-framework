@@ -70,6 +70,13 @@
             <button class="metric-filter-clear-btn" onclick="clearMetricFilter()" title="清除筛选">✕</button>
         </div>
 
+        <!-- 导航操作按钮（仅详情页可见） -->
+        <div class="nav-btn-group" id="navBtnGroup" style="display:none;">
+            <button class="nav-btn nav-btn-back" id="navBackBtn" onclick="navBack()" title="返回来源面板">↩ 返回</button>
+            <button class="nav-btn" id="navPrevBtn" onclick="navigateToPreviousCase()" title="上一个用例（快捷键：↑ 或 W）">◀ 上一个</button>
+            <button class="nav-btn" id="navNextBtn" onclick="navigateToNextCase()" title="下一个用例（快捷键：↓ 或 S）">下一个 ▶</button>
+        </div>
+
         <!-- 用例列表 -->
         <div class="case-list" id="caseList"></div>
 

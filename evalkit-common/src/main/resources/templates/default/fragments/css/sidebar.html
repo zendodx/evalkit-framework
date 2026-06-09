@@ -247,6 +247,51 @@
         flex: 0 0 auto;
     }
 
+    /* ========================================
+       导航操作按钮（返回/上一个/下一个）
+       ======================================== */
+    .nav-btn-group {
+        display: flex;
+        gap: var(--spacing-sm);
+        padding: var(--spacing-md) var(--spacing-lg);
+        border-bottom: 1px solid var(--color-border);
+        flex: 0 0 auto;
+    }
+
+    .nav-btn {
+        flex: 1;
+        height: 24px;
+        border: 1px solid var(--color-border-light);
+        background: var(--color-bg-primary);
+        border-radius: var(--border-radius-base);
+        font-size: var(--font-size-xs);
+        cursor: pointer;
+        transition: all var(--transition-fast);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+        color: var(--color-text-secondary);
+    }
+
+    .nav-btn:hover {
+        border-color: var(--color-primary);
+        color: var(--color-primary);
+        background: #ecf5ff;
+    }
+
+    .nav-btn-back {
+        border-color: #d9ecff;
+        background: #f0f9ff;
+        color: #409eff;
+    }
+
+    .nav-btn-back:hover {
+        background: #409eff;
+        color: #fff;
+        border-color: #409eff;
+    }
+
     /* 归因菜单 */
     .attr-select {
         position: relative;
