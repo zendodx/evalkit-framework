@@ -28,6 +28,7 @@ class DeltaEvalConfigTest {
         System.clearProperty("reportInterval");
         System.clearProperty("mqReceiveTimeout");
         System.clearProperty("enableResume");
+        System.clearProperty("enablePeriodicReport");
     }
 
     @Test
@@ -43,9 +44,10 @@ class DeltaEvalConfigTest {
         assertThat(config.getEvalWorkflow()).isNull();
         assertThat(config.getReportWorkflow()).isNull();
         assertThat(config.getBatchSize()).isEqualTo(10);
-        assertThat(config.getReportInterval()).isEqualTo(30);
+        assertThat(config.getReportInterval()).isEqualTo(600);
         assertThat(config.getMqReceiveTimeout()).isEqualTo(10000);
         assertThat(config.isEnableResume()).isTrue();
+        assertThat(config.isEnablePeriodicReport()).isTrue();
     }
 
     @Test
@@ -188,7 +190,7 @@ class DeltaEvalConfigTest {
     }
 
     /**
-     * reportInterval=0 应触发校验失败
+     * reportInterval=0 且 enablePeriodicReport=true 应触发校验失败
      */
     @Test
     void reportIntervalZeroShouldThrow() {
@@ -200,6 +202,35 @@ class DeltaEvalConfigTest {
                         .build(),
                 "reportInterval=0 应抛出 IllegalArgumentException"
         );
+    }
+
+    /**
+     * enablePeriodicReport=false 时，reportInterval=0 不应触发校验失败
+     */
+    @Test
+    void reportIntervalZeroAllowedWhenPeriodicReportDisabled() {
+        DeltaEvalConfig config = DeltaEvalConfig.builder()
+                .taskName("riZeroDisabled")
+                .reportInterval(0)
+                .enablePeriodicReport(false)
+                .build();
+        assertThat(config.isEnablePeriodicReport()).isFalse();
+        assertThat(config.getReportInterval()).isZero();
+    }
+
+    /**
+     * enablePeriodicReport 默认为 true，可被 env 覆盖为 false
+     */
+    @Test
+    void enablePeriodicReportDefaultTrueAndCanBeOverriddenByEnv() {
+        // 默认值
+        DeltaEvalConfig defaultConfig = DeltaEvalConfig.builder().build();
+        assertThat(defaultConfig.isEnablePeriodicReport()).isTrue();
+
+        // env 覆盖
+        setProp("enablePeriodicReport", "false");
+        DeltaEvalConfig envConfig = DeltaEvalConfig.builder().build();
+        assertThat(envConfig.isEnablePeriodicReport()).isFalse();
     }
 
     /**

@@ -445,6 +445,10 @@ public class DeltaEvalFacade extends EvalFacade {
      */
     @Override
     protected void report() {
+        if (!config.isEnablePeriodicReport()) {
+            log.info("Periodic report is disabled, skip scheduling");
+            return;
+        }
         if (reporterFuture != null && !reporterFuture.isCancelled()) {
             return;
         }
@@ -518,8 +522,8 @@ public class DeltaEvalFacade extends EvalFacade {
      * 等待 JMX QueueSize 达到非零（或超时）
      * ActiveMQ 的 JMX QueueSize 统计是异步更新的，数据量小时入队后可能短暂返回 0
      *
-     * @param queueName  队列名
-     * @param timeoutMs  最长等待毫秒数
+     * @param queueName 队列名
+     * @param timeoutMs 最长等待毫秒数
      * @return 队列实际大小（可能为 0 若真的没有数据或超时）
      */
     protected long waitForQueueSize(String queueName, long timeoutMs) {
