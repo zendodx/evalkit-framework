@@ -62,10 +62,11 @@
             <span class="detail-strategy">${scoreStrategyName}, 阈值: ${threshold}</span>
            <!-- 快速跳转按钮 -->
            <div class="header-jumps">
-             <a href="#section-input"   class="jump-btn">输入数据</a>
-             <a href="#section-api"     class="jump-btn">API调用结果</a>
-             <a href="#section-eval"    class="jump-btn">评测结果</a>
-             <a href="#section-scorer"  class="jump-btn">评测详情</a>
+             <button class="jump-btn" onclick="scrollToSection('section-input')"   title="跳转到输入数据（快捷键：1）">输入数据</button>
+             <button class="jump-btn" onclick="scrollToSection('section-api')"     title="跳转到API调用结果（快捷键：2）">API调用结果</button>
+             <button class="jump-btn" onclick="scrollToSection('section-eval')"    title="跳转到评测结果（快捷键：3）">评测结果</button>
+             <button class="jump-btn" onclick="scrollToSection('section-scorer')"  title="跳转到评测详情（快捷键：4）">评测详情</button>
+             <button class="jump-btn jump-btn-top" onclick="scrollDetailToTop()"   title="返回详情顶部（快捷键：0）">⬆ 顶部</button>
            </div>
             <!-- 分享按钮 -->
            <span class="share-btn" onclick="shareCase()" title="分享链接">
@@ -86,6 +87,21 @@
 
         // 激活 json-viewer
         document.querySelectorAll('pre.json-viewer').forEach(el => new JsonViewer(el));
+    }
+
+    /* ========================================
+       详情页内滚动工具
+       ======================================== */
+    function scrollToSection(sectionId) {
+        const container = document.querySelector('.detail-content-scroll');
+        const target = document.getElementById(sectionId);
+        if (!container || !target) return;
+        container.scrollTo({top: target.offsetTop - container.offsetTop, behavior: 'smooth'});
+    }
+
+    function scrollDetailToTop() {
+        const container = document.querySelector('.detail-content-scroll');
+        if (container) container.scrollTo({top: 0, behavior: 'smooth'});
     }
 
     /* ========================================

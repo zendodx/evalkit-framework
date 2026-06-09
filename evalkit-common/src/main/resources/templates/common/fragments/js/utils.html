@@ -230,6 +230,18 @@
             return;
         }
 
+        // 数字键 0-4：详情页内快速跳转（仅详情页）
+        if (!e.ctrlKey && !e.metaKey && !e.altKey && AppState._currentPanel === 'detail') {
+            const sectionMap = {'1': 'section-input', '2': 'section-api', '3': 'section-eval', '4': 'section-scorer'};
+            if (e.key === '0') {
+                e.preventDefault();
+                scrollDetailToTop();
+            } else if (sectionMap[e.key]) {
+                e.preventDefault();
+                scrollToSection(sectionMap[e.key]);
+            }
+        }
+
         // ArrowLeft 或 A 键：返回来源面板（仅详情页）
         if ((e.key === 'ArrowLeft' || e.key.toUpperCase() === 'A') && !e.ctrlKey && !e.metaKey) {
             if (AppState._currentPanel === 'detail') {
