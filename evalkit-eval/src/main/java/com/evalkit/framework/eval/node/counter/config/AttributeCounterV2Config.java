@@ -32,5 +32,43 @@ public class AttributeCounterV2Config {
      */
     @Builder.Default
     private List<String> standardCategories = DEFAULT_CATEGORIES;
+
+    /**
+     * 每个 chunk 最大 token 数（给 8k 模型预留余量）。
+     * 默认 6000。
+     */
+    @Builder.Default
+    private int maxTokensPerChunk = 6000;
+
+    /**
+     * 为每条 issue 生成代表摘要时，最多取几条样本描述。
+     * 默认 5。
+     */
+    @Builder.Default
+    private int summarySampleSize = 5;
+
+    /**
+     * 生成代表摘要的最大字数限制（写入 Prompt）。
+     * 默认 50。
+     */
+    @Builder.Default
+    private int summaryMaxChars = 50;
+
+    /**
+     * 提取 / 生成摘要时的最大并行度（受控线程池大小）。
+     * 默认 CPU 核数 * 4。
+     */
+    @Builder.Default
+    private int parallelism = Runtime.getRuntime().availableProcessors() * 4;
+
+    /**
+     * 当传入了标准枚举类别时，是否跳过 normalizeCategories 的 LLM 调用。
+     * <ul>
+     *   <li>{@code true}（默认）：提取阶段已约束了枚举，category 名称本就一致，无需再归一化，节省一次 LLM 调用。</li>
+     *   <li>{@code false}：强制执行归一化，适合未使用枚举约束或多模型混合归因的场景。</li>
+     * </ul>
+     */
+    @Builder.Default
+    private boolean skipNormalizeCategoriesIfEnumConstrained = true;
 }
 
