@@ -6,6 +6,21 @@ nav_order: 4
 
 # ChangeLog
 
+## [1.5.0] - 2026-06-09
+
+### Added
+
+- OrderedApiCompletion支持获取设置历史消息
+- 支持Rubric指标统计器
+- html报告增加返回,上一个,下一个导航按钮,增加快捷键支持
+
+### Fixed
+
+- 优化归因Counter,限制问题分类
+- html报告优化归因Counter界面
+- html报告统一鼠标悬浮优化卡片时不能滚动问题
+
+
 ## [1.4.0] - 2026-06-04
 
 ### Added
