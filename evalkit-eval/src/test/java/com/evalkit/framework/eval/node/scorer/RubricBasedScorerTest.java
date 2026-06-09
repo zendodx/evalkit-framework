@@ -13,6 +13,7 @@ import com.evalkit.framework.eval.node.counter.RubricCounter;
 import com.evalkit.framework.eval.node.dataloader.DataLoader;
 import com.evalkit.framework.eval.node.reporter.JsonReporter;
 import com.evalkit.framework.eval.node.reporter.html.HtmlReporter;
+import com.evalkit.framework.eval.node.reporter.html.enums.HtmlReportStyle;
 import com.evalkit.framework.eval.node.scorer.config.RubricBasedScorerConfig;
 import com.evalkit.framework.eval.node.scorer.model.RubricCriteria;
 import com.evalkit.framework.eval.node.scorer.model.RubricMergeStrategy;
@@ -1044,7 +1045,7 @@ class RubricBasedScorerTest {
         };
 
         // 结果上报器
-        HtmlReporter htmlReporter = new HtmlReporter("Rubric评估器测试_" + DateUtils.nowToString());
+        HtmlReporter htmlReporter = new HtmlReporter("Rubric评估器测试_" + DateUtils.nowToString(), HtmlReportStyle.GITHUB);
         JsonReporter jsonReporter = new JsonReporter("Rubric评估器测试_" + DateUtils.nowToString());
 
 
