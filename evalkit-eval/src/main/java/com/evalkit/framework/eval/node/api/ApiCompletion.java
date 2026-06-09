@@ -64,8 +64,16 @@ public abstract class ApiCompletion extends WorkflowNode {
 
     /**
      * 包含钩子的调用,单数据项调用失败不能影响整体运行
+     * <p>
+     * 增量评测（DeltaEvalFacade）会将同组历史条目与当前条目一起注入 WorkflowContext，
+     * 历史条目已有 apiCompletionResult（在前序轮次中已执行过），不应被重复调用。
+     * 因此当 dataItem 已有 apiCompletionResult 时直接返回，跳过本次 invoke。
      */
     protected ApiCompletionResult invokeWrapper(DataItem dataItem) {
+        // 历史条目已有结果，直接返回，不重复执行
+        if (dataItem.getApiCompletionResult() != null) {
+            return dataItem.getApiCompletionResult();
+        }
         ApiCompletionResult result = new ApiCompletionResult(new LinkedHashMap<>());
         result.setDataIndex(dataItem.getDataIndex());
         try {

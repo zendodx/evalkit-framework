@@ -10,7 +10,6 @@ has_toc: true
 
 评估器是框架的核心节点，负责对接口返回结果进行**打分**。多个评估器可以并行执行，最终分数由 `Begin` 节点配置的打分策略汇总。
 
-
 ## 体系结构
 
 ```
@@ -25,80 +24,193 @@ Scorer（抽象基类）
 └── DifyWorkflowScorer（抽象）   调用 Dify 工作流打分
 ```
 
-
 ## Scorer（基类）
 
 最基础的评估器，实现 `eval(DataItem)` 方法即可进行任意规则的自定义打分。
 
 ### 配置项（ScorerConfig）
 
-| 配置项 | 说明 | 必填 | 默认值 |
-|--------|------|------|--------|
-| `metricName` | 指标名称（出现在报告中） | 是 | `未命名指标` |
-| `threadNum` | 并发打分线程数 | 否 | 1 |
-| `threshold` | 通过阈值（得分 ≥ 阈值则该条数据在此指标上通过） | 否 | 0.0 |
-| `star` | 是否为**必过指标**（即此指标不通过则整体不通过，无论其他指标得分多高） | 否 | false |
-| `totalScore` | 该评估器满分，用于计算得分率 | 否 | 1.0 |
-| `dynamicTotalScore` | 是否动态总分（某些评估器满分由运行时决定，如 MultiCheckerBasedScorer） | 否 | false |
+| 配置项                 | 说明                                              | 必填 | 默认值     |
+|---------------------|-------------------------------------------------|----|---------|
+| `metricName`        | 指标名称（出现在报告中）                                    | 是  | `未命名指标` |
+| `threadNum`         | 并发打分线程数                                         | 否  | 1       |
+| `threshold`         | 通过阈值（得分 ≥ 阈值则该条数据在此指标上通过）                       | 否  | 0.0     |
+| `star`              | 是否为**必过指标**（即此指标不通过则整体不通过，无论其他指标得分多高）           | 否  | false   |
+| `totalScore`        | 该评估器满分，用于计算得分率                                  | 否  | 1.0     |
+| `dynamicTotalScore` | 是否动态总分（某些评估器满分由运行时决定，如 MultiCheckerBasedScorer） | 否  | false   |
 
 ### 生命周期钩子
 
-| 方法 | 说明 |
-|------|------|
-| `beforeEval(DataItem)` | 评估前钩子 |
-| `eval(DataItem)` | **核心方法**，返回 `ScorerResult` |
-| `afterEval(DataItem, ScorerResult)` | 评估后钩子（可修改结果） |
-| `orErrorEval(DataItem, Throwable)` | 评估异常时的处理钩子 |
+| 方法                                  | 说明                         |
+|-------------------------------------|----------------------------|
+| `beforeEval(DataItem)`              | 评估前钩子                      |
+| `eval(DataItem)`                    | **核心方法**，返回 `ScorerResult` |
+| `afterEval(DataItem, ScorerResult)` | 评估后钩子（可修改结果）               |
+| `orErrorEval(DataItem, Throwable)`  | 评估异常时的处理钩子                 |
 
 ### ScorerResult 字段
 
-| 字段 | 说明 |
-|------|------|
-| `metric` | 指标名称 |
-| `score` | 本条数据得分 |
-| `totalScore` | 满分 |
-| `scoreRate` | 得分率（score / totalScore） |
-| `pass` | 是否通过阈值 |
-| `reason` | 打分理由 |
-| `extra` | 额外信息（如 LLM 的原始回复） |
+| 字段           | 说明                      |
+|--------------|-------------------------|
+| `metric`     | 指标名称                    |
+| `score`      | 本条数据得分                  |
+| `totalScore` | 满分                      |
+| `scoreRate`  | 得分率（score / totalScore） |
+| `pass`       | 是否通过阈值                  |
+| `reason`     | 打分理由                    |
+| `extra`      | 额外信息（如 LLM 的原始回复）       |
 
 ### 示例：自定义规则打分
 
 ```java
 // 示例：检查回复中是否包含关键词，包含得 1 分，不包含得 0 分
 Scorer keywordScorer = new Scorer(
+                ScorerConfig.builder()
+                        .metricName("关键词覆盖检查")
+                        .threshold(1.0)     // 满分才算通过
+                        .star(true)         // 必过指标
+                        .build()
+        ) {
+            @Override
+            public ScorerResult eval(DataItem dataItem) {
+                String response = dataItem.getApiCompletionResult().get("response");
+                String[] requiredKeywords = {"价格", "座位", "出发时间"};
+
+                List<String> missing = new ArrayList<>();
+                for (String kw : requiredKeywords) {
+                    if (response == null || !response.contains(kw)) {
+                        missing.add(kw);
+                    }
+                }
+
+                ScorerResult result = new ScorerResult();
+                result.setMetric("关键词覆盖检查");
+                if (missing.isEmpty()) {
+                    result.setScore(1.0);
+                    result.setReason("所有关键词均已覆盖");
+                } else {
+                    result.setScore(0.0);
+                    result.setReason("缺少关键词：" + String.join("、", missing));
+                }
+                return result;
+            }
+        };
+```
+
+### 多轮对话场景：在评估器中提取历史数据
+
+当使用 `OrderedApiCompletion` 进行多轮对话评测时，同一会话的所有轮次数据**在 `invoke` 完成后就已填好**
+`apiCompletionResult`。在后续的 `Scorer.eval()` 中，可以通过 `DataItem.extra` 读取由 `ApiCompletion` 预先写入的历史信息，也可以借助
+`WorkflowContextOps` 从全局上下文中查询同一会话的其他轮次数据。
+
+#### 方式一：通过 extra 传递（推荐）
+
+在 `OrderedApiCompletion.invoke()` 中把需要的历史信息提前写入 `DataItem.extra`，评估器直接读取，无需任何额外依赖。
+
+**ApiCompletion 侧（写入 extra）：**
+
+```java
+
+@Override
+protected ApiCompletionResult invoke(DataItem dataItem) {
+    // 构建历史对话（当前轮之前所有轮的 query + response）
+    List<Map<String, String>> historyMessages = new ArrayList<>();
+    for (DataItem prev : getPrevDataItems(dataItem)) {
+        historyMessages.add(MapUtils.of(
+                "query", prev.getInputData().get("query"),
+                "response", prev.getApiCompletionResult().get("response")
+        ));
+    }
+    // 把历史消息写入 extra，供评估器使用
+    dataItem.addExtraItem("historyMessages", historyMessages);
+
+    // 调用业务接口
+    String response = aiService.chat(dataItem.getInputData().get("query"));
+
+    ApiCompletionResult result = new ApiCompletionResult();
+    result.setResultItem(MapUtils.of("response", response));
+    return result;
+}
+```
+
+**Scorer 侧（读取 extra）：**
+
+```java
+Scorer multiTurnScorer = new Scorer(
         ScorerConfig.builder()
-                .metricName("关键词覆盖检查")
-                .threshold(1.0)     // 满分才算通过
-                .star(true)         // 必过指标
+                .metricName("多轮一致性")
+                .threshold(0.8)
                 .build()
 ) {
     @Override
     public ScorerResult eval(DataItem dataItem) {
-        String response = dataItem.getApiCompletionResult().get("response");
-        String[] requiredKeywords = {"价格", "座位", "出发时间"};
+        String currentResponse = dataItem.getApiCompletionResult().get("response");
 
-        List<String> missing = new ArrayList<>();
-        for (String kw : requiredKeywords) {
-            if (response == null || !response.contains(kw)) {
-                missing.add(kw);
-            }
-        }
+        // 从 extra 中读取历史对话
+        List<Map<String, String>> historyMessages =
+                dataItem.getExtraItem("historyMessages");
+
+        // 基于历史对话进行评估（示例：检查回复是否引用了历史信息）
+        boolean referencedHistory = historyMessages != null
+                && historyMessages.stream()
+                .anyMatch(msg -> currentResponse.contains(msg.get("query")));
 
         ScorerResult result = new ScorerResult();
-        result.setMetric("关键词覆盖检查");
-        if (missing.isEmpty()) {
-            result.setScore(1.0);
-            result.setReason("所有关键词均已覆盖");
-        } else {
-            result.setScore(0.0);
-            result.setReason("缺少关键词：" + String.join("、", missing));
-        }
+        result.setMetric("多轮一致性");
+        result.setScore(referencedHistory ? 1.0 : 0.0);
+        result.setReason(referencedHistory ? "回复引用了历史上下文" : "回复未引用历史上下文");
         return result;
     }
 };
 ```
 
+#### 方式二：通过 WorkflowContextOps 查询同组数据
+
+若需要在评估器中自行遍历同一会话的全部轮次，可通过 `WorkflowContextOps` 按字段查询：
+
+```java
+Scorer historyAwareScorer = new Scorer(
+        ScorerConfig.builder().metricName("历史感知评估").build()
+) {
+    @Override
+    public ScorerResult eval(DataItem dataItem) {
+        String sessionId = dataItem.getInputData().get("sessionId");
+        int currentRound = Integer.parseInt(dataItem.getInputData().get("round"));
+
+        // 查询同一 sessionId 的所有轮次数据
+        List<DataItem> sessionItems = WorkflowContextOps.getDataItemsByField(
+                getWorkflowContext(), "sessionId", sessionId);
+
+        // 找到上一轮数据
+        DataItem prevItem = sessionItems.stream()
+                .filter(item -> String.valueOf(currentRound - 1)
+                        .equals(item.getInputData().get("round")))
+                .findFirst()
+                .orElse(null);
+
+        String currentResponse = dataItem.getApiCompletionResult().get("response");
+        String prevResponse = prevItem != null && prevItem.getApiCompletionResult() != null
+                ? prevItem.getApiCompletionResult().get("response")
+                : null;
+
+        // 评估当前轮与上一轮的相关性（伪代码，根据业务自定义）
+        double score = evaluateCoherence(prevResponse, currentResponse);
+
+        ScorerResult result = new ScorerResult();
+        result.setMetric("历史感知评估");
+        result.setScore(score);
+        return result;
+    }
+};
+```
+
+> **两种方式对比：**
+>
+> | | 方式一（extra） | 方式二（WorkflowContextOps） |
+> |---|---|---|
+> | **适用场景** | 历史信息在 `invoke` 时就已知，提前整理好结构 | 评估时才需要灵活查询，不确定要用哪些历史字段 |
+> | **性能** | O(1) 直接读取 | O(n) 遍历所有数据后过滤 |
+> | **推荐程度** | ✅ 推荐 | 按需使用 |
 
 ## VectorSimilarityScorer
 
@@ -111,8 +223,8 @@ Scorer keywordScorer = new Scorer(
 
 包含 `ScorerConfig` 所有配置，额外配置项：
 
-| 配置项 | 说明 | 默认值 |
-|--------|------|--------|
+| 配置项                   | 说明           | 默认值 |
+|-----------------------|--------------|-----|
 | `similarityThreshold` | 相似度通过阈值（0~1） | 0.5 |
 
 ### 示例
@@ -135,31 +247,30 @@ VectorSimilarityScorer similarityScorer = new VectorSimilarityScorer(
 };
 ```
 
-
 ## PromptBasedScorer
 
 使用 LLM 进行评估的基类，适合语义理解、内容判断等需要大模型智能推理的场景。
 
 需要实现 3 个方法：
 
-| 方法 | 说明 |
-|------|------|
-| `prepareSysPrompt()` | 准备系统提示词（告诉 LLM 角色和任务） |
-| `prepareUserPrompt(InputData, ApiCompletionResult)` | 准备用户提示词（把被评估的数据填入） |
-| `parseLLMReply(String)` | 解析 LLM 的回复，提取分数和理由 |
+| 方法                                                  | 说明                    |
+|-----------------------------------------------------|-----------------------|
+| `prepareSysPrompt()`                                | 准备系统提示词（告诉 LLM 角色和任务） |
+| `prepareUserPrompt(InputData, ApiCompletionResult)` | 准备用户提示词（把被评估的数据填入）    |
+| `parseLLMReply(String)`                             | 解析 LLM 的回复，提取分数和理由    |
 
 ### 配置项
 
 包含 `ScorerConfig` 所有配置，额外配置项：
 
-| 配置项 | 说明 | 必填 | 默认值 |
-|--------|------|------|--------|
-| `llmService` | LLM 服务实例 | 是 | 无 |
-| `sysPrompt` | 系统提示词（覆盖 `prepareSysPrompt()` 的返回值） | 否 | 无 |
-| `enableRetry` | 解析失败时是否重试 | 否 | true |
-| `retryTimes` | 最大重试次数 | 否 | 3 |
-| `retryInterval` | 重试间隔 | 否 | 1 |
-| `retryTimeUnit` | 重试时间单位 | 否 | 秒 |
+| 配置项             | 说明                                  | 必填 | 默认值  |
+|-----------------|-------------------------------------|----|------|
+| `llmService`    | LLM 服务实例                            | 是  | 无    |
+| `sysPrompt`     | 系统提示词（覆盖 `prepareSysPrompt()` 的返回值） | 否  | 无    |
+| `enableRetry`   | 解析失败时是否重试                           | 否  | true |
+| `retryTimes`    | 最大重试次数                              | 否  | 3    |
+| `retryInterval` | 重试间隔                                | 否  | 1    |
+| `retryTimeUnit` | 重试时间单位                              | 否  | 秒    |
 
 ### 示例：自定义 LLM 打分器
 
@@ -174,16 +285,16 @@ PromptBasedScorer customLLMScorer = new PromptBasedScorer(
     @Override
     public String prepareSysPrompt() {
         return "你是一位评测专家。请评估候选答案是否准确回答了用户的问题。" +
-               "请输出 JSON 格式：{\"score\": 0到1之间的小数, \"reason\": \"评判理由\"}";
+                "请输出 JSON 格式：{\"score\": 0到1之间的小数, \"reason\": \"评判理由\"}";
     }
 
     @Override
     public String prepareUserPrompt(InputData inputData, ApiCompletionResult apiCompletionResult) {
         return String.format(
-            "用户问题：%s\n标准答案：%s\n候选答案：%s",
-            inputData.get("query"),
-            inputData.get("groundTruth"),
-            apiCompletionResult.get("response")
+                "用户问题：%s\n标准答案：%s\n候选答案：%s",
+                inputData.get("query"),
+                inputData.get("groundTruth"),
+                apiCompletionResult.get("response")
         );
     }
 
@@ -195,7 +306,6 @@ PromptBasedScorer customLLMScorer = new PromptBasedScorer(
     }
 };
 ```
-
 
 ## AnswerRelevancyScorer
 
@@ -226,11 +336,11 @@ AnswerRelevancyScorer relevancyScorer = new AnswerRelevancyScorer(
 ```
 
 **打分逻辑（内置）**：
+
 - 0 分：完全跑题、答非所问
 - 0.1~0.4 分：部分回应但缺核心内容
 - 0.5~0.7 分：基本回应但有冗余
 - 0.8~1.0 分：精准、无冗余
-
 
 ## SemanticConsistencyScorer
 
@@ -262,7 +372,6 @@ SemanticConsistencyScorer consistencyScorer = new SemanticConsistencyScorer(
 };
 ```
 
-
 ## SecurityScorer
 
 检测文本中是否包含**有害、违规内容**，内置涵盖政治、暴力、色情、诈骗、隐私等维度的检查提示词。
@@ -288,10 +397,10 @@ SecurityScorer securityScorer = new SecurityScorer(
 };
 ```
 
-
 ## GSBScorer
 
-**多维度综合打分器**，从准确性（Accuracy）、相关性（Relevance）、完整性（Completeness）、流畅性（Fluency）四个维度对回复进行 1~5 分制评分，最终取平均分率（0~1）。
+**多维度综合打分器**，从准确性（Accuracy）、相关性（Relevance）、完整性（Completeness）、流畅性（Fluency）四个维度对回复进行 1~5
+分制评分，最终取平均分率（0~1）。
 
 > G(Good)=提升 / S(Same)=持平 / B(Bad)=退步，常用于 A/B 实验对比评测。
 
@@ -325,7 +434,6 @@ GSBScorer gsbScorer = new GSBScorer(
 };
 ```
 
-
 ## DifyWorkflowScorer
 
 通过调用 **Dify 平台的工作流**来完成评估，适合已经在 Dify 上搭建好了评测流程的团队。
@@ -334,11 +442,11 @@ GSBScorer gsbScorer = new GSBScorer(
 
 包含 `ScorerConfig` 所有配置，额外配置项：
 
-| 配置项 | 说明 | 必填 |
-|--------|------|------|
-| `apiKey` | Dify 工作流的 API Key | 是 |
-| `baseUrl` | Dify 服务地址 | 是 |
-| `userName` | 调用者标识 | 是 |
+| 配置项        | 说明                | 必填 |
+|------------|-------------------|----|
+| `apiKey`   | Dify 工作流的 API Key | 是  |
+| `baseUrl`  | Dify 服务地址         | 是  |
+| `userName` | 调用者标识             | 是  |
 
 ### 示例
 
@@ -356,8 +464,8 @@ DifyWorkflowScorer difyScorer = new DifyWorkflowScorer(
     public Map<String, Object> prepareInputParams(InputData inputData, ApiCompletionResult apiCompletionResult) {
         // 准备传给 Dify 工作流的输入变量
         return MapUtils.of(
-            "query",    inputData.get("query"),
-            "response", apiCompletionResult.get("response")
+                "query", inputData.get("query"),
+                "response", apiCompletionResult.get("response")
         );
     }
 
@@ -376,10 +484,10 @@ DifyWorkflowScorer difyScorer = new DifyWorkflowScorer(
 };
 ```
 
-
 ## RubricBasedScorer
 
-**量规（Rubric）评估器**，通过预先定义的多个评估维度（Criteria）和对应的打分规则，对模型输出进行系统性、多维度的质量评估。每个维度独立发起一次 LLM 调用，采用强制推理（CoT）模式确保打分准确，最终按配置的合并策略汇总为最终得分。
+**量规（Rubric）评估器**，通过预先定义的多个评估维度（Criteria）和对应的打分规则，对模型输出进行系统性、多维度的质量评估。每个维度独立发起一次
+LLM 调用，采用强制推理（CoT）模式确保打分准确，最终按配置的合并策略汇总为最终得分。
 
 > **适用场景**：需要从多个角度综合评估模型输出质量的场景，如同时评估"内容安全 + 答案准确性 + 表达流畅度"。
 
@@ -410,43 +518,43 @@ RubricBasedScorer（抽象类）
 
 包含 `ScorerConfig` 所有配置，额外配置项：
 
-| 配置项 | 说明 | 必填 | 默认值 |
-|--------|------|------|--------|
-| `llmService` | LLM 服务实例 | 是 | 无 |
-| `criteria` | 评估维度列表 | 是 | 无 |
-| `mergeStrategy` | 各维度分数合并策略 | 否 | `WEIGHTED_AVERAGE` |
-| `normalizeScore` | 是否将各维度分归一化到 [0,1] 后再合并 | 否 | `true` |
-| `criteriaThreadNum` | 维度并发线程数（各维度 LLM 调用并行） | 否 | 3 |
-| `enableRetry` | LLM 解析失败时是否重试 | 否 | `true` |
-| `retryTimes` | 最大重试次数 | 否 | 3 |
-| `sampleTimes` | 多次采样取均值（0 = 单次采样） | 否 | 0 |
+| 配置项                 | 说明                     | 必填 | 默认值                |
+|---------------------|------------------------|----|--------------------|
+| `llmService`        | LLM 服务实例               | 是  | 无                  |
+| `criteria`          | 评估维度列表                 | 是  | 无                  |
+| `mergeStrategy`     | 各维度分数合并策略              | 否  | `WEIGHTED_AVERAGE` |
+| `normalizeScore`    | 是否将各维度分归一化到 [0,1] 后再合并 | 否  | `true`             |
+| `criteriaThreadNum` | 维度并发线程数（各维度 LLM 调用并行）  | 否  | 3                  |
+| `enableRetry`       | LLM 解析失败时是否重试          | 否  | `true`             |
+| `retryTimes`        | 最大重试次数                 | 否  | 3                  |
+| `sampleTimes`       | 多次采样取均值（0 = 单次采样）      | 否  | 0                  |
 
 ### 维度配置（RubricCriteria）
 
-| 字段 | 说明 | 默认值 |
-|------|------|--------|
-| `name` | 维度名称（英文，作为 JSON Key） | 必填 |
-| `definition` | 维度定义，描述评估目标 | 必填 |
-| `scoreType` | `STEPPED`（阶梯分）/ `BINARY`（0 或 1） | `BINARY` |
-| `maxScore` | 最高分 | 1.0 |
-| `minScore` | 最低分（通常为 0，也可配置为 1 等） | 0.0 |
-| `passScore` | 通过分数线（归一化后 < passScore/maxScore 视为未达标） | 1.0 |
-| `scoringGuide` | 打分指引（注入 Prompt，建议详细描述每个分值的含义） | 无 |
-| `anchors` | Few-shot 锚点示例（强烈建议配置，提升打分一致性） | 无 |
-| `weight` | 权重（用于 `WEIGHTED_AVERAGE` 策略） | 1.0 |
-| `star` | 是否为必过维度（`STAR_GATE` 策略下归一化分为 0 则整体归零） | `false` |
-| `condition` | 条件执行函数 `Function<DataItem, Boolean>`，返回 `false` 时跳过此维度 | `null`（始终执行） |
-| `skipScore` | 条件不满足时的默认原始分数 | 0.0 |
+| 字段             | 说明                                                     | 默认值          |
+|----------------|--------------------------------------------------------|--------------|
+| `name`         | 维度名称（英文，作为 JSON Key）                                   | 必填           |
+| `definition`   | 维度定义，描述评估目标                                            | 必填           |
+| `scoreType`    | `STEPPED`（阶梯分）/ `BINARY`（0 或 1）                        | `BINARY`     |
+| `maxScore`     | 最高分                                                    | 1.0          |
+| `minScore`     | 最低分（通常为 0，也可配置为 1 等）                                   | 0.0          |
+| `passScore`    | 通过分数线（归一化后 < passScore/maxScore 视为未达标）                 | 1.0          |
+| `scoringGuide` | 打分指引（注入 Prompt，建议详细描述每个分值的含义）                          | 无            |
+| `anchors`      | Few-shot 锚点示例（强烈建议配置，提升打分一致性）                          | 无            |
+| `weight`       | 权重（用于 `WEIGHTED_AVERAGE` 策略）                           | 1.0          |
+| `star`         | 是否为必过维度（`STAR_GATE` 策略下归一化分为 0 则整体归零）                  | `false`      |
+| `condition`    | 条件执行函数 `Function<DataItem, Boolean>`，返回 `false` 时跳过此维度 | `null`（始终执行） |
+| `skipScore`    | 条件不满足时的默认原始分数                                          | 0.0          |
 
 ### 合并策略详解
 
-| 策略 | 公式 | 说明 |
-|------|------|------|
-| `WEIGHTED_AVERAGE` | `Σ(score_i × weight_i) / Σ(weight_i)` | 加权平均，默认策略 |
-| `SIMPLE_AVERAGE` | `Σ(score_i) / n` | 简单平均，忽略权重 |
-| `LOGICAL_AND` | 所有维度归一化分 ≥ passRate 则得 1.0，否则 0.0 | 全部通过才算通过 |
-| `STAR_GATE` | 有任意 `star=true` 的维度未达标则整体为 0.0，否则取加权平均 | 设置一票否决门控 |
-| `COMPLETION_RATE` | 达标维度数 / 总维度数 | 通过率，适合清单式检查 |
+| 策略                 | 公式                                     | 说明          |
+|--------------------|----------------------------------------|-------------|
+| `WEIGHTED_AVERAGE` | `Σ(score_i × weight_i) / Σ(weight_i)`  | 加权平均，默认策略   |
+| `SIMPLE_AVERAGE`   | `Σ(score_i) / n`                       | 简单平均，忽略权重   |
+| `LOGICAL_AND`      | 所有维度归一化分 ≥ passRate 则得 1.0，否则 0.0      | 全部通过才算通过    |
+| `STAR_GATE`        | 有任意 `star=true` 的维度未达标则整体为 0.0，否则取加权平均 | 设置一票否决门控    |
+| `COMPLETION_RATE`  | 达标维度数 / 总维度数                           | 通过率，适合清单式检查 |
 
 ### 示例：基础用法
 
@@ -528,7 +636,8 @@ RubricCriteria accuracyCriteria = RubricCriteria.builder()
 
 ### 示例：条件执行（condition / skipScore）
 
-当某些样本不满足某维度的评估前提时（如没有检索上下文，就无需评估上下文相关性），可通过 `condition` 动态跳过该维度，并用 `skipScore` 填充默认分：
+当某些样本不满足某维度的评估前提时（如没有检索上下文，就无需评估上下文相关性），可通过 `condition` 动态跳过该维度，并用
+`skipScore` 填充默认分：
 
 ```java
 RubricCriteria contextRelevance = RubricCriteria.builder()
@@ -545,15 +654,16 @@ RubricCriteria contextRelevance = RubricCriteria.builder()
 
 **`skipScore` 策略选择：**
 
-| 赋值 | 含义 | 适用场景 |
-|------|------|----------|
-| `0.0`（默认） | 保守策略，视为未通过 | 跳过等同于失败时 |
-| `passScore` | 中性策略，视为刚好通过 | 不适用时不影响整体 |
-| `maxScore` | 豁免策略，视为满分通过 | 该维度对此类样本不适用时 |
+| 赋值          | 含义          | 适用场景         |
+|-------------|-------------|--------------|
+| `0.0`（默认）   | 保守策略，视为未通过  | 跳过等同于失败时     |
+| `passScore` | 中性策略，视为刚好通过 | 不适用时不影响整体    |
+| `maxScore`  | 豁免策略，视为满分通过 | 该维度对此类样本不适用时 |
 
 ### 示例：关闭归一化（normalizeScore=false）
 
-默认情况下框架会将各维度分数归一化到 `[0, 1]` 再合并，`totalScore` 始终为 1.0。若希望保留各维度的原始量程（如 1~5 分），可关闭归一化：
+默认情况下框架会将各维度分数归一化到 `[0, 1]` 再合并，`totalScore` 始终为 1.0。若希望保留各维度的原始量程（如 1~5
+分），可关闭归一化：
 
 ```java
 RubricBasedScorerConfig config = RubricBasedScorerConfig.builder()
@@ -574,24 +684,25 @@ RubricBasedScorerConfig config = RubricBasedScorerConfig.builder()
 // scoreRate  = 5.0 / 6.67 ≈ 0.75
 ```
 
-> **注意**：即使关闭归一化，`STAR_GATE` / `LOGICAL_AND` / `COMPLETION_RATE` 策略的 **passRate 门控判断仍然基于归一化分数**，以保证语义一致性。
+> **注意**：即使关闭归一化，`STAR_GATE` / `LOGICAL_AND` / `COMPLETION_RATE` 策略的 **passRate 门控判断仍然基于归一化分数**
+> ，以保证语义一致性。
 
 ### ScorerResult 额外 extra 字段
 
 `RubricBasedScorer` 的评估结果会在 `extra` 中携带各维度的详细信息，可在报告层或后续处理中使用：
 
-| extra key | 类型 | 说明 |
-|-----------|------|------|
-| `criteria_raw_scores` | `Map<String, Double>` | 各维度原始分数 |
-| `criteria_norm_scores` | `Map<String, Double>` | 各维度归一化分数 |
-| `criteria_reasons` | `Map<String, String>` | 各维度打分理由 |
-| `criteria_reasonings` | `Map<String, String>` | 各维度 CoT 推理过程 |
-| `merge_strategy` | `String` | 本次使用的合并策略名 |
-
+| extra key              | 类型                    | 说明           |
+|------------------------|-----------------------|--------------|
+| `criteria_raw_scores`  | `Map<String, Double>` | 各维度原始分数      |
+| `criteria_norm_scores` | `Map<String, Double>` | 各维度归一化分数     |
+| `criteria_reasons`     | `Map<String, String>` | 各维度打分理由      |
+| `criteria_reasonings`  | `Map<String, String>` | 各维度 CoT 推理过程 |
+| `merge_strategy`       | `String`              | 本次使用的合并策略名   |
 
 ## MultiCheckerBasedScorer
 
-将多个 **Checker（检查器）** 组合起来，每个 Checker 负责一个检查维度，最终分数由各 Checker 的结果汇总而来。详见 [检查器文档](./checker.md)。
+将多个 **Checker（检查器）** 组合起来，每个 Checker 负责一个检查维度，最终分数由各 Checker
+的结果汇总而来。详见 [检查器文档](./checker.md)。
 
 ```java
 MultiCheckerBasedScorer multiChecker = new MultiCheckerBasedScorer(
@@ -603,30 +714,29 @@ MultiCheckerBasedScorer multiChecker = new MultiCheckerBasedScorer(
     @Override
     public List<Checker> prepareCheckers(DataItem dataItem) {
         return ListUtils.of(
-            new KeywordChecker(),    // 检查关键词覆盖
-            new FormatChecker(),     // 检查格式规范
-            new SafetyChecker()      // 检查内容安全
+                new KeywordChecker(),    // 检查关键词覆盖
+                new FormatChecker(),     // 检查格式规范
+                new SafetyChecker()      // 检查内容安全
         );
     }
 };
 ```
 
-
 ## 打分策略
 
 `Begin` 节点的 `scoreStrategy` 配置决定如何把多个 `Scorer` 的分数**汇总成最终评测结果**：
 
-| 策略类 | 说明 |
-|--------|------|
-| `SumScoreStrategy` | 分数值求和（默认） |
-| `MinScoreStrategy` | 取最小分数值 |
-| `MaxScoreStrategy` | 取最大分数值 |
-| `AvgScoreValueStrategy` | 分数值取平均 |
-| `SumScoreRateStrategy` | 得分率求和 |
-| `MinScoreRateStrategy` | 取最小得分率 |
-| `MaxScoreRateStrategy` | 取最大得分率 |
-| `AvgScoreRateStrategy` | 得分率取平均 |
-| 自定义 | 实现 `ScoreStrategy` 接口 |
+| 策略类                     | 说明                    |
+|-------------------------|-----------------------|
+| `SumScoreStrategy`      | 分数值求和（默认）             |
+| `MinScoreStrategy`      | 取最小分数值                |
+| `MaxScoreStrategy`      | 取最大分数值                |
+| `AvgScoreValueStrategy` | 分数值取平均                |
+| `SumScoreRateStrategy`  | 得分率求和                 |
+| `MinScoreRateStrategy`  | 取最小得分率                |
+| `MaxScoreRateStrategy`  | 取最大得分率                |
+| `AvgScoreRateStrategy`  | 得分率取平均                |
+| 自定义                     | 实现 `ScoreStrategy` 接口 |
 
 ### 示例：自定义打分策略
 
@@ -646,31 +756,44 @@ Begin begin = new Begin(
 ```java
 // 示例：内容安全是必过指标，安全检测通过才能算整体通过
 Scorer safetyScorer = new Scorer(
-        ScorerConfig.builder()
-                .metricName("内容安全")
-                .star(true)     // 必过！
-                .threshold(1.0)
-                .build()
-) { ... };
+                ScorerConfig.builder()
+                        .metricName("内容安全")
+                        .star(true)     // 必过！
+                        .threshold(1.0)
+                        .build()
+        ) { ...
+        };
 
 
-## RubricBasedScorer（量规评估器）
+##RubricBasedScorer（量规评估器）
 
-`RubricBasedScorer` 是基于**量规（Rubric）**的 LLM 评估器，通过预先定义的多个评估维度（`criteria`）和对应的打分规则，对模型输出进行系统性、可量化的质量评估。
+        `RubricBasedScorer`是基于**量规（Rubric）**
+的 LLM
+评估器，通过预先定义的多个评估维度（`criteria`）和对应的打分规则，对模型输出进行系统性、可量化的质量评估。
 
-**核心优势：**
+        **核心优势：**
 
-- 每个维度独立发起 LLM 调用，避免多维度共享 Prompt 时的注意力稀释
-- 强制 Chain-of-Thought（先推理后打分），防止 LLM 先锚定分数再补理由
-- 各维度得分归一化到 `[0, 1]` 后再聚合，消除不同量程维度之间的量纲干扰
-- 支持 Few-shot 分值锚点，校准中间分值漂移
-- 支持多次采样取均值，提升打分稳定性
+        -
+每个维度独立发起 LLM
+调用，
+避免多维度共享 Prompt
+时的注意力稀释
+-
+强制 Chain-of-Thought（先推理后打分），
+防止 LLM
+先锚定分数再补理由
+-各维度得分归一化到 `[0,1]`后再聚合，消除不同量程维度之间的量纲干扰
+-
+支持 Few-
+shot 分值锚点，校准中间分值漂移
+-支持多次采样取均值，提升打分稳定性
 
-### 快速示例
+###快速示例
 
-继承 `RubricBasedScorer` 并实现 `prepareUserPrompt`，提供待评估的用户侧文本：
+继承 `RubricBasedScorer`并实现 `prepareUserPrompt`，提供待评估的用户侧文本：
 
-```java
+        ```java
+
 public class ContentQualityScorer extends RubricBasedScorer {
 
     public ContentQualityScorer(LLMService llmService) {
@@ -707,15 +830,15 @@ public class ContentQualityScorer extends RubricBasedScorer {
 
 ### RubricBasedScorerConfig 配置项
 
-| 参数 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `llmService` | `LLMService` | 必填 | 用于评分的大模型服务 |
-| `criteria` | `List<RubricCriteria>` | 必填 | 评估维度列表（至少一个） |
-| `mergeStrategy` | `RubricMergeStrategy` | `WEIGHTED_AVERAGE` | 维度分数综合策略，见下方说明 |
-| `samplingTimes` | `int` | `1` | 每个维度的采样次数，`>1` 时多次调用取均值，提升稳定性 |
-| `criteriaThreadNum` | `int` | `1` | 维度并发线程数，建议设为维度数量以全并发执行 |
-| `criteriaBatchSize` | `int` | `1` | 每次 LLM 调用评估的维度数，`1` = 单维度模式，`>1` = 批量模式（节省 Token） |
-| `normalizeScore` | `boolean` | `true` | 是否将各维度分数归一化到 `[0,1]` 后再合并 |
+| 参数                  | 类型                     | 默认值                | 说明                                                |
+|---------------------|------------------------|--------------------|---------------------------------------------------|
+| `llmService`        | `LLMService`           | 必填                 | 用于评分的大模型服务                                        |
+| `criteria`          | `List<RubricCriteria>` | 必填                 | 评估维度列表（至少一个）                                      |
+| `mergeStrategy`     | `RubricMergeStrategy`  | `WEIGHTED_AVERAGE` | 维度分数综合策略，见下方说明                                    |
+| `samplingTimes`     | `int`                  | `1`                | 每个维度的采样次数，`>1` 时多次调用取均值，提升稳定性                     |
+| `criteriaThreadNum` | `int`                  | `1`                | 维度并发线程数，建议设为维度数量以全并发执行                            |
+| `criteriaBatchSize` | `int`                  | `1`                | 每次 LLM 调用评估的维度数，`1` = 单维度模式，`>1` = 批量模式（节省 Token） |
+| `normalizeScore`    | `boolean`              | `true`             | 是否将各维度分数归一化到 `[0,1]` 后再合并                         |
 
 > **`criteriaBatchSize` 说明：**
 > - `1`（默认）：每个维度独立一次 LLM 调用，注意力最集中，打分最准确，推荐高精度场景。
@@ -725,30 +848,30 @@ public class ContentQualityScorer extends RubricBasedScorer {
 
 ### RubricCriteria 维度配置项
 
-| 参数 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `name` | `String` | 必填 | 维度名称，作为 Key 和展示标识 |
-| `definition` | `String` | - | 维度定义，描述评估目标 |
-| `scoreType` | `RubricScoreType` | `BINARY` | 评分类型：`BINARY`（0/1）或 `STEPPED`（区间整数分） |
-| `maxScore` | `double` | `1.0` | 最高分（`STEPPED` 时有效） |
-| `minScore` | `double` | `0.0` | 最低分（`STEPPED` 时有效） |
-| `passScore` | `double` | `1.0` | 通过分数线，`passRate = passScore / maxScore` |
-| `weight` | `double` | `1.0` | 维度权重，用于 `WEIGHTED_AVERAGE` 策略 |
-| `star` | `boolean` | `false` | 是否为一票否决维度（配合 `STAR_GATE` 策略使用） |
-| `scoringGuide` | `String` | - | 打分指引，直接注入 Prompt，可显著提升一致性 |
-| `anchors` | `List<ScoringAnchor>` | - | Few-shot 分值锚点，描述"X分对应什么输出" |
-| `condition` | `Function<DataItem, Boolean>` | `null`（始终执行）| 条件执行函数，返回 `false` 时跳过该维度 |
-| `skipScore` | `double` | `0.0` | 条件不满足时的默认原始分（跳过时生效） |
+| 参数             | 类型                            | 默认值          | 说明                                      |
+|----------------|-------------------------------|--------------|-----------------------------------------|
+| `name`         | `String`                      | 必填           | 维度名称，作为 Key 和展示标识                       |
+| `definition`   | `String`                      | -            | 维度定义，描述评估目标                             |
+| `scoreType`    | `RubricScoreType`             | `BINARY`     | 评分类型：`BINARY`（0/1）或 `STEPPED`（区间整数分）    |
+| `maxScore`     | `double`                      | `1.0`        | 最高分（`STEPPED` 时有效）                      |
+| `minScore`     | `double`                      | `0.0`        | 最低分（`STEPPED` 时有效）                      |
+| `passScore`    | `double`                      | `1.0`        | 通过分数线，`passRate = passScore / maxScore` |
+| `weight`       | `double`                      | `1.0`        | 维度权重，用于 `WEIGHTED_AVERAGE` 策略           |
+| `star`         | `boolean`                     | `false`      | 是否为一票否决维度（配合 `STAR_GATE` 策略使用）          |
+| `scoringGuide` | `String`                      | -            | 打分指引，直接注入 Prompt，可显著提升一致性               |
+| `anchors`      | `List<ScoringAnchor>`         | -            | Few-shot 分值锚点，描述"X分对应什么输出"              |
+| `condition`    | `Function<DataItem, Boolean>` | `null`（始终执行） | 条件执行函数，返回 `false` 时跳过该维度                |
+| `skipScore`    | `double`                      | `0.0`        | 条件不满足时的默认原始分（跳过时生效）                     |
 
 ### RubricMergeStrategy 合并策略
 
-| 策略 | 公式 | 适用场景 |
-|------|------|----------|
-| `WEIGHTED_AVERAGE`（默认） | `Σ(normScore_i × weight_i) / Σ(weight_i)` | 各维度重要程度不同，需要通过权重区分 |
-| `SIMPLE_AVERAGE` | `Σ(normScore_i) / N` | 各维度等权重 |
-| `LOGICAL_AND` | 任意维度 `normScore < passRate` 时取最小失败分，否则加权均值 | 要求所有维度都达标，任一短板直接拉低整体 |
-| `STAR_GATE` | 任意 `star=true` 维度 `normScore < passRate` 则整体返回 0，否则加权均值 | 存在一票否决项（如安全合规维度） |
-| `COMPLETION_RATE` | `count(normScore_i >= passRate_i) / N` | 关注"有多少维度达标"而非具体分值 |
+| 策略                     | 公式                                                      | 适用场景                 |
+|------------------------|---------------------------------------------------------|----------------------|
+| `WEIGHTED_AVERAGE`（默认） | `Σ(normScore_i × weight_i) / Σ(weight_i)`               | 各维度重要程度不同，需要通过权重区分   |
+| `SIMPLE_AVERAGE`       | `Σ(normScore_i) / N`                                    | 各维度等权重               |
+| `LOGICAL_AND`          | 任意维度 `normScore < passRate` 时取最小失败分，否则加权均值              | 要求所有维度都达标，任一短板直接拉低整体 |
+| `STAR_GATE`            | 任意 `star=true` 维度 `normScore < passRate` 则整体返回 0，否则加权均值 | 存在一票否决项（如安全合规维度）     |
+| `COMPLETION_RATE`      | `count(normScore_i >= passRate_i) / N`                  | 关注"有多少维度达标"而非具体分值    |
 
 ### 分值锚点（Few-shot Anchor）
 
@@ -756,20 +879,58 @@ public class ContentQualityScorer extends RubricBasedScorer {
 
 ```java
 RubricCriteria.builder()
-        .name("Relevance")
-        .definition("回答与问题的相关程度")
-        .scoreType(RubricScoreType.STEPPED)
-        .maxScore(5).passScore(3)
-        .scoringGuide("5=完全切题; 3=部分相关; 1=完全跑题")
-        .anchors(Arrays.asList(
-                RubricCriteria.ScoringAnchor.builder()
-                        .score(5).description("回答完整解决了用户问题，所有信息直接相关").build(),
-                RubricCriteria.ScoringAnchor.builder()
-                        .score(3).description("回答有一定帮助，但包含部分不相关内容").build(),
-                RubricCriteria.ScoringAnchor.builder()
-                        .score(1).description("回答基本不回应用户问题，内容严重偏题").build()
+        .
+
+name("Relevance")
+        .
+
+definition("回答与问题的相关程度")
+        .
+
+scoreType(RubricScoreType.STEPPED)
+        .
+
+maxScore(5).
+
+passScore(3)
+        .
+
+scoringGuide("5=完全切题; 3=部分相关; 1=完全跑题")
+        .
+
+anchors(Arrays.asList(
+        RubricCriteria.ScoringAnchor.builder()
+                        .
+
+score(5).
+
+description("回答完整解决了用户问题，所有信息直接相关").
+
+build(),
+                RubricCriteria.ScoringAnchor.
+
+builder()
+                        .
+
+score(3).
+
+description("回答有一定帮助，但包含部分不相关内容").
+
+build(),
+                RubricCriteria.ScoringAnchor.
+
+builder()
+                        .
+
+score(1).
+
+description("回答基本不回应用户问题，内容严重偏题").
+
+build()
         ))
-        .build()
+                .
+
+build()
 ```
 
 ### 条件执行维度
@@ -778,25 +939,39 @@ RubricCriteria.builder()
 
 ```java
 RubricCriteria.builder()
-        .name("ContextRelevance")
-        .definition("回答是否与提供的参考文档一致")
-        .condition(item -> item.getInputData().get("context") != null)
-        .skipScore(3.0)   // 无参考文档时视为中性通过，不影响整体分
-        .build()
+        .
+
+name("ContextRelevance")
+        .
+
+definition("回答是否与提供的参考文档一致")
+        .
+
+condition(item ->item.
+
+getInputData().
+
+get("context") !=null)
+        .
+
+skipScore(3.0)   // 无参考文档时视为中性通过，不影响整体分
+        .
+
+build()
 ```
 
 ### extra 附加信息
 
 `RubricBasedScorer` 在 `ScorerResult.extra` 中透传各维度详细数据，可供报告层和调试使用：
 
-| Key 常量 | Key 值 | 内容 |
-|----------|--------|------|
-| `EXTRA_KEY_CRITERIA_RAW_SCORES` | `rubric_criteria_raw_scores` | `Map<criteriaName, rawScore>` 各维度原始分 |
+| Key 常量                           | Key 值                         | 内容                                           |
+|----------------------------------|-------------------------------|----------------------------------------------|
+| `EXTRA_KEY_CRITERIA_RAW_SCORES`  | `rubric_criteria_raw_scores`  | `Map<criteriaName, rawScore>` 各维度原始分         |
 | `EXTRA_KEY_CRITERIA_NORM_SCORES` | `rubric_criteria_norm_scores` | `Map<criteriaName, normalizedScore>` 各维度归一化分 |
-| `EXTRA_KEY_CRITERIA_PASS_RATES` | `rubric_criteria_pass_rates` | `Map<criteriaName, passRate>` 各维度通过率阈值 |
-| `EXTRA_KEY_CRITERIA_REASONS` | `rubric_criteria_reasons` | `Map<criteriaName, reason>` 各维度打分结论 |
-| `EXTRA_KEY_CRITERIA_REASONINGS` | `rubric_criteria_reasonings` | `Map<criteriaName, reasoning>` 各维度推理过程 |
-| `EXTRA_KEY_MERGE_STRATEGY` | `rubric_merge_strategy` | 本次使用的合并策略名称 |
+| `EXTRA_KEY_CRITERIA_PASS_RATES`  | `rubric_criteria_pass_rates`  | `Map<criteriaName, passRate>` 各维度通过率阈值       |
+| `EXTRA_KEY_CRITERIA_REASONS`     | `rubric_criteria_reasons`     | `Map<criteriaName, reason>` 各维度打分结论          |
+| `EXTRA_KEY_CRITERIA_REASONINGS`  | `rubric_criteria_reasonings`  | `Map<criteriaName, reasoning>` 各维度推理过程       |
+| `EXTRA_KEY_MERGE_STRATEGY`       | `rubric_merge_strategy`       | 本次使用的合并策略名称                                  |
 
 ```java
 ScorerResult result = scorer.eval(dataItem);
@@ -810,8 +985,8 @@ Map<String, String> reasonings = result.getExtraItem(RubricBasedScorer.EXTRA_KEY
 
 ### normalizeScore 说明
 
-| 配置 | 最终得分域 | totalScore | 适用场景 |
-|------|-----------|-----------|----------|
-| `normalizeScore=true`（默认） | `[0, 1]` | 固定 `1.0` | 各维度量程不同（推荐） |
-| `normalizeScore=false` | 原始分值域 | 动态计算（各维度加权 maxScore 均值） | 所有维度量程相同、希望结果可读为原始分值 |
+| 配置                        | 最终得分域    | totalScore              | 适用场景                 |
+|---------------------------|----------|-------------------------|----------------------|
+| `normalizeScore=true`（默认） | `[0, 1]` | 固定 `1.0`                | 各维度量程不同（推荐）          |
+| `normalizeScore=false`    | 原始分值域    | 动态计算（各维度加权 maxScore 均值） | 所有维度量程相同、希望结果可读为原始分值 |
 
