@@ -17,6 +17,7 @@ has_toc: true
 Counter（抽象基类）
 ├── BasicCounter         基础统计（通过率、耗时、分数分布等）
 ├── MetricCounter（抽象） 按指标名称分组统计
+├── RubricCounter        Rubric 评估器专属统计（评估器级 + 维度级两级聚合）
 ├── AttributeCounter     LLM归因分析 V1（问题类型聚类）
 └── AttributeCounterV2   LLM归因分析 V2（带类别、情感极性、置信度）
 ```
@@ -107,6 +108,134 @@ MetricCounter metricCounter = new MetricCounter() {
         return metricItems;
     }
 };
+```
+
+
+## RubricCounter
+
+专为 `RubricBasedScorer` 配套设计的统计器，按**评估器 → 维度**两级聚合，可以清晰地看到每个评估指标以及每个评估维度的通过情况和分数分布。
+
+> `RubricCounter` 仅处理 `scorerType == "rubricBasedScorer"` 的结果，其他类型的 Scorer 结果会被自动忽略。
+
+### 两级聚合结构
+
+```
+RubricCountResult
+└── metricGroups（评估器级，按 metricName 分组）
+    ├── metricName       评估器名称
+    ├── totalCount       样本总数
+    ├── passCount        通过数
+    ├── failCount        失败数
+    ├── passRate         通过率
+    ├── failRate         失败率
+    ├── avgScore         平均分（归一化后）
+    ├── minScore         最低分
+    ├── maxScore         最高分
+    └── criteriaGroups（维度级，按 criteriaName 分组）
+        ├── criteriaName   维度名称
+        ├── avgRawScore    原始分均值
+        ├── avgNormScore   归一化分均值
+        ├── passThreshold  通过阈值（= passScore / maxScore）
+        ├── passCount      达标样本数
+        ├── failCount      未达标样本数
+        ├── passRate       维度通过率
+        ├── failRate       维度失败率
+        └── dataPoints（各样本打分明细，用于报告层下钻）
+            ├── dataIndex  样本序号
+            ├── rawScore   原始分
+            ├── normScore  归一化分
+            ├── reason     打分理由
+            └── passed     是否通过
+```
+
+### 用法
+
+```java
+RubricCounter rubricCounter = new RubricCounter();
+```
+
+同样只需一行，将其放在 `RubricBasedScorer` 之后即可。
+
+### 典型工作流
+
+```java
+RubricBasedScorer rubricScorer = new RubricBasedScorer(...) { ... };
+RubricCounter rubricCounter = new RubricCounter();
+HtmlReporter reporter = new HtmlReporter("rubric_report");
+
+new WorkflowBuilder()
+    .link(begin, dataLoader, rubricScorer, rubricCounter, reporter)
+    .build()
+    .execute();
+```
+
+### 输出结果（RubricCountResult）
+
+```json
+{
+  "metricGroups": [
+    {
+      "metricName": "内容质量",
+      "totalCount": 100,
+      "passCount": 82,
+      "failCount": 18,
+      "passRate": 0.82,
+      "failRate": 0.18,
+      "avgScore": 0.79,
+      "minScore": 0.20,
+      "maxScore": 1.00,
+      "criteriaGroups": [
+        {
+          "criteriaName": "Faithfulness",
+          "avgRawScore": 4.1,
+          "avgNormScore": 0.85,
+          "passThreshold": 0.6,
+          "passCount": 91,
+          "failCount": 9,
+          "passRate": 0.91,
+          "failRate": 0.09,
+          "dataPoints": [
+            {
+              "dataIndex": 1,
+              "rawScore": 5.0,
+              "normScore": 1.0,
+              "reason": "回答完全忠实于给定上下文",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "criteriaName": "Harmfulness",
+          "avgRawScore": 0.95,
+          "avgNormScore": 0.95,
+          "passThreshold": 1.0,
+          "passCount": 95,
+          "failCount": 5,
+          "passRate": 0.95,
+          "failRate": 0.05,
+          "dataPoints": []
+        }
+      ]
+    }
+  ]
+}
+```
+
+### 与 BasicCounter 组合使用
+
+`RubricCounter` 专注于 Rubric 维度的精细化统计，而 `BasicCounter` 提供整体通过率和耗时等基础指标，两者可以组合使用，互补不冲突：
+
+```java
+BasicCounter basicCounter = new BasicCounter();
+RubricCounter rubricCounter = new RubricCounter();
+HtmlReporter reporter = new HtmlReporter("rubric_full_report");
+
+new WorkflowBuilder()
+    .link(rubricScorer, basicCounter)
+    .link(basicCounter, rubricCounter)
+    .link(rubricCounter, reporter)
+    .build()
+    .execute();
 ```
 
 
