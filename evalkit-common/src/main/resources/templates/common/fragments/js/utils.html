@@ -96,6 +96,8 @@
         document.getElementById('attributeContent').style.display = name === 'attribute' ? '' : 'none';
         document.getElementById('attributeV2Panel').style.display = name === 'attributeV2Panel' ? '' : 'none';
         document.getElementById('metricCountPanel').style.display = name === 'metricCountPanel' ? '' : 'none';
+        const rubricPanel = document.getElementById('rubricCountPanel');
+        if (rubricPanel) rubricPanel.style.display = name === 'rubricCountPanel' ? '' : 'none';
         // 记录当前面板名称，供 NavSource 和 updateNavButtons 使用
         AppState._currentPanel = name;
         updateNavButtons();
@@ -109,7 +111,8 @@
         'detail': '详情',
         'attribute': '归因',
         'attributeV2Panel': '归因V2',
-        'metricCountPanel': '指标统计'
+        'metricCountPanel': '指标统计',
+        'rubricCountPanel': 'R指标统计'
     };
 
     /* ========================================
@@ -219,6 +222,7 @@
         // 执行对应的渲染函数
         if (version === 'old') renderAttribute();
         if (version === 'v2') renderAttributeV2();
+        if (version === 'rubric') renderRubricCount();
     }
 
     /* ========================================

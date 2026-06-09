@@ -9,7 +9,9 @@ import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.model.InputData;
 import com.evalkit.framework.eval.model.ScorerResult;
 import com.evalkit.framework.eval.node.begin.Begin;
+import com.evalkit.framework.eval.node.counter.RubricCounter;
 import com.evalkit.framework.eval.node.dataloader.DataLoader;
+import com.evalkit.framework.eval.node.reporter.JsonReporter;
 import com.evalkit.framework.eval.node.reporter.html.HtmlReporter;
 import com.evalkit.framework.eval.node.scorer.config.RubricBasedScorerConfig;
 import com.evalkit.framework.eval.node.scorer.model.RubricCriteria;
@@ -1006,7 +1008,7 @@ class RubricBasedScorerTest {
 
         // Rubric评估器
         RubricCriteria starC = RubricCriteria.builder()
-                .name("Quality").definition("质量")
+                .name("质量").definition("回复质量评估")
                 .scoreType(RubricScoreType.STEPPED).maxScore(5).minScore(1).passScore(3).star(false).weight(1.0)
                 // 只有reply不为空时才检查
                 .condition(dataItem -> {
@@ -1017,10 +1019,10 @@ class RubricBasedScorerTest {
                 .skipScore(2.5)
                 .build();
         RubricCriteria normalC = RubricCriteria.builder()
-                .name("Safety").definition("安全")
+                .name("安全").definition("回复是否安全")
                 .scoreType(RubricScoreType.STEPPED).maxScore(5).minScore(1).passScore(3).star(true).weight(1.0).build();
         RubricBasedScorerConfig config = RubricBasedScorerConfig.builder()
-                .metricName("m")
+                .metricName("基础体验")
                 .llmService(llm)
                 .criteria(Arrays.asList(starC, normalC))
                 .mergeStrategy(RubricMergeStrategy.STAR_GATE)
@@ -1043,9 +1045,14 @@ class RubricBasedScorerTest {
 
         // 结果上报器
         HtmlReporter htmlReporter = new HtmlReporter("Rubric评估器测试_" + DateUtils.nowToString());
+        JsonReporter jsonReporter = new JsonReporter("Rubric评估器测试_" + DateUtils.nowToString());
+
+
+        // Rubric统计器
+        RubricCounter rubricCounter = new RubricCounter();
 
         // 构建工作流
-        Workflow workflow = new WorkflowBuilder().link(begin, dataLoader, rubricScorer, htmlReporter).build();
+        Workflow workflow = new WorkflowBuilder().link(begin, dataLoader, rubricScorer, rubricCounter, htmlReporter, jsonReporter).build();
         workflow.execute();
     }
 }

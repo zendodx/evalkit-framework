@@ -28,6 +28,8 @@
     <th:block th:replace="~{github/fragments/css/attribution :: attribution}"/>
     <!-- 6. 指标统计面板样式（GitHub风格，主题专属） -->
     <th:block th:replace="~{github/fragments/css/metric :: metric}"/>
+    <!-- 6.1 Rubric 指标统计面板样式（GitHub风格，主题专属） -->
+    <th:block th:replace="~{github/fragments/css/rubric :: rubric}"/>
     <!-- 7. 导出对话框样式（通用） -->
     <th:block th:replace="~{common/fragments/css/export :: export}"/>
 </head>
@@ -45,6 +47,8 @@
                         <div class="attr-item" onclick="chooseAttr('v2')">归因V2</div>
                         <!-- 评估指标统计面板 -->
                         <div class="attr-item metric-panel" onclick="renderMetricCount()">指标统计</div>
+                        <!-- Rubric 指标统计面板 -->
+                        <div class="attr-item" onclick="chooseAttr('rubric')">R指标统计</div>
                         <!-- 结果导出 -->
                         <div class="attr-item" onclick="openExportDialog()">结果导出</div>
                     </div>
@@ -154,6 +158,9 @@
     </div>
     <div id="metricCountPanel" style="display:none;">
         <div id="metricCountContent">暂无指标数据</div>
+    </div>
+    <div id="rubricCountPanel" style="display:none;">
+        <div id="rubricCountContent">暂无Rubric指标数据</div>
     </div>
 </div>
 
@@ -281,6 +288,8 @@
     const attributeCountResultV2 = /*[[${attributeCountResultV2}]]*/ {};
     /* 评估指标统计数据 */
     const metricCountResult = /*[[${metricCountResult}]]*/ {};
+    /* Rubric 指标统计数据 */
+    const rubricCountResult = /*[[${rubricCountResult}]]*/ {};
 </script>
 
 <!-- 业务脚本资源 - 按功能模块导入（通用） -->
@@ -298,6 +307,8 @@
 <th:block th:replace="~{common/fragments/js/render-attribution :: renderAttribution}"/>
 <!-- 7. 指标统计面板渲染 -->
 <th:block th:replace="~{common/fragments/js/render-metric :: renderMetric}"/>
+<!-- 7.1 Rubric 指标统计面板渲染 -->
+<th:block th:replace="~{common/fragments/js/render-rubric :: renderRubric}"/>
 <!-- 8. 导出功能处理（通用） -->
 <th:block th:replace="~{common/fragments/js/export :: export}"/>
 </body>

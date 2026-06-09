@@ -251,6 +251,8 @@
                 renderAttributeV2();
             } else if (state && state.panel === 'attribute') {
                 renderAttribute();
+            } else if (state && state.panel === 'rubricCountPanel') {
+                renderRubricCount();
             } else {
                 // 默认回到总览
                 renderOverview();
