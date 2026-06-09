@@ -138,4 +138,25 @@ public class DateUtils {
         calendar.add(Calendar.DATE, days);
         return calendar.getTime();
     }
+
+    /**
+     * 时间戳转日期
+     */
+    public static Date timestampToDate(long timestamp) {
+        return new Date(timestamp);
+    }
+
+    /**
+     * 时间戳转日期字符串
+     */
+    public static String timestampToDateString(long timestamp) {
+        return dateToString(timestampToDate(timestamp));
+    }
+
+    /**
+     * 时间戳转日期字符串,可指定格式
+     */
+    public static String timestampToDateString(long timestamp, String format) {
+        return dateToString(timestampToDate(timestamp), format);
+    }
 }
