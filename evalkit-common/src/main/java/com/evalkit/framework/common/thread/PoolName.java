@@ -25,5 +25,9 @@ public enum PoolName {
     /**
      * 数据生成线程池
      */
-    DATA_GENERATOR
+    DATA_GENERATOR,
+    /**
+     * 归因统计器线程池
+     */
+    ATTRIBUTE_COUNTER
 }

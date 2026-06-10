@@ -49,6 +49,17 @@
         border-color: var(--color-primary);
     }
 
+    .jump-btn-top {
+        border-color: var(--color-border);
+        color: var(--color-text-secondary);
+    }
+
+    .jump-btn-top:hover {
+        background: var(--color-text-secondary);
+        border-color: var(--color-text-secondary);
+        color: #fff;
+    }
+
     /* 分享按钮 */
     .share-btn {
         margin-left: auto;
@@ -81,6 +92,7 @@
         overflow-y: auto;
         padding: 6px;
         background: #f6f8fa;
+        overscroll-behavior: contain;
     }
 
     /* 详情分组 */
@@ -166,6 +178,7 @@
         border-radius: var(--border-radius-base);
         border: 1px solid var(--color-border);
         font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+        overscroll-behavior: contain;
     }
 
     /* ========================================

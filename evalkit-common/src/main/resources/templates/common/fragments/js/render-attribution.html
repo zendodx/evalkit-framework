@@ -6,6 +6,10 @@
     function renderAttribute() {
         setActiveButton('attrTrigger');
         showPanel('attribute');
+        // 记录当前面板到历史，支持从详情页后退回此面板
+        const url = new URL(location.href);
+        url.searchParams.delete('dataIndex');
+        window.history.replaceState({panel: 'attribute'}, '', url);
         const box = document.getElementById('attributeContent');
         if (!attributeCountResult || !attributeCountResult.overallAttribution?.length) {
             box.innerHTML = '<div>暂无归因数据</div>';
@@ -134,6 +138,10 @@
     function renderAttributeV2() {
         setActiveButton('attrTrigger');
         showPanel('attributeV2Panel');
+        // 记录当前面板到历史，支持从详情页后退回此面板
+        const url = new URL(location.href);
+        url.searchParams.delete('dataIndex');
+        window.history.replaceState({panel: 'attributeV2'}, '', url);
         const box = document.getElementById('attributeV2Content');
         const data = attributeCountResultV2;
 

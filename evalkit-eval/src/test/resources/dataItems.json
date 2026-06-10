@@ -1,0 +1,174 @@
+[
+  {
+    "dataIndex": 0,
+    "inputData": {
+      "dataIndex": 0,
+      "inputItem": {
+        "query": "hello, 元宵节",
+        "type": "1"
+      }
+    },
+    "apiCompletionResult": {
+      "dataIndex": 0,
+      "resultItem": {
+        "response": "Mock response for hello, 元宵节"
+      },
+      "startTime": 1763027533462,
+      "endTime": 1763027533463,
+      "timeCost": 1,
+      "success": true
+    },
+    "evalResult": {
+      "dataIndex": 0,
+      "score": 0.0,
+      "reason": "由于用户查询信息不完整（缺少具体日期、目的地等关键要素），AI助手仅提示信息缺失而未主动推荐模糊条件下的机票选项（如全国低价票或春季航班），也未通过交互引导用户补充信息，导致在信息卡片展示、用户偏好匹配和有效回复等所有评估维度均得分为0，反映出系统对模糊查询的处理能力不足。",
+      "startTime": 0,
+      "endTime": 0,
+      "timeCost": 0,
+      "scorerResults": [
+        {
+          "dataIndex": 0,
+          "metric": "异常测试",
+          "score": 0.0,
+          "scoreRate": 0.0,
+          "totalScore": 1.0,
+          "reason": "Error: / by zero",
+          "extra": null,
+          "statTime": 0,
+          "endTime": 0,
+          "timeCost": 0,
+          "success": false,
+          "pass": false,
+          "threshold": 0.0,
+          "star": false
+        },
+        {
+          "dataIndex": 0,
+          "metric": "回复长度检查",
+          "score": 1.0,
+          "scoreRate": 0.0,
+          "totalScore": 1.0,
+          "reason": "hello, 元宵节 的回复长度超过5个字符",
+          "extra": null,
+          "statTime": 1763027533557,
+          "endTime": 1763027533558,
+          "timeCost": 1,
+          "success": true,
+          "pass": true,
+          "threshold": 0.0,
+          "star": false
+        },
+        {
+          "dataIndex": 0,
+          "metric": "相似度检查level1",
+          "score": 0.0,
+          "scoreRate": 0.0,
+          "totalScore": 1.0,
+          "reason": "相似度为0.0000，小于阈值0.0000",
+          "extra": {
+            "similarity": 0.0,
+            "similarityThreshold": 0.0
+          },
+          "statTime": 1763027533558,
+          "endTime": 1763027533900,
+          "timeCost": 342,
+          "success": true,
+          "pass": true,
+          "threshold": 0.0,
+          "star": false
+        }
+      ],
+      "success": false,
+      "pass": false,
+      "threshold": 1.0,
+      "scoreStrategyName": "最大得分率策略"
+    },
+    "extra": null
+  },
+  {
+    "dataIndex": 1,
+    "inputData": {
+      "dataIndex": 1,
+      "inputItem": {
+        "query": "hello, 国庆节",
+        "type": "1"
+      }
+    },
+    "apiCompletionResult": {
+      "dataIndex": 1,
+      "resultItem": {
+        "response": "Mock response for hello, 国庆节"
+      },
+      "startTime": 1763027533463,
+      "endTime": 1763027533463,
+      "timeCost": 0,
+      "success": true
+    },
+    "evalResult": {
+      "dataIndex": 1,
+      "score": 0.0,
+      "reason": "在火车票推荐场景中，由于用户仅提供出发地和目的地而未明确任何偏好（如车次类型、座位等级、时间要求等），AI助手仅默认推荐无座/硬座的普通列车，既未主动引导用户补充信息，也未展示符合常规偏好的推荐方案（如高铁、卧铺等），导致在车次推荐、偏好匹配和有效回复等所有评估维度均得分为0，反映出系统对基础查询的默认推荐策略存在缺陷。",
+      "startTime": 0,
+      "endTime": 0,
+      "timeCost": 0,
+      "scorerResults": [
+        {
+          "dataIndex": 1,
+          "metric": "异常测试",
+          "score": 0.0,
+          "scoreRate": 0.0,
+          "totalScore": 1.0,
+          "reason": "Error: / by zero",
+          "extra": null,
+          "statTime": 0,
+          "endTime": 0,
+          "timeCost": 0,
+          "success": false,
+          "pass": false,
+          "threshold": 0.0,
+          "star": false
+        },
+        {
+          "dataIndex": 1,
+          "metric": "回复长度检查",
+          "score": 1.0,
+          "scoreRate": 0.0,
+          "totalScore": 1.0,
+          "reason": "hello, 国庆节 的回复长度超过5个字符",
+          "extra": null,
+          "statTime": 1763027533980,
+          "endTime": 1763027533980,
+          "timeCost": 0,
+          "success": true,
+          "pass": true,
+          "threshold": 0.0,
+          "star": false
+        },
+        {
+          "dataIndex": 1,
+          "metric": "相似度检查level1",
+          "score": 0.0,
+          "scoreRate": 0.0,
+          "totalScore": 1.0,
+          "reason": "相似度为0.0000，小于阈值0.0000",
+          "extra": {
+            "similarity": 0.0,
+            "similarityThreshold": 0.0
+          },
+          "statTime": 1763027533900,
+          "endTime": 1763027533917,
+          "timeCost": 17,
+          "success": true,
+          "pass": true,
+          "threshold": 0.0,
+          "star": false
+        }
+      ],
+      "success": false,
+      "pass": false,
+      "threshold": 1.0,
+      "scoreStrategyName": "最大得分率策略"
+    },
+    "extra": null
+  }
+]

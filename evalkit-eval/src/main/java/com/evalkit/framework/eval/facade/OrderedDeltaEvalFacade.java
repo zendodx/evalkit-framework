@@ -14,6 +14,7 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.TextMessage;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -72,6 +73,34 @@ public abstract class OrderedDeltaEvalFacade extends DeltaEvalFacade {
         } catch (JMSException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * 重写历史数据加载：从 SQLite 中查询与当前 DataItem 同组（相同 orderKey）的已完成 DataItem。
+     * <p>
+     * 由于 {@link OrderedDeltaEvalFacade} 保证同组数据串行执行，当前轮处理时前序轮已落库，
+     * 因此可安全从 DB 读取历史数据注入 context，使
+     * {@link com.evalkit.framework.eval.node.api.OrderedApiCompletion}
+     * 的 getPrevDataItem / getPrevDataItems / getGroupDataItemAt 等多轮历史方法正常工作。
+     *
+     * @param current 当前正在处理的 DataItem
+     * @return 同组已完成的历史 DataItem 列表（按 dataIndex 升序，不含当前条）
+     */
+    @Override
+    protected List<DataItem> loadHistoryItems(DataItem current) throws SQLException {
+        String currentKey = prepareOrderKey(current.getInputData());
+        List<DataItem> all = dataItemMapper.queryAll();
+        List<DataItem> history = new ArrayList<>();
+        for (DataItem item : all) {
+            if (item.getInputData() == null) continue;
+            String key = prepareOrderKey(item.getInputData());
+            if (Objects.equals(key, currentKey)) {
+                history.add(item);
+            }
+        }
+        // 按 dataIndex 升序排列，保证历史顺序正确
+        history.sort(Comparator.comparingLong(item -> item.getDataIndex() == null ? 0L : item.getDataIndex()));
+        return history;
     }
 
     /**

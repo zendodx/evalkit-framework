@@ -61,6 +61,27 @@ public class DataItemMapper {
     }
 
     /**
+     * 按 InputData 中的指定字段值查询已完成的 DataItem 列表（精确匹配）。
+     * 底层遍历全表在 Java 侧过滤，适用于同组数据量小（如多轮对话同 sessionId）的场景。
+     *
+     * @param fieldKey   InputData 中的字段名
+     * @param fieldValue 要匹配的字段值
+     * @return 满足条件的 DataItem 列表（保持插入顺序）
+     */
+    public List<DataItem> queryByInputField(String fieldKey, Object fieldValue) throws SQLException {
+        List<DataItem> all = queryAll();
+        List<DataItem> result = new ArrayList<>();
+        for (DataItem item : all) {
+            if (item.getInputData() == null) continue;
+            Object v = item.getInputData().get(fieldKey);
+            if (java.util.Objects.equals(String.valueOf(v), String.valueOf(fieldValue))) {
+                result.add(item);
+            }
+        }
+        return result;
+    }
+
+    /**
      * 创建data_item表
      */
     private void createTable() throws SQLException {

@@ -90,4 +90,64 @@ public final class WorkflowContextOps {
         if (StringUtils.isEmpty(countResultJson)) return null;
         return JsonUtils.fromJson(countResultJson, clazz);
     }
+
+    /**
+     * 按输入字段值查找 DataItem 列表（精确匹配）
+     * 例如：getDataItemsByField(ctx, "sessionId", "session-001")
+     *
+     * @param ctx        工作流上下文
+     * @param fieldKey   InputData 中的字段名
+     * @param fieldValue 要匹配的字段值
+     * @return 满足条件的 DataItem 列表（保持原始顺序）
+     */
+    public static List<DataItem> getDataItemsByField(WorkflowContext ctx, String fieldKey, Object fieldValue) {
+        List<DataItem> all = getDataItems(ctx);
+        if (all == null || all.isEmpty()) return java.util.Collections.emptyList();
+        List<DataItem> result = new java.util.ArrayList<>();
+        for (DataItem item : all) {
+            Object v = item.getInputData().get(fieldKey);
+            if (java.util.Objects.equals(v, fieldValue)) {
+                result.add(item);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 按输入字段值查找单条 DataItem（精确匹配，返回第一个命中）
+     *
+     * @param ctx        工作流上下文
+     * @param fieldKey   InputData 中的字段名
+     * @param fieldValue 要匹配的字段值
+     * @return 第一条满足条件的 DataItem，不存在时返回 null
+     */
+    public static DataItem getDataItemByField(WorkflowContext ctx, String fieldKey, Object fieldValue) {
+        List<DataItem> all = getDataItems(ctx);
+        if (all == null || all.isEmpty()) return null;
+        for (DataItem item : all) {
+            Object v = item.getInputData().get(fieldKey);
+            if (java.util.Objects.equals(v, fieldValue)) {
+                return item;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 按 dataIndex 查找单条 DataItem
+     *
+     * @param ctx       工作流上下文
+     * @param dataIndex 数据索引
+     * @return 对应的 DataItem，不存在时返回 null
+     */
+    public static DataItem getDataItemByIndex(WorkflowContext ctx, long dataIndex) {
+        List<DataItem> all = getDataItems(ctx);
+        if (all == null || all.isEmpty()) return null;
+        for (DataItem item : all) {
+            if (java.util.Objects.equals(item.getDataIndex(), dataIndex)) {
+                return item;
+            }
+        }
+        return null;
+    }
 }

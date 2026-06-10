@@ -62,10 +62,11 @@
             <span class="detail-strategy">${scoreStrategyName}, 阈值: ${threshold}</span>
            <!-- 快速跳转按钮 -->
            <div class="header-jumps">
-             <a href="#section-input"   class="jump-btn">输入数据</a>
-             <a href="#section-api"     class="jump-btn">API调用结果</a>
-             <a href="#section-eval"    class="jump-btn">评测结果</a>
-             <a href="#section-scorer"  class="jump-btn">评测详情</a>
+             <button class="jump-btn" onclick="scrollToSection('section-input')"   title="跳转到输入数据（快捷键：1）">输入数据</button>
+             <button class="jump-btn" onclick="scrollToSection('section-api')"     title="跳转到API调用结果（快捷键：2）">API调用结果</button>
+             <button class="jump-btn" onclick="scrollToSection('section-eval')"    title="跳转到评测结果（快捷键：3）">评测结果</button>
+             <button class="jump-btn" onclick="scrollToSection('section-scorer')"  title="跳转到评测详情（快捷键：4）">评测详情</button>
+             <button class="jump-btn jump-btn-top" onclick="scrollDetailToTop()"   title="返回详情顶部（快捷键：0）">⬆ 顶部</button>
            </div>
             <!-- 分享按钮 -->
            <span class="share-btn" onclick="shareCase()" title="分享链接">
@@ -86,6 +87,21 @@
 
         // 激活 json-viewer
         document.querySelectorAll('pre.json-viewer').forEach(el => new JsonViewer(el));
+    }
+
+    /* ========================================
+       详情页内滚动工具
+       ======================================== */
+    function scrollToSection(sectionId) {
+        const container = document.querySelector('.detail-content-scroll');
+        const target = document.getElementById(sectionId);
+        if (!container || !target) return;
+        container.scrollTo({top: target.offsetTop - container.offsetTop, behavior: 'smooth'});
+    }
+
+    function scrollDetailToTop() {
+        const container = document.querySelector('.detail-content-scroll');
+        if (container) container.scrollTo({top: 0, behavior: 'smooth'});
     }
 
     /* ========================================
@@ -130,9 +146,45 @@
     }
 
     /* ========================================
+       来源面板记录（用于"返回"按钮）
+       ======================================== */
+    const NavSource = {
+        panelName: null,      // 来源面板名称，如 'attributeV2Panel'、'attribute'、'overview'
+        scrollTop: 0,         // 来源面板的滚动位置
+        // 记录当前面板为来源
+        record(panelName) {
+            this.panelName = panelName;
+            // 获取来源面板的滚动位置
+            const el = panelName ? document.getElementById(panelName) : null;
+            this.scrollTop = el ? el.scrollTop : 0;
+        },
+        // 恢复来源面板（不重渲染）
+        restore() {
+            if (!this.panelName) return false;
+            showPanel(this.panelName);
+            updateNavButtons();
+            // 恢复滚动位置
+            const savedScrollTop = this.scrollTop;
+            requestAnimationFrame(() => {
+                const el = document.getElementById(this.panelName);
+                if (el) el.scrollTop = savedScrollTop;
+            });
+            this.panelName = null;
+            return true;
+        }
+    };
+
+    /* ========================================
        跳转到指定用例
        ======================================== */
     function jumpToCase(dataIndex) {
+        // 记录来源面板（不重渲染版）
+        const currentPanel = AppState._currentPanel || null;
+        NavSource.record(currentPanel);
+
+        // 记录跳转前的 URL（用于浏览器历史）
+        const prevUrl = new URL(location.href);
+
         AppState.currentFilter = 'all';
         renderCaseList();
         AppState.selectedCase = evaluationData.find(c => c.dataIndex === dataIndex);
@@ -148,13 +200,65 @@
             }
         });
 
-        // 同步 URL
+        // 使用 pushState 压入历史，使浏览器后退按钮可以返回来源面板
         if (AppState.selectedCase) {
             const url = new URL(location.href);
             url.searchParams.set('dataIndex', AppState.selectedCase.inputData.dataIndex);
-            window.history.replaceState(null, '', url);
+            // 如果当前 URL 已经是同一个 dataIndex，则 replace 避免重复入栈
+            if (prevUrl.href === url.href) {
+                window.history.replaceState({panel: 'detail', dataIndex}, '', url);
+            } else {
+                window.history.pushState({panel: 'detail', dataIndex}, '', url);
+            }
         }
     }
+
+    /* ========================================
+       返回来源面板（保留原始展示状态，不重渲染）
+       ======================================== */
+    function navBack() {
+        if (!NavSource.restore()) {
+            // 没有记录来源时，浏览器后退
+            window.history.back();
+        }
+    }
+
+    /* ========================================
+       监听浏览器后退/前进，恢复面板状态
+       ======================================== */
+    window.addEventListener('popstate', function (e) {
+        const params = new URLSearchParams(location.search);
+        const dataIndex = params.get('dataIndex');
+
+        if (dataIndex != null) {
+            // 有 dataIndex 参数：显示对应用例详情
+            const targetCase = evaluationData.find(d => String(d.inputData.dataIndex) === dataIndex);
+            if (targetCase) {
+                AppState.currentFilter = 'all';
+                AppState.selectedCase = targetCase;
+                renderCaseList();
+                renderDetail();
+                showPanel('detail');
+                requestAnimationFrame(() => {
+                    const scrollContainer = document.querySelector('.detail-content-scroll');
+                    if (scrollContainer) scrollContainer.scrollTop = 0;
+                });
+            }
+        } else {
+            // 无 dataIndex：回退到归因 V2 面板（或其他来源面板）
+            const state = e.state;
+            if (state && state.panel === 'attributeV2') {
+                renderAttributeV2();
+            } else if (state && state.panel === 'attribute') {
+                renderAttribute();
+            } else if (state && state.panel === 'rubricCountPanel') {
+                renderRubricCount();
+            } else {
+                // 默认回到总览
+                renderOverview();
+            }
+        }
+    });
 
     /* ========================================
        详情分组 HTML 生成

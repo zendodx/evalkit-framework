@@ -50,8 +50,8 @@ activemq-data
 
 # other
 *.xlsx
-*.json
-*.html
+#*.json
+#*.html
 *.csv
 cache_data
 delta_eval_cache_data

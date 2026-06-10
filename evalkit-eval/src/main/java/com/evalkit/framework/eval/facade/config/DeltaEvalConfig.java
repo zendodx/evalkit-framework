@@ -11,6 +11,7 @@ public class DeltaEvalConfig extends FullEvalConfig {
     protected int mqReceiveTimeout;
     protected boolean enableResume;
     protected long messageProcessMaxTime;
+    protected boolean enablePeriodicReport;
 
     protected DeltaEvalConfig() {
     }
@@ -42,6 +43,10 @@ public class DeltaEvalConfig extends FullEvalConfig {
         if (messageProcessMaxTime != null && messageProcessMaxTime > 0) {
             this.messageProcessMaxTime = messageProcessMaxTime;
         }
+        Boolean enablePeriodicReport = RuntimeEnvUtils.getJVMPropertyBoolean("enablePeriodicReport", null);
+        if (enablePeriodicReport != null) {
+            this.enablePeriodicReport = enablePeriodicReport;
+        }
     }
 
     @Override
@@ -50,7 +55,7 @@ public class DeltaEvalConfig extends FullEvalConfig {
         if (batchSize <= 0) {
             throw new IllegalArgumentException("batchSize must be greater than 0");
         }
-        if (reportInterval <= 0) {
+        if (enablePeriodicReport && reportInterval <= 0) {
             throw new IllegalArgumentException("reportInterval must be greater than 0");
         }
         if (mqReceiveTimeout <= 0) {
@@ -64,14 +69,16 @@ public class DeltaEvalConfig extends FullEvalConfig {
     public static class DeltaEvalConfigBuilder<B extends DeltaEvalConfigBuilder<B>> extends FullEvalConfigBuilder<B> {
         /* 批处理大小 */
         protected int batchSize = 10;
-        /* 报告间隔, 30秒 */
-        protected int reportInterval = 30;
+        /* 报告间隔, 10分钟 */
+        protected int reportInterval = 600;
         /* MQ接收超时时间, 10秒 */
         protected int mqReceiveTimeout = 10000;
         /* 是否开启中断续评模式 */
         protected boolean enableResume = true;
         /* 消息处理最大时间, 60秒 */
         protected long messageProcessMaxTime = 60;
+        /* 是否开启周期性上报，默认开启 */
+        protected boolean enablePeriodicReport = true;
 
         public B batchSize(int batchSize) {
             this.batchSize = batchSize;
@@ -98,6 +105,11 @@ public class DeltaEvalConfig extends FullEvalConfig {
             return (B) this;
         }
 
+        public B enablePeriodicReport(boolean enablePeriodicReport) {
+            this.enablePeriodicReport = enablePeriodicReport;
+            return (B) this;
+        }
+
         @Override
         protected void applyTo(EvalConfig base) {
             super.applyTo(base);
@@ -107,6 +119,7 @@ public class DeltaEvalConfig extends FullEvalConfig {
             config.mqReceiveTimeout = mqReceiveTimeout;
             config.enableResume = enableResume;
             config.messageProcessMaxTime = messageProcessMaxTime;
+            config.enablePeriodicReport = enablePeriodicReport;
         }
 
         @Override
@@ -157,5 +170,13 @@ public class DeltaEvalConfig extends FullEvalConfig {
 
     public void setMessageProcessMaxTime(long messageProcessMaxTime) {
         this.messageProcessMaxTime = messageProcessMaxTime;
+    }
+
+    public boolean isEnablePeriodicReport() {
+        return enablePeriodicReport;
+    }
+
+    public void setEnablePeriodicReport(boolean enablePeriodicReport) {
+        this.enablePeriodicReport = enablePeriodicReport;
     }
 }

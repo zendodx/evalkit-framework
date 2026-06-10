@@ -35,7 +35,7 @@ public enum RubricMergeStrategy {
     STAR_GATE,
 
     /**
-     * 严格完成率: count(normalizedScore_i >= passRate_i) / N
+     * 严格完成率: count(normalizedScore_i 大于等于 passRate_i) / N
      * 适用场景：关注"有多少比例的维度达标"，而非具体分值。
      */
     COMPLETION_RATE

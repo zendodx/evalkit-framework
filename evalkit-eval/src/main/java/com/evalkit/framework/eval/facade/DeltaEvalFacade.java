@@ -35,9 +35,9 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.TextMessage;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -372,8 +372,10 @@ public class DeltaEvalFacade extends EvalFacade {
         // 执行评测并落库
         String json = ((TextMessage) message).getText();
         DataItem dataItem = JsonUtils.fromJson(json, DataItem.class);
-        // 构建DataItem
-        List<DataItem> dataItems = new CopyOnWriteArrayList<>();
+        // 加载同组历史数据（默认空列表；子类可重写以支持多轮对话上下文）
+        List<DataItem> historyItems = loadHistoryItems(dataItem);
+        // 构建DataItem列表：历史条目在前，当前条目在末尾
+        List<DataItem> dataItems = new CopyOnWriteArrayList<>(historyItems);
         dataItems.add(dataItem);
         Workflow evalWorkflow = null;
         try {
@@ -387,10 +389,10 @@ public class DeltaEvalFacade extends EvalFacade {
             evalWorkflow.setWorkflowContext(ctx);
             // 执行评测
             evalWorkflow.execute();
-            // 执行后结果落库
-            Optional<DataItem> result = WorkflowContextOps.getDataItems(ctx).stream().findFirst();
-            if (result.isPresent()) {
-                dataItemMapper.insert(result.get());
+            // 执行后结果落库（只落当前条，历史条已落库）
+            List<DataItem> afterItems = WorkflowContextOps.getDataItems(ctx);
+            if (afterItems != null && !afterItems.isEmpty()) {
+                dataItemMapper.insert(afterItems.get(afterItems.size() - 1));
             }
         } catch (Exception e) {
             log.error("[DeltaEvalFacade] Eval data consume and eval failed, error: {}", e.getMessage(), e);
@@ -406,6 +408,22 @@ public class DeltaEvalFacade extends EvalFacade {
                 WorkflowContextHolder.clear();
             }
         }
+    }
+
+    /**
+     * 加载当前 DataItem 的同组历史数据（已完成，已落库）。
+     * 默认返回空列表，适用于不需要多轮历史的普通评测场景。
+     * <p>
+     * 子类（如 {@link OrderedDeltaEvalFacade}）可重写此方法，
+     * 按 orderKey 从 SQLite 中查询同组的已完成 DataItem，
+     * 使 {@link com.evalkit.framework.eval.node.api.OrderedApiCompletion}
+     * 的多轮历史访问方法（getPrevDataItem 等）在增量评测中正常工作。
+     *
+     * @param current 当前正在处理的 DataItem
+     * @return 同组历史 DataItem 列表（按执行顺序排列，不含当前条）
+     */
+    protected List<DataItem> loadHistoryItems(DataItem current) throws SQLException {
+        return Collections.emptyList();
     }
 
     /**
@@ -427,6 +445,10 @@ public class DeltaEvalFacade extends EvalFacade {
      */
     @Override
     protected void report() {
+        if (!config.isEnablePeriodicReport()) {
+            log.info("Periodic report is disabled, skip scheduling");
+            return;
+        }
         if (reporterFuture != null && !reporterFuture.isCancelled()) {
             return;
         }
@@ -500,8 +522,8 @@ public class DeltaEvalFacade extends EvalFacade {
      * 等待 JMX QueueSize 达到非零（或超时）
      * ActiveMQ 的 JMX QueueSize 统计是异步更新的，数据量小时入队后可能短暂返回 0
      *
-     * @param queueName  队列名
-     * @param timeoutMs  最长等待毫秒数
+     * @param queueName 队列名
+     * @param timeoutMs 最长等待毫秒数
      * @return 队列实际大小（可能为 0 若真的没有数据或超时）
      */
     protected long waitForQueueSize(String queueName, long timeoutMs) {

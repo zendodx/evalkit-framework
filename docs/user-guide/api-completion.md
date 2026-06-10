@@ -242,6 +242,101 @@ OrderedApiCompletion orderedApiCompletion = new OrderedApiCompletion(
 | 需实现方法 | `invoke()` | `invoke()` + `prepareOrderKey()` + `prepareComparator()` |
 
 
+### 多轮历史访问工具方法
+
+`OrderedApiCompletion` 内置了一组**多轮对话历史访问工具方法**，可在 `invoke()` 中直接调用，无需手动维护历史容器。
+
+> **底层原理**：框架在批量执行开始前，会按 `prepareOrderKey` 和 `prepareComparator` 预建分组索引（`O(1)` 查找），同一 `orderKey` 下的数据按顺序串行执行，当前轮调用时前序轮已执行完毕，因此可以安全读取历史数据。
+
+#### 方法一览
+
+| 方法 | 说明 |
+|------|------|
+| `getGroupDataItems(current)` | 获取同组（同 `orderKey`）**全部轮次**的 `DataItem` 列表，按 `prepareComparator` 排序 |
+| `getPrevDataItem(current)` | 获取**上一轮**的 `DataItem`；第一轮返回 `null` |
+| `getPrevDataItems(current)` | 获取当前轮**之前所有轮次**的 `DataItem` 列表（不含当前轮） |
+| `getGroupDataItemAt(current, index)` | 按 **1-based** 索引获取同组指定轮次的 `DataItem`；越界返回 `null` |
+| `getGroupDataItemAt(current, from, to)` | 获取同组 **[from, to]** 范围内（1-based，左右均含）的 `DataItem` 列表；超出实际轮数自动截断 |
+| `getHistoryValues(current, extractor)` | 从当前轮**之前所有历史轮**中，按 `extractor` 函数提取字段值，返回有序列表（自动过滤 `null`） |
+
+#### 示例：在 invoke 中构建历史对话上下文
+
+```java
+@Override
+protected ApiCompletionResult invoke(DataItem dataItem) {
+    InputData inputData = dataItem.getInputData();
+    String sessionId = inputData.get("sessionId");
+    String currentQuery = inputData.get("query");
+
+    // 1. 获取历史对话列表（当前轮之前所有轮的 query + response）
+    List<Message> history = new ArrayList<>();
+    for (DataItem prev : getPrevDataItems(dataItem)) {
+        String q = prev.getInputData().get("query");
+        String a = prev.getApiCompletionResult().get("response");
+        history.add(new Message("user", q));
+        history.add(new Message("assistant", a));
+    }
+    // 追加当前轮的问题
+    history.add(new Message("user", currentQuery));
+
+    // 调用 AI 接口（自行构建 history 消息，无需依赖服务端 session）
+    ChatResponse resp = aiChatService.chatWithHistory(history);
+
+    ApiCompletionResult result = new ApiCompletionResult();
+    result.setResultItem(MapUtils.of("response", resp.getAnswer()));
+    return result;
+}
+```
+
+#### 示例：使用 getHistoryValues 快速提取历史字段
+
+```java
+@Override
+protected ApiCompletionResult invoke(DataItem dataItem) {
+    // 提取所有历史轮的 query，组成列表
+    List<String> historyQueries = getHistoryValues(dataItem,
+            item -> item.getInputData().get("query"));
+
+    // 提取所有历史轮的 response（需要前序轮已完成，才有 apiCompletionResult）
+    List<String> historyResponses = getHistoryValues(dataItem,
+            item -> item.getApiCompletionResult() != null
+                    ? item.getApiCompletionResult().get("response")
+                    : null);
+
+    // ... 调用接口
+}
+```
+
+#### 示例：按指定轮次取数据
+
+```java
+@Override
+protected ApiCompletionResult invoke(DataItem dataItem) {
+    // 取第 1 轮（如果当前是多轮会话的第 N 轮）
+    DataItem round1 = getGroupDataItemAt(dataItem, 1);
+    if (round1 != null) {
+        String firstQuery = round1.getInputData().get("query");
+        // ...
+    }
+
+    // 取第 2~4 轮的数据
+    List<DataItem> midRounds = getGroupDataItemAt(dataItem, 2, 4);
+    for (DataItem item : midRounds) {
+        // ...
+    }
+
+    // 取上一轮
+    DataItem prev = getPrevDataItem(dataItem);
+    if (prev != null) {
+        String lastResponse = prev.getApiCompletionResult().get("response");
+        // ...
+    }
+
+    // ... 调用接口
+}
+```
+
+
 ## 注意事项
 
 1. **失败不中断**：单条数据调用失败时，框架会记录 `success=false` 并继续，不会抛出异常中断整体评测。

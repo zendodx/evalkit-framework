@@ -1,0 +1,472 @@
+<!-- Rubric 指标统计面板样式 -->
+<style th:fragment="rubric">
+    /* ========================================
+       面板主体
+       ======================================== */
+    #rubricCountPanel {
+        flex: 1;
+        padding: 3px;
+        overflow-y: auto;
+        background: #fafafa;
+        overscroll-behavior: contain;
+    }
+
+    .rubric-container {
+        padding: 12px;
+    }
+
+    .rubric-no-data {
+        padding: 32px;
+        text-align: center;
+        color: #909399;
+        font-size: 13px;
+    }
+
+    /* ========================================
+       页头
+       ======================================== */
+    .rubric-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+
+    .rubric-header h3 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .rubric-header-stat {
+        font-size: 13px;
+        color: #666;
+        margin-left: 12px;
+    }
+
+    /* ========================================
+       区块标题
+       ======================================== */
+    .rubric-section-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 10px;
+        padding-left: 8px;
+        border-left: 3px solid #409eff;
+    }
+
+    /* ========================================
+       汇总表格
+       ======================================== */
+    .rubric-summary-section {
+        margin-bottom: 20px;
+    }
+
+    .rubric-table-wrapper {
+        background: #fff;
+        border: 1px solid #e4e7ed;
+        border-radius: 4px;
+        overflow-x: auto;
+    }
+
+    .rubric-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        text-align: left;
+    }
+
+    .rubric-table th,
+    .rubric-table td {
+        padding: 8px 12px;
+        border: 1px solid #e4e7ed;
+    }
+
+    .rubric-table th {
+        background: #f5f7fa;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .rubric-table tbody tr:nth-child(even) {
+        background: #fafbfc;
+    }
+
+    .rubric-table tbody tr:hover {
+        background: #f0f5ff;
+    }
+
+    /* ========================================
+       评估器卡片列表
+       ======================================== */
+    .rubric-metric-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .rubric-metric-card {
+        background: #fff;
+        border: 1px solid #e4e7ed;
+        border-radius: 4px;
+        overflow: hidden;
+        transition: box-shadow .2s;
+    }
+
+    .rubric-metric-card:hover {
+        box-shadow: 0 2px 10px rgba(0, 0, 0, .08);
+    }
+
+    /* ========================================
+       卡片头部
+       ======================================== */
+    .rubric-card-header {
+        display: flex;
+        align-items: center;
+        padding: 10px 16px;
+        background: #f5f7fa;
+        cursor: pointer;
+        user-select: none;
+        border-bottom: 1px solid #e4e7ed;
+        gap: 12px;
+    }
+
+    .rubric-card-header:hover {
+        background: #ecf0f8;
+    }
+
+    .rubric-card-title {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .rubric-card-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .rubric-card-badge {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 7px;
+        border-radius: 10px;
+        background: #f0f0f0;
+        color: #606266;
+    }
+
+    .rubric-card-badge.good  { background: #f0f9eb; color: #67c23a; }
+    .rubric-card-badge.warning { background: #fdf6ec; color: #e6a23c; }
+    .rubric-card-badge.bad  { background: #fef0f0; color: #f56c6c; }
+
+    .rubric-card-sub {
+        font-size: 11px;
+        color: #909399;
+    }
+
+    .rubric-card-stats {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .rubric-stat-chip {
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 10px;
+        background: #f5f5f5;
+        color: #606266;
+        border: 1px solid #e0e0e0;
+    }
+
+    .rubric-stat-chip.bad {
+        background: #fef0f0;
+        color: #f56c6c;
+        border-color: #fbc4c4;
+    }
+
+    .rubric-card-toggle {
+        font-size: 11px;
+        color: #909399;
+        width: 18px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+
+    /* ========================================
+       卡片体
+       ======================================== */
+    .rubric-card-body {
+        padding: 16px;
+    }
+
+    .rubric-no-criteria {
+        color: #909399;
+        font-size: 12px;
+        text-align: center;
+        padding: 16px;
+    }
+
+    /* ========================================
+       图表行（雷达图 + 柱状图并排）
+       ======================================== */
+    .rubric-charts-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .rubric-chart-box {
+        background: #fafafa;
+        border: 1px solid #e4e7ed;
+        border-radius: 4px;
+        padding: 12px;
+        min-height: 260px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .rubric-chart-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .rubric-chart-box canvas {
+        flex: 1;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 200px;
+    }
+
+    /* ========================================
+       维度明细表格
+       ======================================== */
+    .rubric-criteria-section {
+        margin-top: 8px;
+    }
+
+    .rubric-criteria-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+    }
+
+    .rubric-criteria-table-wrapper {
+        overflow-x: auto;
+        border: 1px solid #e4e7ed;
+        border-radius: 4px;
+    }
+
+    .rubric-criteria-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        text-align: left;
+    }
+
+    .rubric-criteria-table th,
+    .rubric-criteria-table td {
+        padding: 7px 10px;
+        border: 1px solid #e4e7ed;
+    }
+
+    .rubric-criteria-table th {
+        background: #f5f7fa;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .rubric-criteria-table tbody tr:nth-child(even) {
+        background: #fafbfc;
+    }
+
+    .rubric-criteria-table tbody tr:hover {
+        background: #f0f5ff;
+    }
+
+    /* ========================================
+       下钻样本明细
+       ======================================== */
+    .rubric-drill-btn {
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 3px;
+        border: 1px solid #c6e2ff;
+        background: #ecf5ff;
+        color: #409eff;
+        cursor: pointer;
+        transition: background .15s;
+    }
+
+    .rubric-drill-btn:hover {
+        background: #d9ecff;
+    }
+
+    .rubric-drill-cell {
+        padding: 0 !important;
+        background: #f8fbff;
+    }
+
+    .rubric-drill-table-wrapper {
+        padding: 8px 12px;
+        overflow-x: auto;
+    }
+
+    .rubric-drill-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 11px;
+        text-align: left;
+    }
+
+    .rubric-drill-table th,
+    .rubric-drill-table td {
+        padding: 5px 8px;
+        border: 1px solid #dce6f0;
+    }
+
+    .rubric-drill-table th {
+        background: #eef4fc;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .rubric-drill-data-row:nth-child(even) {
+        background: #f5f9ff;
+    }
+
+    .rubric-drill-data-row:hover {
+        background: #e8f2ff;
+    }
+
+    .rubric-case-link {
+        color: #409eff;
+        cursor: pointer;
+        text-decoration: underline;
+        font-weight: 600;
+    }
+
+    .rubric-case-link:hover {
+        color: #66b1ff;
+    }
+
+    .rubric-reason-cell {
+        max-width: 320px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* ========================================
+       颜色工具类
+       ======================================== */
+    .good    { color: #67c23a; font-weight: 600; }
+    .warning { color: #e6a23c; font-weight: 600; }
+    .bad     { color: #f56c6c; font-weight: 600; }
+
+    /* ========================================
+       样本明细筛选栏
+       ======================================== */
+    .rubric-drill-filter-bar {
+        padding: 8px 12px 6px;
+        background: #f0f5ff;
+        border-bottom: 1px solid #d4e3f7;
+    }
+
+    .rubric-filter-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .rubric-filter-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: #555;
+        white-space: nowrap;
+        margin-right: 2px;
+    }
+
+    .rubric-filter-input {
+        height: 24px;
+        font-size: 11px;
+        border: 1px solid #c6d9f0;
+        border-radius: 3px;
+        padding: 0 6px;
+        outline: none;
+        background: #fff;
+        color: #333;
+        transition: border-color .15s;
+    }
+
+    .rubric-filter-input:focus {
+        border-color: #409eff;
+    }
+
+    .rubric-filter-num {
+        width: 76px;
+    }
+
+    .rubric-filter-text {
+        width: 140px;
+    }
+
+    .rubric-filter-sep {
+        font-size: 11px;
+        color: #909399;
+        padding: 0 1px;
+    }
+
+    .rubric-filter-select {
+        height: 24px;
+        font-size: 11px;
+        border: 1px solid #c6d9f0;
+        border-radius: 3px;
+        padding: 0 4px;
+        outline: none;
+        background: #fff;
+        color: #333;
+        cursor: pointer;
+        transition: border-color .15s;
+    }
+
+    .rubric-filter-select:focus {
+        border-color: #409eff;
+    }
+
+    .rubric-filter-reset-btn {
+        height: 24px;
+        padding: 0 10px;
+        font-size: 11px;
+        border: 1px solid #d4aefb;
+        border-radius: 3px;
+        background: #f5eeff;
+        color: #7232d6;
+        cursor: pointer;
+        transition: background .15s;
+        margin-left: 6px;
+        white-space: nowrap;
+    }
+
+    .rubric-filter-reset-btn:hover {
+        background: #e8d5ff;
+    }
+
+    .rubric-filter-stat {
+        font-size: 11px;
+        color: #909399;
+        margin-top: 4px;
+    }
+</style>
+

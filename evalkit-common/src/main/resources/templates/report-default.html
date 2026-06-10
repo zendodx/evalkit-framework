@@ -28,6 +28,8 @@
     <th:block th:replace="~{default/fragments/css/attribution :: attribution}"/>
     <!-- 6. 指标统计面板样式（主题专属） -->
     <th:block th:replace="~{default/fragments/css/metric :: metric}"/>
+    <!-- 6.1 Rubric 指标统计面板样式（主题专属） -->
+    <th:block th:replace="~{default/fragments/css/rubric :: rubric}"/>
     <!-- 7. 导出对话框样式（通用） -->
     <th:block th:replace="~{common/fragments/css/export :: export}"/>
 </head>
@@ -45,6 +47,8 @@
                         <div class="attr-item" onclick="chooseAttr('v2')">归因V2</div>
                         <!-- 评估指标统计面板 -->
                         <div class="attr-item metric-panel" onclick="renderMetricCount()">指标统计</div>
+                        <!-- Rubric 指标统计面板 -->
+                        <div class="attr-item" onclick="chooseAttr('rubric')">R指标统计</div>
                         <!-- 结果导出 -->
                         <div class="attr-item" onclick="openExportDialog()">结果导出</div>
                     </div>
@@ -70,6 +74,13 @@
             <button class="metric-filter-clear-btn" onclick="clearMetricFilter()" title="清除筛选">✕</button>
         </div>
 
+        <!-- 导航操作按钮（仅详情页可见） -->
+        <div class="nav-btn-group" id="navBtnGroup" style="display:none;">
+            <button class="nav-btn nav-btn-back" id="navBackBtn" onclick="navBack()" title="返回来源面板">↩ 返回</button>
+            <button class="nav-btn" id="navPrevBtn" onclick="navigateToPreviousCase()" title="上一个用例（快捷键：↑ 或 W）">◀ 上一个</button>
+            <button class="nav-btn" id="navNextBtn" onclick="navigateToNextCase()" title="下一个用例（快捷键：↓ 或 S）">下一个 ▶</button>
+        </div>
+
         <!-- 用例列表 -->
         <div class="case-list" id="caseList"></div>
 
@@ -79,15 +90,26 @@
         </div>
         <div class="search-tip-pop" id="searchTipPop">
             <div class="tip-header">
-                搜索语法
+                搜索语法 &amp; 快捷键
                 <span class="tip-close" id="tipClose">✕</span>
             </div>
             <div class="tip-body">
+                <div class="tip-group-title">搜索语法</div>
                 <p><code>#99</code> 序号含 99</p>
-                <p><code>超时 & 错误</code> 同时出现"超时"和"错误"</p>
+                <p><code>超时 &amp; 错误</code> 同时出现"超时"和"错误"</p>
                 <p><code>超时 | 错误</code> 出现"超时"或"错误"</p>
                 <p><code>!通过</code> 不含"通过"</p>
-                <p><code>(超时 | 错误) & #123</code> 括号组合</p>
+                <p><code>(超时 | 错误) &amp; #123</code> 括号组合</p>
+                <div class="tip-group-title">通用快捷键</div>
+                <p><code>↑ / W</code> 上一个用例</p>
+                <p><code>↓ / S</code> 下一个用例</p>
+                <div class="tip-group-title">详情页快捷键</div>
+                <p><code>← / A</code> 返回来源面板</p>
+                <p><code>0</code> 返回详情顶部</p>
+                <p><code>1</code> 跳转到输入数据</p>
+                <p><code>2</code> 跳转到 API 调用结果</p>
+                <p><code>3</code> 跳转到评测结果</p>
+                <p><code>4</code> 跳转到评测详情</p>
             </div>
         </div>
     </div>
@@ -136,6 +158,9 @@
     </div>
     <div id="metricCountPanel" style="display:none;">
         <div id="metricCountContent">暂无指标数据</div>
+    </div>
+    <div id="rubricCountPanel" style="display:none;">
+        <div id="rubricCountContent">暂无Rubric指标数据</div>
     </div>
 </div>
 
@@ -263,6 +288,8 @@
     const attributeCountResultV2 = /*[[${attributeCountResultV2}]]*/ {};
     /* 评估指标统计数据 */
     const metricCountResult = /*[[${metricCountResult}]]*/ {};
+    /* Rubric 指标统计数据 */
+    const rubricCountResult = /*[[${rubricCountResult}]]*/ {};
 </script>
 
 <!-- 业务脚本资源 - 按功能模块导入（通用） -->
@@ -280,6 +307,8 @@
 <th:block th:replace="~{common/fragments/js/render-attribution :: renderAttribution}"/>
 <!-- 7. 指标统计面板渲染 -->
 <th:block th:replace="~{common/fragments/js/render-metric :: renderMetric}"/>
+<!-- 7.1 Rubric 指标统计面板渲染 -->
+<th:block th:replace="~{common/fragments/js/render-rubric :: renderRubric}"/>
 <!-- 8. 导出功能处理（通用） -->
 <th:block th:replace="~{common/fragments/js/export :: export}"/>
 </body>

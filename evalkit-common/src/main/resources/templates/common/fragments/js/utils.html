@@ -96,6 +96,57 @@
         document.getElementById('attributeContent').style.display = name === 'attribute' ? '' : 'none';
         document.getElementById('attributeV2Panel').style.display = name === 'attributeV2Panel' ? '' : 'none';
         document.getElementById('metricCountPanel').style.display = name === 'metricCountPanel' ? '' : 'none';
+        const rubricPanel = document.getElementById('rubricCountPanel');
+        if (rubricPanel) rubricPanel.style.display = name === 'rubricCountPanel' ? '' : 'none';
+        // 记录当前面板名称，供 NavSource 和 updateNavButtons 使用
+        AppState._currentPanel = name;
+        updateNavButtons();
+    }
+
+    /* ========================================
+       面板 ID → 可读名称映射
+       ======================================== */
+    const PANEL_LABELS = {
+        'overview': '总览',
+        'detail': '详情',
+        'attribute': '归因',
+        'attributeV2Panel': '归因V2',
+        'metricCountPanel': '指标统计',
+        'rubricCountPanel': 'R指标统计'
+    };
+
+    /* ========================================
+       导航按钮显隐控制
+       仅在详情面板时显示"返回/上一个/下一个"
+       ======================================== */
+    function updateNavButtons() {
+        const group = document.getElementById('navBtnGroup');
+        if (!group) return;
+        const isDetail = AppState._currentPanel === 'detail';
+        group.style.display = isDetail ? 'flex' : 'none';
+
+        // 有来源面板时才启用"返回"按钮，并更新按钮文字
+        const backBtn = document.getElementById('navBackBtn');
+        if (backBtn) {
+            // NavSource 可能在此函数调用时尚未定义（页面初始化阶段），做安全处理
+            const hasSource = typeof NavSource !== 'undefined' && NavSource.panelName;
+            backBtn.disabled = !hasSource;
+            backBtn.style.opacity = hasSource ? '1' : '0.45';
+            if (hasSource) {
+                const label = PANEL_LABELS[NavSource.panelName] || NavSource.panelName;
+                backBtn.textContent = `↩ 返回：${label}`;
+                backBtn.title = `返回 ${label}（快捷键：← 或 A）`;
+            } else {
+                backBtn.textContent = '↩ 返回';
+                backBtn.title = '无来源面板（快捷键：← 或 A）';
+            }
+
+            // 更新上一个/下一个按钮的 title
+            const prevBtn = document.getElementById('navPrevBtn');
+            const nextBtn = document.getElementById('navNextBtn');
+            if (prevBtn) prevBtn.title = '上一个用例（快捷键：↑ 或 W）';
+            if (nextBtn) nextBtn.title = '下一个用例（快捷键：↓ 或 S）';
+        }
     }
 
     /* ========================================
@@ -171,6 +222,7 @@
         // 执行对应的渲染函数
         if (version === 'old') renderAttribute();
         if (version === 'v2') renderAttributeV2();
+        if (version === 'rubric') renderRubricCount();
     }
 
     /* ========================================
@@ -182,13 +234,32 @@
             return;
         }
 
-        // ArrowUp 或 K 键：上一个用例
-        if ((e.key === 'ArrowUp' || e.key.toUpperCase() === 'K') && !e.ctrlKey && !e.metaKey) {
+        // 数字键 0-4：详情页内快速跳转（仅详情页）
+        if (!e.ctrlKey && !e.metaKey && !e.altKey && AppState._currentPanel === 'detail') {
+            const sectionMap = {'1': 'section-input', '2': 'section-api', '3': 'section-eval', '4': 'section-scorer'};
+            if (e.key === '0') {
+                e.preventDefault();
+                scrollDetailToTop();
+            } else if (sectionMap[e.key]) {
+                e.preventDefault();
+                scrollToSection(sectionMap[e.key]);
+            }
+        }
+
+        // ArrowLeft 或 A 键：返回来源面板（仅详情页）
+        if ((e.key === 'ArrowLeft' || e.key.toUpperCase() === 'A') && !e.ctrlKey && !e.metaKey) {
+            if (AppState._currentPanel === 'detail') {
+                e.preventDefault();
+                navBack();
+            }
+        }
+        // ArrowUp 或 W 键：上一个用例
+        else if ((e.key === 'ArrowUp' || e.key.toUpperCase() === 'W') && !e.ctrlKey && !e.metaKey) {
             e.preventDefault();
             navigateToPreviousCase();
         }
-        // ArrowDown 或 J 键：下一个用例
-        else if ((e.key === 'ArrowDown' || e.key.toUpperCase() === 'J') && !e.ctrlKey && !e.metaKey) {
+        // ArrowDown 或 S 键：下一个用例
+        else if ((e.key === 'ArrowDown' || e.key.toUpperCase() === 'S') && !e.ctrlKey && !e.metaKey) {
             e.preventDefault();
             navigateToNextCase();
         }
@@ -252,7 +323,7 @@
         const tip = document.getElementById('copyTip');
         if (!tip) return;
 
-        const helpText = '⬆/K: 上一个用例 | ⬇/J: 下一个用例';
+        const helpText = '⬆/W: 上一个用例 | ⬇/S: 下一个用例 | ←/A: 返回';
         const originalText = tip.textContent;
         const originalClass = tip.className;
 

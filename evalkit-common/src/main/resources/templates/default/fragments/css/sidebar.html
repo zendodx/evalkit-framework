@@ -131,7 +131,7 @@
         position: absolute;
         top: 36px;
         left: 240px;
-        width: 260px;
+        width: 300px;
         background: #fff;
         border: 1px solid #e4e7ed;
         border-radius: 4px;
@@ -180,6 +180,19 @@
         color: #d75050;
     }
 
+    .tip-group-title {
+        font-weight: 600;
+        color: #303133;
+        font-size: 11px;
+        margin: 8px 0 4px;
+        padding-bottom: 3px;
+        border-bottom: 1px solid #e4e7ed;
+    }
+
+    .tip-group-title:first-child {
+        margin-top: 0;
+    }
+
     /* ========================================
        用例列表样式
        ======================================== */
@@ -187,6 +200,7 @@
         flex: 1;
         overflow-y: auto;
         min-height: 0;
+        overscroll-behavior: contain;
     }
 
     .case-item {
@@ -245,6 +259,51 @@
         background: #fafafa;
         border-top: 1px solid #e4e7ed;
         flex: 0 0 auto;
+    }
+
+    /* ========================================
+       导航操作按钮（返回/上一个/下一个）
+       ======================================== */
+    .nav-btn-group {
+        display: flex;
+        gap: var(--spacing-sm);
+        padding: var(--spacing-md) var(--spacing-lg);
+        border-bottom: 1px solid var(--color-border);
+        flex: 0 0 auto;
+    }
+
+    .nav-btn {
+        flex: 1;
+        height: 24px;
+        border: 1px solid var(--color-border-light);
+        background: var(--color-bg-primary);
+        border-radius: var(--border-radius-base);
+        font-size: var(--font-size-xs);
+        cursor: pointer;
+        transition: all var(--transition-fast);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+        color: var(--color-text-secondary);
+    }
+
+    .nav-btn:hover {
+        border-color: var(--color-primary);
+        color: var(--color-primary);
+        background: #ecf5ff;
+    }
+
+    .nav-btn-back {
+        border-color: #d9ecff;
+        background: #f0f9ff;
+        color: #409eff;
+    }
+
+    .nav-btn-back:hover {
+        background: #409eff;
+        color: #fff;
+        border-color: #409eff;
     }
 
     /* 归因菜单 */
