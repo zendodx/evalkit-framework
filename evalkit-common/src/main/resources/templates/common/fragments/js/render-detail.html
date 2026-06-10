@@ -96,12 +96,12 @@
         const container = document.querySelector('.detail-content-scroll');
         const target = document.getElementById(sectionId);
         if (!container || !target) return;
-        container.scrollTo({top: target.offsetTop - container.offsetTop, behavior: 'smooth'});
+        container.scrollTo({top: target.offsetTop - container.offsetTop, behavior: 'instant'});
     }
 
     function scrollDetailToTop() {
         const container = document.querySelector('.detail-content-scroll');
-        if (container) container.scrollTo({top: 0, behavior: 'smooth'});
+        if (container) container.scrollTo({top: 0, behavior: 'instant'});
     }
 
     /* ========================================
