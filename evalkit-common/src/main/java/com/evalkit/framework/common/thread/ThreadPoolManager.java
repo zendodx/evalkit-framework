@@ -46,8 +46,18 @@ public class ThreadPoolManager {
 
     public static void resize(PoolName name, int core, int max) {
         ThreadPoolExecutor pool = get(name);
-        pool.setCorePoolSize(core);
-        pool.setMaximumPoolSize(max);
+        // JDK 约束：corePoolSize 不能大于 maximumPoolSize，否则抛 IllegalArgumentException。
+        // 因此需要根据新旧值的大小关系决定调用顺序：
+        //   扩容（新 core > 当前 max）：先设 max，再设 core
+        //   缩容（新 max < 当前 core）：先设 core，再设 max
+        //   其他情况：任意顺序均安全，这里统一先设 max 再设 core
+        if (core > pool.getMaximumPoolSize()) {
+            pool.setMaximumPoolSize(max);
+            pool.setCorePoolSize(core);
+        } else {
+            pool.setCorePoolSize(core);
+            pool.setMaximumPoolSize(max);
+        }
     }
 
     /**

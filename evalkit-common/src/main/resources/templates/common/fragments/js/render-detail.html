@@ -87,6 +87,9 @@
 
         // 激活 json-viewer
         document.querySelectorAll('pre.json-viewer').forEach(el => new JsonViewer(el));
+
+        // 初始化跳转按钮高亮（DOM 就绪后立即绑定）
+        initSectionHighlight();
     }
 
     /* ========================================
@@ -96,12 +99,69 @@
         const container = document.querySelector('.detail-content-scroll');
         const target = document.getElementById(sectionId);
         if (!container || !target) return;
-        container.scrollTo({top: target.offsetTop - container.offsetTop, behavior: 'smooth'});
+        container.scrollTo({top: target.offsetTop - container.offsetTop, behavior: 'instant'});
     }
 
     function scrollDetailToTop() {
         const container = document.querySelector('.detail-content-scroll');
-        if (container) container.scrollTo({top: 0, behavior: 'smooth'});
+        if (container) container.scrollTo({top: 0, behavior: 'instant'});
+    }
+
+    /* ========================================
+       跳转按钮高亮（滚动位置感知）
+       ======================================== */
+    // sectionId -> button 的映射
+    const _sectionBtnMap = {
+        'section-input':  0,
+        'section-api':    1,
+        'section-eval':   2,
+        'section-scorer': 3,
+    };
+
+    // 当前激活的 observer，每次渲染详情后重新绑定
+    let _sectionObserver = null;
+
+    function initSectionHighlight() {
+        // 清理上一次的 observer
+        if (_sectionObserver) { _sectionObserver.disconnect(); _sectionObserver = null; }
+
+        const container = document.querySelector('.detail-content-scroll');
+        const btns = document.querySelectorAll('.header-jumps .jump-btn:not(.jump-btn-top)');
+        if (!container || btns.length === 0) return;
+
+        // 记录各 section 的可见比例
+        const visibleRatio = {};
+        Object.keys(_sectionBtnMap).forEach(id => visibleRatio[id] = 0);
+
+        function updateActive() {
+            // 找可见比例最大的 section；若全为 0（未渲染完），不改变高亮
+            let maxRatio = -1, activeId = null;
+            Object.entries(visibleRatio).forEach(([id, r]) => {
+                if (r > maxRatio) { maxRatio = r; activeId = id; }
+            });
+            btns.forEach((btn, i) => btn.classList.remove('active'));
+            if (activeId !== null && maxRatio > 0) {
+                const idx = _sectionBtnMap[activeId];
+                if (btns[idx]) btns[idx].classList.add('active');
+            }
+        }
+
+        _sectionObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.target.id in visibleRatio) {
+                    visibleRatio[entry.target.id] = entry.intersectionRatio;
+                }
+            });
+            updateActive();
+        }, {
+            root: container,
+            threshold: Array.from({length: 21}, (_, i) => i * 0.05), // 0, 0.05, 0.1 … 1
+        });
+
+        Object.keys(_sectionBtnMap).forEach(id => {
+            const el = document.getElementById(id);
+            if (el) _sectionObserver.observe(el);
+        });
     }
 
     /* ========================================
