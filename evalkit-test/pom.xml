@@ -40,6 +40,11 @@
         <tag>HEAD</tag>
     </scm>
 
+    <properties>
+        <!-- 跳过 JaCoCo 代码覆盖率扫描 -->
+        <jacoco.skip>true</jacoco.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.github.zendodx</groupId>

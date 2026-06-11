@@ -64,6 +64,7 @@
         <maven-gpg-plugin.version>1.5</maven-gpg-plugin.version>
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
         <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
+        <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -127,6 +128,27 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- 代码覆盖率插件 -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <!-- 单元测试执行器插件 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -144,6 +166,9 @@
                         <exclude>OrderedDeltaEvalFacadeTest</exclude>
                         <exclude>OrderedDeltaEvalWithinDataInjectTest</exclude>
                     </excludes>
+                    <!-- 修复 Mockito inline 在部分 JVM 版本下与 @Nested 内部类的兼容性问题
+                         (MalformedParameters: Invalid parameter name "") -->
+                    <argLine>-Dnet.bytebuddy.experimental=true</argLine>
                 </configuration>
             </plugin>
             <!-- 在发布（deploy/install）前自动将变量展开为实际值 -->
