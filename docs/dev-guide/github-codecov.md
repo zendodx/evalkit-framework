@@ -164,3 +164,85 @@ Push 代码前，你还需要在 GitHub 仓库中添加 Secret：
 ---
 
 **注意**：由于根 `pom.xml` 中 GPG 插件在 `verify` 阶段会签名，CI 里用了 `-Dgpg.skip=true` 跳过签名（只跑 `test` 阶段），否则会因为没有 GPG 私钥而失败。
+
+# 怎么查看Jacoco的覆盖率
+
+查看 Jacoco 覆盖率有以下几种方式：
+
+## 方式一：直接打开 HTML 报告（最推荐）
+
+每次运行 `mvn test` 后，Jacoco 会在各模块的 `target/site/jacoco/` 目录生成 HTML 报告。
+
+先查看项目中是否已有报告：
+
+报告已经生成了。直接用浏览器打开：
+
+浏览器已打开报告。以下是所有查看方式的说明：
+
+---
+
+## 查看 Jacoco 覆盖率的几种方式
+
+### 方式一：HTML 报告（已自动打开）
+
+每次 `mvn test` 后，各模块都会生成可视化报告，路径规律为：
+
+```
+{模块名}/target/site/jacoco/index.html
+```
+
+本项目已生成的报告：
+- `evalkit-eval/target/site/jacoco/index.html`
+- `evalkit-infra/target/site/jacoco/index.html`
+- `evalkit-workflow/target/site/jacoco/index.html`
+- `evalkit-common/target/site/jacoco/index.html`
+
+报告提供**行覆盖率**、**分支覆盖率**、**方法覆盖率**等多维度数据，可以点击包名 → 类名 → 方法名，逐层下钻查看具体哪些代码行被覆盖（绿色=覆盖，红色=未覆盖，黄色=部分覆盖）。
+
+---
+
+### 方式二：命令行查看汇总数据
+
+```bash
+# 查看某模块的文本覆盖率汇总（CSV 格式）
+cat evalkit-eval/target/site/jacoco/jacoco.csv | head -5
+```
+
+---
+
+### 方式三：手动重新生成报告
+
+如果想刷新覆盖率数据（只生成报告，不重跑测试）：
+
+```bash
+# 重新跑测试并生成所有模块报告
+mvn test --no-transfer-progress
+
+# 仅针对某个模块
+mvn test -pl evalkit-eval --no-transfer-progress
+```
+
+---
+
+### 方式四：生成聚合报告（跨模块汇总）
+
+如果项目配置了 `jacoco-report` 聚合模块，可以用：
+
+```bash
+mvn jacoco:report-aggregate
+```
+
+---
+
+### 报告解读
+
+HTML 报告的每列含义：
+
+| 列名 | 含义 |
+|------|------|
+| **Instructions** | 字节码指令覆盖率（最精确） |
+| **Branches** | 分支覆盖率（if/else/switch） |
+| **Lines** | 源代码行覆盖率 |
+| **Methods** | 方法覆盖率 |
+| **Classes** | 类覆盖率 |
+
