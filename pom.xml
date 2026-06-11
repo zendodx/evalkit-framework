@@ -167,8 +167,10 @@
                         <exclude>OrderedDeltaEvalWithinDataInjectTest</exclude>
                     </excludes>
                     <!-- 修复 Mockito inline 在部分 JVM 版本下与 @Nested 内部类的兼容性问题
-                         (MalformedParameters: Invalid parameter name "") -->
-                    <argLine>-Dnet.bytebuddy.experimental=true</argLine>
+                         (MalformedParameters: Invalid parameter name "")
+                         注意：必须引用 ${argLine} 以继承 Jacoco prepare-agent 注入的 -javaagent 参数，
+                         否则 Jacoco 插桩失效，覆盖率报告全为 0 -->
+                    <argLine>${argLine} -Dnet.bytebuddy.experimental=true</argLine>
                 </configuration>
             </plugin>
             <!-- 在发布（deploy/install）前自动将变量展开为实际值 -->
