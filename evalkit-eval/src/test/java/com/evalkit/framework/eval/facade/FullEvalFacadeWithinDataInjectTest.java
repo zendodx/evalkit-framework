@@ -1,8 +1,8 @@
 package com.evalkit.framework.eval.facade;
 
 import com.evalkit.framework.common.utils.file.FileUtils;
+import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.common.utils.list.ListUtils;
-import com.evalkit.framework.common.utils.runtime.RuntimeEnvUtils;
 import com.evalkit.framework.common.utils.time.DateUtils;
 import com.evalkit.framework.eval.facade.config.FullEvalConfig;
 import com.evalkit.framework.eval.model.DataItem;
@@ -22,18 +22,26 @@ import com.evalkit.framework.eval.node.scorer.strategy.SumScoreStrategy;
 import com.evalkit.framework.workflow.Workflow;
 import com.evalkit.framework.workflow.WorkflowBuilder;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.ThrowingSupplier;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 @Slf4j
 class FullEvalFacadeWithinDataInjectTest {
+
+    private File tempJsonFile;
 
     /**
      * 自定义全量式评测
@@ -58,11 +66,46 @@ class FullEvalFacadeWithinDataInjectTest {
         }
     }
 
+    @BeforeEach
+    void setUp() throws IOException {
+        // 运行时动态创建临时 JSON 测试文件，不依赖外部文件路径
+        // 构造符合 JsonFileDataLoader 期望格式的数据（$.dataItems 数组）
+        List<Map<String, Object>> dataItems = new java.util.ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            Map<String, Object> inputItem = new HashMap<>();
+            inputItem.put("query", "测试问题" + i);
+            inputItem.put("type", "1");
+
+            Map<String, Object> inputData = new HashMap<>();
+            inputData.put("dataIndex", (long) i);
+            inputData.put("inputItem", inputItem);
+
+            Map<String, Object> item = new HashMap<>();
+            item.put("dataIndex", (long) i);
+            item.put("inputData", inputData);
+            dataItems.add(item);
+        }
+        Map<String, Object> jsonContent = new HashMap<>();
+        jsonContent.put("dataItems", dataItems);
+
+        // 写入临时文件
+        tempJsonFile = File.createTempFile("full_eval_inject_test_", ".json");
+        tempJsonFile.deleteOnExit();
+        Files.write(tempJsonFile.toPath(), JsonUtils.toJson(jsonContent).getBytes(StandardCharsets.UTF_8));
+        log.info("Created temp test file: {}", tempJsonFile.getAbsolutePath());
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (tempJsonFile != null && tempJsonFile.exists()) {
+            tempJsonFile.delete();
+        }
+    }
+
     @Test
-    @Disabled
     public void test() throws Exception {
-        // 数据加载器,开启数据注入
-        String filePath = RuntimeEnvUtils.getPropertyFromResource("secret.properties", "json-file-datainjector-test-file");
+        // 使用运行时创建的临时文件，不依赖外部文件或 secret.properties
+        String filePath = tempJsonFile.getAbsolutePath();
         JsonFileDataLoader jsonFileDataLoader = new JsonFileDataLoader(
                 JsonFileDataLoaderConfig.builder()
                         .jsonPath("$.dataItems")
@@ -101,7 +144,7 @@ class FullEvalFacadeWithinDataInjectTest {
                 ScorerResult scorerResult = new ScorerResult();
                 scorerResult.setMetric("eval-test-2");
                 scorerResult.setScore(1.0);
-                scorerResult.setReason("eval test1:" + dataItem.getInputData().get("query"));
+                scorerResult.setReason("eval test2:" + dataItem.getInputData().get("query"));
                 return scorerResult;
             }
         };

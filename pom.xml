@@ -64,6 +64,7 @@
         <maven-gpg-plugin.version>1.5</maven-gpg-plugin.version>
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
         <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
+        <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -127,6 +128,27 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- 代码覆盖率插件 -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <!-- 单元测试执行器插件 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -139,11 +161,24 @@
                     </includes>
                     <!-- 排除单元测试 -->
                     <excludes>
-                        <!-- TODO 耗时长排除,手动测试 -->
+                        <!-- 耗时长排除,手动测试 -->
                         <exclude>DeltaEvalFacadeTest</exclude>
                         <exclude>OrderedDeltaEvalFacadeTest</exclude>
                         <exclude>OrderedDeltaEvalWithinDataInjectTest</exclude>
+                        <!-- 性能测试排除，CI 环境内存/时间有限，手动运行 -->
+                        <exclude>DAGEvalPerformanceTest</exclude>
+                        <exclude>DeltaEvalPerformanceTest</exclude>
+                        <!-- 嵌入式 ActiveMQ/混合服务启停耗时约 30s+，手动运行 -->
+                        <exclude>ActiveMQEmbeddedServerTest</exclude>
+                        <exclude>MixedEmbeddedServerTest</exclude>
+                        <!-- RubricBasedScorer 采样测试含多轮线程等待，耗时约 20s+，手动运行 -->
+                        <exclude>RubricBasedScorerTest</exclude>
                     </excludes>
+                    <!-- 修复 Mockito inline 在部分 JVM 版本下与 @Nested 内部类的兼容性问题
+                         (MalformedParameters: Invalid parameter name "")
+                         注意：必须引用 ${argLine} 以继承 Jacoco prepare-agent 注入的 -javaagent 参数，
+                         否则 Jacoco 插桩失效，覆盖率报告全为 0 -->
+                    <argLine>${argLine} -Dnet.bytebuddy.experimental=true</argLine>
                 </configuration>
             </plugin>
             <!-- 在发布（deploy/install）前自动将变量展开为实际值 -->

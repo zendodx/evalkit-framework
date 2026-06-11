@@ -25,8 +25,8 @@ public class RouterScorerConfig extends ScorerConfig {
     @Builder.Default
     private Scorer defaultScorer = null;
 
-    /* 路由匹配模式，false=first-match，true=match-all(默认) */
+    /* 路由匹配模式，false=first-match（默认），true=match-all */
     @Builder.Default
-    private boolean matchAll = true;
+    private boolean matchAll = false;
 }
 

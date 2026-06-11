@@ -1,8 +1,8 @@
 package com.evalkit.framework.eval.facade;
 
 import com.evalkit.framework.common.utils.file.FileUtils;
+import com.evalkit.framework.common.utils.json.JsonUtils;
 import com.evalkit.framework.common.utils.list.ListUtils;
-import com.evalkit.framework.common.utils.runtime.RuntimeEnvUtils;
 import com.evalkit.framework.common.utils.time.DateUtils;
 import com.evalkit.framework.eval.facade.config.DeltaEvalConfig;
 import com.evalkit.framework.eval.model.DataItem;
@@ -23,12 +23,16 @@ import com.evalkit.framework.eval.node.scorer.strategy.SumScoreStrategy;
 import com.evalkit.framework.workflow.Workflow;
 import com.evalkit.framework.workflow.WorkflowBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.ThrowingSupplier;
 
 import java.io.File;
-import java.util.Comparator;
-import java.util.List;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
@@ -77,16 +81,67 @@ class OrderedDeltaEvalFacadeWithinDataInjectTest {
         @Override
         protected void afterExecute() {
             log.info("===>Finish consume and eval, remain data size:{}, processed data size:{}", getRemainDataCount(), getProcessedDataCount());
-            List<File> files = FileUtils.listFiles("attaches/");
+            List<File> files = FileUtils.listFiles(config.getAttachDir());
             List<String> collect = files.stream().map(File::getName).collect(Collectors.toList());
             log.info("===>attaches files:{}", collect);
         }
     }
 
+    private File tempJsonFile;
+
+    @BeforeEach
+    void setUp() throws IOException {
+        // 运行时动态创建临时 JSON 测试文件，不依赖外部文件路径或 secret.properties
+        // 构造符合 openInjectData 模式的嵌套数据格式（$.dataItems 数组）：
+        //   item.dataIndex      → DataInjector.injectDataIndex 读取（Long 类型）
+        //   item.inputData      → DataInjector.injectInputData 读取，包含业务字段
+        //     inputData.dataIndex
+        //     inputData.inputItem → 实际业务字段（caseId、round、query）
+        // 构建 3 个 caseId，每个 caseId 有 2 轮数据，共 6 条
+        List<Map<String, Object>> dataItems = new ArrayList<>();
+        long idx = 0L;
+        for (int caseId = 1; caseId <= 3; caseId++) {
+            for (int round = 1; round <= 2; round++) {
+                // 业务字段放在 inputItem 中
+                Map<String, Object> inputItem = new HashMap<>();
+                inputItem.put("caseId", caseId);
+                inputItem.put("round", round);
+                inputItem.put("query", "caseId=" + caseId + " round=" + round + " 测试问题");
+
+                // 嵌套的 inputData 对象
+                Map<String, Object> inputData = new HashMap<>();
+                inputData.put("dataIndex", idx);
+                inputData.put("inputItem", inputItem);
+
+                // 顶层 item
+                Map<String, Object> item = new HashMap<>();
+                item.put("dataIndex", idx);
+                item.put("inputData", inputData);
+                dataItems.add(item);
+                idx++;
+            }
+        }
+        Map<String, Object> jsonContent = new HashMap<>();
+        jsonContent.put("dataItems", dataItems);
+
+        // 写入临时文件
+        tempJsonFile = File.createTempFile("ordered_delta_eval_inject_test_", ".json");
+        tempJsonFile.deleteOnExit();
+        Files.write(tempJsonFile.toPath(), JsonUtils.toJson(jsonContent).getBytes(StandardCharsets.UTF_8));
+        log.info("Created temp test file: {}", tempJsonFile.getAbsolutePath());
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (tempJsonFile != null && tempJsonFile.exists()) {
+            tempJsonFile.delete();
+        }
+    }
+
     @Test
     public void test() throws Exception {
-        // 数据加载器,开启数据注入
-        String filePath = RuntimeEnvUtils.getPropertyFromResource("secret.properties", "json-file-datainjector-test-file");
+        // 使用运行时创建的临时文件，不依赖外部文件或 secret.properties
+        String filePath = tempJsonFile.getAbsolutePath();
         JsonFileDataLoader jsonFileDataLoader = new JsonFileDataLoader(
                 JsonFileDataLoaderConfig.builder()
                         .jsonPath("$.dataItems")
@@ -124,7 +179,7 @@ class OrderedDeltaEvalFacadeWithinDataInjectTest {
                 ScorerResult scorerResult = new ScorerResult();
                 scorerResult.setMetric("eval-test-2");
                 scorerResult.setScore(1.0);
-                scorerResult.setReason("eval test1:" + dataItem.getInputData().get("query"));
+                scorerResult.setReason("eval test2:" + dataItem.getInputData().get("query"));
                 return scorerResult;
             }
         };
@@ -140,12 +195,14 @@ class OrderedDeltaEvalFacadeWithinDataInjectTest {
         };
 
         // 评测结果上报
+        String taskName = "OrderedDeltaEvalWithinDataInjectTest";
+        String attachDir = "attachments/" + taskName;
         String fileName = "ordered_delta_eval_within_datainject_test_" + DateUtils.nowToString();
         BasicCounter basicCounter = new BasicCounter();
-        HtmlReporter htmlReporter = new HtmlReporter(fileName, fileName);
-        JsonReporter jsonReporter = new JsonReporter(fileName, fileName);
-        ExcelReporter excelReporter = new ExcelReporter(fileName, fileName);
-        CsvReporter csvReporter = new CsvReporter(fileName, fileName);
+        HtmlReporter htmlReporter = new HtmlReporter(fileName, attachDir);
+        JsonReporter jsonReporter = new JsonReporter(fileName, attachDir);
+        ExcelReporter excelReporter = new ExcelReporter(fileName, attachDir);
+        CsvReporter csvReporter = new CsvReporter(fileName, attachDir);
 
         List<Scorer> scorers = ListUtils.of(scorer1, scorer2, scorer3);
 
@@ -156,7 +213,7 @@ class OrderedDeltaEvalFacadeWithinDataInjectTest {
 
         CustomDeltaEval cfe = new CustomDeltaEval(
                 DeltaEvalConfig.builder()
-                        .taskName("OrderedDeltaEvalWithinDataInjectTest")
+                        .taskName(taskName)
                         .dataLoader(jsonFileDataLoader)
                         .evalWorkflow(evalWorkflow)
                         .reportWorkflow(reportWorkflow)

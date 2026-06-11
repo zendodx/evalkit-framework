@@ -1,0 +1,47 @@
+name: CI - Test & Coverage
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - 1.5.x
+  pull_request:
+    branches:
+      - main
+      - master
+      - 1.5.x
+
+jobs:
+  test:
+    name: Run Tests & Upload Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run Tests with JaCoCo
+        run: mvn -B test --no-transfer-progress -Dgpg.skip=true
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: |
+            evalkit-common/target/site/jacoco/jacoco.xml
+            evalkit-workflow/target/site/jacoco/jacoco.xml
+            evalkit-infra/target/site/jacoco/jacoco.xml
+            evalkit-eval/target/site/jacoco/jacoco.xml
+          flags: unittests
+          name: evalkit-coverage
+          fail_ci_if_error: false
+          verbose: true
+

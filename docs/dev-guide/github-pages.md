@@ -2,7 +2,7 @@
 layout: default
 title: Github Pages用法参考
 parent: 开发指南
-nav_order: 2
+nav_order: 90
 ---
 
 Github Pages使用方法
