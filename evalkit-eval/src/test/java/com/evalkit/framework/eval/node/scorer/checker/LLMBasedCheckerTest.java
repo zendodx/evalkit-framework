@@ -3,16 +3,38 @@ package com.evalkit.framework.eval.node.scorer.checker;
 import com.evalkit.framework.eval.model.DataItem;
 import com.evalkit.framework.eval.node.scorer.checker.config.LLMBasedCheckerConfig;
 import com.evalkit.framework.eval.node.scorer.checker.model.CheckItem;
-import com.evalkit.framework.infra.service.llm.LLMServiceFactory;
+import com.evalkit.framework.infra.service.llm.LLMService;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 class LLMBasedCheckerTest {
-    void test() {
+
+    /**
+     * 构造一个 mock LLMService，不依赖外部服务
+     */
+    private LLMService buildMockLLMService() {
+        return new LLMService() {
+            @Override
+            public String chat(String prompt) {
+                return "mock reply";
+            }
+
+            @Override
+            public String getModel() {
+                return "mock-model";
+            }
+        };
+    }
+
+    @Test
+    void testConstructLLMBasedChecker() {
         LLMBasedChecker checker = new LLMBasedChecker(
                 LLMBasedCheckerConfig.builder()
-                        .llmService(LLMServiceFactory.createLLMService("test", null))
+                        .llmService(buildMockLLMService())
                         .build()
         ) {
             @Override
@@ -40,5 +62,7 @@ class LLMBasedCheckerTest {
                 return 0;
             }
         };
+
+        assertNotNull(checker, "LLMBasedChecker 实例不应为 null");
     }
 }

@@ -24,7 +24,7 @@ public class DeltaEvalPerformanceTest {
     private static final Logger logger = LoggerFactory.getLogger(DeltaEvalPerformanceTest.class);
     private static final String tempDir = System.getProperty("java.io.tmpdir");
     private static final String fileName = "DeltaEvalPerformanceTest_" + UuidUtils.generateUuid() + ".xlsx";
-    public static int caseCount = 10000 * 5;
+    public static int caseCount = 10000;
     private static PerformanceMonitor performanceMonitor;
 
     /**

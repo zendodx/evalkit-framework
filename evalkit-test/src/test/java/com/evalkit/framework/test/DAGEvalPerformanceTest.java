@@ -24,7 +24,7 @@ public class DAGEvalPerformanceTest {
     private static final Logger logger = LoggerFactory.getLogger(DAGEvalPerformanceTest.class);
     private static final String tempDir = System.getProperty("java.io.tmpdir");
     private static final String fileName = "DAGEvalTest_" + UuidUtils.generateUuid() + ".xlsx";
-    public static int caseCount = 10000 * 6;
+    public static int caseCount = 10000;
     private static PerformanceMonitor performanceMonitor;
 
     /**

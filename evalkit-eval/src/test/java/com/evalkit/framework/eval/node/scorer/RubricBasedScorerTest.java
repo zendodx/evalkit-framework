@@ -19,7 +19,6 @@ import com.evalkit.framework.eval.node.scorer.model.RubricCriteria;
 import com.evalkit.framework.eval.node.scorer.model.RubricMergeStrategy;
 import com.evalkit.framework.eval.node.scorer.model.RubricScoreType;
 import com.evalkit.framework.infra.service.llm.LLMService;
-import com.evalkit.framework.infra.utils.DebugUtils;
 import com.evalkit.framework.workflow.Workflow;
 import com.evalkit.framework.workflow.WorkflowBuilder;
 import lombok.extern.slf4j.Slf4j;
@@ -978,10 +977,13 @@ class RubricBasedScorerTest {
 
     // ==================== 真实链路 ====================
     @Test
-    @DisplayName("真实链路")
+    @DisplayName("真实链路（mock LLM）")
     void realLink() {
-        LLMService llm = DebugUtils.buildLLMService();
-        // LLMService llm = mockLLMSequence(cotJson(1, "最差"), cotJson(5, "最好"));
+        // 使用 mock LLMService 替代真实 DeepSeek 服务，不依赖外部 token 或 HTTP 请求
+        // criteriaBatchSize=2，每次 LLM 调用需返回包含 2 个维度评分结果的 JSON 数组
+        // 3 条数据 × 1 次批量调用（2 个维度合并为一次） = 3 次 LLM 调用
+        String batchCotJson = "[" + cotJson(4, "回复质量良好") + "," + cotJson(5, "内容安全") + "]";
+        LLMService llm = mockLLMSequence(batchCotJson, batchCotJson, batchCotJson);
 
         // 开始节点
         Begin begin = new Begin();
