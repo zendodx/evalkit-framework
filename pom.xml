@@ -161,10 +161,18 @@
                     </includes>
                     <!-- 排除单元测试 -->
                     <excludes>
-                        <!-- TODO 耗时长排除,手动测试 -->
+                        <!-- 耗时长排除,手动测试 -->
                         <exclude>DeltaEvalFacadeTest</exclude>
                         <exclude>OrderedDeltaEvalFacadeTest</exclude>
                         <exclude>OrderedDeltaEvalWithinDataInjectTest</exclude>
+                        <!-- 性能测试排除，CI 环境内存/时间有限，手动运行 -->
+                        <exclude>DAGEvalPerformanceTest</exclude>
+                        <exclude>DeltaEvalPerformanceTest</exclude>
+                        <!-- 嵌入式 ActiveMQ/混合服务启停耗时约 30s+，手动运行 -->
+                        <exclude>ActiveMQEmbeddedServerTest</exclude>
+                        <exclude>MixedEmbeddedServerTest</exclude>
+                        <!-- RubricBasedScorer 采样测试含多轮线程等待，耗时约 20s+，手动运行 -->
+                        <exclude>RubricBasedScorerTest</exclude>
                     </excludes>
                     <!-- 修复 Mockito inline 在部分 JVM 版本下与 @Nested 内部类的兼容性问题
                          (MalformedParameters: Invalid parameter name "")

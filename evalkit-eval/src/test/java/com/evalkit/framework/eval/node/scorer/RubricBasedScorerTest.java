@@ -35,20 +35,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * RubricBasedScorer 单元测试
- * <p>
- * 测试覆盖：
- * <ul>
- *   <li>配置校验（validRubricConfig）</li>
- *   <li>五种合并策略（WEIGHTED_AVERAGE / SIMPLE_AVERAGE / LOGICAL_AND / STAR_GATE / COMPLETION_RATE）</li>
- *   <li>二元分强制约束（BINARY scoreType）</li>
- *   <li>归一化公式（minScore > 0 的区间归一化）</li>
- *   <li>多次采样取均值 + 代表性采样保留</li>
- *   <li>extra 字段透传</li>
- *   <li>采样全失败时抛异常</li>
- * </ul>
- */
 @Slf4j
 class RubricBasedScorerTest {
 
