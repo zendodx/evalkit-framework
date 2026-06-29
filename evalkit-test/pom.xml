@@ -43,6 +43,9 @@
     <properties>
         <!-- 跳过 JaCoCo 代码覆盖率扫描 -->
         <jacoco.skip>true</jacoco.skip>
+        <!-- 跳过发布到 Maven Central（maven deploy + central-publishing-maven-plugin） -->
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <skipPublishing>true</skipPublishing>
     </properties>
 
     <dependencies>
