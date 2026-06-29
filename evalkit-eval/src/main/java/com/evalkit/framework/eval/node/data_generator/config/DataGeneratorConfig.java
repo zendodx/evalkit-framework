@@ -4,15 +4,18 @@ import com.evalkit.framework.common.utils.list.ListUtils;
 import com.evalkit.framework.common.utils.time.DateUtils;
 import com.evalkit.framework.eval.node.data_generator.exporter.ExcelGenDataExporter;
 import com.evalkit.framework.eval.node.data_generator.exporter.GenDataExporter;
+import com.evalkit.framework.workflow.model.NodeConfig;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 
 import java.util.List;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 @SuperBuilder
-public class DataGeneratorConfig {
+public class DataGeneratorConfig extends NodeConfig {
     /* 是否导出数据 */
     @Builder.Default
     protected boolean enableOutputFile = false;
@@ -25,7 +28,4 @@ public class DataGeneratorConfig {
     /* 文件导出器列表 */
     @Builder.Default
     protected List<GenDataExporter> genDataExporterList = ListUtils.of(new ExcelGenDataExporter());
-    /* 生成并发数 */
-    @Builder.Default
-    protected Integer threadNum = 1;
 }

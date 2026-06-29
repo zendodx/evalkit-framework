@@ -19,11 +19,14 @@ public abstract class DataLoaderWrapper extends WorkflowNode {
     protected DataLoaderWrapperConfig config;
 
     protected DataLoaderWrapper() {
-        this.config = DataLoaderWrapperConfig.builder().build();
+        DataLoaderWrapperConfig defaultConfig = DataLoaderWrapperConfig.builder().build();
+        this.config = defaultConfig;
+        setNodeConfig(defaultConfig);
     }
 
     public DataLoaderWrapper(DataLoaderWrapperConfig config) {
         this.config = config;
+        setNodeConfig(config);
     }
 
     /**
@@ -71,7 +74,7 @@ public abstract class DataLoaderWrapper extends WorkflowNode {
         long start = System.currentTimeMillis();
         WorkflowContext ctx = getWorkflowContext();
         List<DataItem> dataItems = WorkflowContextOps.getDataItems(ctx);
-        BatchRunner.runBatch(dataItems, this::executeWrapper, PoolName.DATA_WRAPPER, config.getThreadNum(), size -> size * SINGLE_TASK_TIMEOUT);
+        BatchRunner.runBatch(dataItems, this::executeWrapper, PoolName.DATA_WRAPPER, config.getThreadNum(), size -> size * config.getBatchTimeoutSec());
         log.info("Wrapper data success, time cost: {}ms", System.currentTimeMillis() - start);
     }
 }

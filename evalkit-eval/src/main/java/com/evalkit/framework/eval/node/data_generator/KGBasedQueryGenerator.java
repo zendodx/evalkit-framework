@@ -74,7 +74,7 @@ public class KGBasedQueryGenerator extends DataGenerator {
 
         // 并发生成单会话多轮Query
         List<List<Map<String, Object>>> rawQueries = BatchRunner.runBatch(scenarioConfigAndSessions, this::generateSessionQueries,
-                PoolName.DATA_GENERATOR, config.getThreadNum(), size -> size * SINGLE_TASK_TIMEOUT);
+                PoolName.DATA_GENERATOR, config.getThreadNum(), size -> size * config.getBatchTimeoutSec());
         if (CollectionUtils.isEmpty(rawQueries)) {
             throw new IllegalArgumentException("[KGBasedQueryGenerator] Generate eval case data failed");
         }

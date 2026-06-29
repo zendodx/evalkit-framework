@@ -8,12 +8,7 @@ import com.evalkit.framework.eval.node.api.config.ApiCompletionConfig;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -62,7 +57,7 @@ public abstract class OrderedApiCompletion extends ApiCompletion {
         // 批量执行开始前预建分组索引，invoke 内部查询全部走 O(1) Map 查找
         buildGroupIndexIfAbsent(dataItems);
         return OrderedBatchRunner.runOrderedBatch(dataItems, this::invokeWrapper, this::prepareOrderKey,
-                (o1, o2) -> prepareComparator().compare(o1, o2), config.getThreadNum(), size -> size * SINGLE_TASK_TIMEOUT);
+                (o1, o2) -> prepareComparator().compare(o1, o2), config.getThreadNum(), size -> size * config.getBatchTimeoutSec());
     }
 
     // ===================================================================

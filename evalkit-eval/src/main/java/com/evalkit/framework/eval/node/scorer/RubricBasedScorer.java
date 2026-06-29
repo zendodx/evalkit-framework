@@ -215,7 +215,7 @@ public abstract class RubricBasedScorer extends Scorer {
                     batch -> evalCriteriaBatch(batch, userPrompt),
                     PoolName.SCORER_CRITERIA,
                     criteriaThreadNum,
-                    size -> size * SINGLE_TASK_TIMEOUT
+                    size -> size * config.getBatchTimeoutSec()
             );
             if (CollectionUtils.isEmpty(batchResults) || batchResults.size() != batches.size()) {
                 throw new EvalException("[RubricBasedScorer] Partial or all criteria eval failed, expected=" +

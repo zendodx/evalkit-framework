@@ -19,8 +19,6 @@ import java.util.stream.Collectors;
  * 多轮Query数据生成器
  */
 public class EvalCaseDataGenerator extends DataGenerator {
-    /* 单任务超时时间 */
-    protected final static long SINGLE_TASK_TIMEOUT = 60 * 10;
     /* 评测用例生成器配置 */
     protected final EvalCaseDataGeneratorConfig config;
 
@@ -41,7 +39,7 @@ public class EvalCaseDataGenerator extends DataGenerator {
             sessionIs.add(genSessionId());
         }
         // 并发生成单会话的评测数据
-        List<List<Map<String, Object>>> singleSessionResultList = BatchRunner.runBatch(sessionIs, this::singleSessionGenerate, PoolName.DATA_GENERATOR, config.getThreadNum(), size -> size * SINGLE_TASK_TIMEOUT);
+        List<List<Map<String, Object>>> singleSessionResultList = BatchRunner.runBatch(sessionIs, this::singleSessionGenerate, PoolName.DATA_GENERATOR, config.getThreadNum(), size -> size * config.getBatchTimeoutSec());
         if (CollectionUtils.isEmpty(singleSessionResultList)) {
             throw new IllegalArgumentException("Generate eval case data failed");
         }

@@ -30,8 +30,7 @@ public abstract class LoaderBasedDataGenerator extends DataGenerator {
         if (dataLoader == null) {
             throw new IllegalArgumentException("[LoaderBasedDataGenerator] dataLoader is null");
         }
-        Integer threadNum = config.getThreadNum();
-        if (threadNum == null || threadNum <= 0) {
+        if (config.getThreadNum() <= 0) {
             throw new IllegalArgumentException("[LoaderBasedDataGenerator] threadNum is invalid");
         }
     }
@@ -45,7 +44,7 @@ public abstract class LoaderBasedDataGenerator extends DataGenerator {
         }
         List<Map<String, Object>> inputItemList = rawInputDataList.stream().map(InputData::getInputItem).collect(Collectors.toList());
         // 并发处理每行数据
-        List<List<Map<String, Object>>> singleSessionResultList = BatchRunner.runBatch(inputItemList, this::processSingleInputData, PoolName.DATA_GENERATOR, config.getThreadNum(), size -> size * SINGLE_TASK_TIMEOUT);
+        List<List<Map<String, Object>>> singleSessionResultList = BatchRunner.runBatch(inputItemList, this::processSingleInputData, PoolName.DATA_GENERATOR, config.getThreadNum(), size -> size * config.getBatchTimeoutSec());
         if (CollectionUtils.isEmpty(singleSessionResultList)) {
             return Collections.emptyList();
         }

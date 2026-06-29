@@ -32,6 +32,7 @@ public abstract class ApiCompletionWrapper extends WorkflowNode {
     public ApiCompletionWrapper(ApiCompletionWrapperConfig config) {
         super(WorkflowUtils.generateNodeId(NodeNamePrefix.API_COMPLETION_WRAPPER));
         this.config = config;
+        setNodeConfig(config);
     }
 
     /**
@@ -82,7 +83,7 @@ public abstract class ApiCompletionWrapper extends WorkflowNode {
         if (CollectionUtils.isEmpty(dataItems)) {
             throw new EvalException("Data items is empty");
         }
-        BatchRunner.runBatch(dataItems, this::executeWrapper, PoolName.API_COMPLETION, config.getThreadNum(), size -> size * SINGLE_TASK_TIMEOUT);
+        BatchRunner.runBatch(dataItems, this::executeWrapper, PoolName.API_COMPLETION, config.getThreadNum(), size -> size * config.getBatchTimeoutSec());
         log.info("Wrapper api completion result success, time cost: {}ms", System.currentTimeMillis() - start);
     }
 }

@@ -1,15 +1,15 @@
 package com.evalkit.framework.eval.node.dataloader_wrapper.config;
 
 import com.evalkit.framework.infra.service.llm.LLMService;
-import lombok.Builder;
+import com.evalkit.framework.workflow.model.NodeConfig;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 
+@EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 @Data
-public class DataLoaderWrapperConfig {
-    @Builder.Default
-    private int threadNum = 1;
+public class DataLoaderWrapperConfig extends NodeConfig {
     /* 大模型服务 */
     private LLMService llmService;
 }

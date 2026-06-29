@@ -1,9 +1,11 @@
 package com.evalkit.framework.eval.node.scorer.config;
 
 import com.evalkit.framework.eval.model.DataItem;
+import com.evalkit.framework.workflow.model.NodeConfig;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 
 import java.util.function.Function;
@@ -11,15 +13,13 @@ import java.util.function.Function;
 /**
  * 评估器配置
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
 @SuperBuilder
-public class ScorerConfig {
+public class ScorerConfig extends NodeConfig {
     /* 评估器名称 */
     @Builder.Default
     protected String metricName = "未命名指标";
-    /* 评估线程数,默认值1 */
-    @Builder.Default
-    protected int threadNum = 1;
     /* 评估器通过阈值,默认值0 */
     @Builder.Default
     protected double threshold = 0.0;
