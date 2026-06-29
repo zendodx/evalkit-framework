@@ -30,11 +30,14 @@ public abstract class ApiCompletion extends WorkflowNode {
     protected ApiCompletionConfig config;
 
     public ApiCompletion() {
-        config = ApiCompletionConfig.builder().build();
+        ApiCompletionConfig defaultConfig = ApiCompletionConfig.builder().build();
+        this.config = defaultConfig;
+        setNodeConfig(defaultConfig);
     }
 
     public ApiCompletion(ApiCompletionConfig config) {
         this.config = config;
+        setNodeConfig(config);
     }
 
     /**
@@ -97,7 +100,7 @@ public abstract class ApiCompletion extends WorkflowNode {
     }
 
     protected List<ApiCompletionResult> batchInvoke(List<DataItem> dataItems) {
-        return BatchRunner.runBatch(dataItems, this::invokeWrapper, PoolName.API_COMPLETION, config.getThreadNum(), size -> size * SINGLE_TASK_TIMEOUT);
+        return BatchRunner.runBatch(dataItems, this::invokeWrapper, PoolName.API_COMPLETION, config.getThreadNum(), size -> size * config.getBatchTimeoutSec());
     }
 
     @Override

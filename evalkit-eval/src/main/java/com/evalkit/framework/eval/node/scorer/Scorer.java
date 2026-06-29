@@ -42,6 +42,7 @@ public abstract class Scorer extends WorkflowNode {
         super(WorkflowUtils.generateNodeId(NodeNamePrefix.SCORER));
         validConfig(config);
         this.config = config;
+        setNodeConfig(config);
     }
 
     protected void validConfig(ScorerConfig config) {
@@ -239,7 +240,7 @@ public abstract class Scorer extends WorkflowNode {
         }
         List<ScorerResult> scorerResults = BatchRunner.runBatch(dataItems,
                 item -> shouldEval(item) ? this.evalWrapper(item) : this.buildSkipResult(item),
-                PoolName.SCORER, config.getThreadNum(), size -> size * SINGLE_TASK_TIMEOUT);
+                PoolName.SCORER, config.getThreadNum(), size -> size * config.getBatchTimeoutSec());
         if (CollectionUtils.isEmpty(scorerResults)) {
             throw new EvalException("Scorer result is empty");
         }
