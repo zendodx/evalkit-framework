@@ -2,6 +2,7 @@
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.zendodx/evalkit-eval?color=blue&logo=apache-maven)](https://mvnrepository.com/artifact/io.github.zendodx/evalkit-eval)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+[![](https://jitpack.io/v/zendodx/evalkit-framework.svg)](https://jitpack.io/#zendodx/evalkit-framework)
 [![Java](https://img.shields.io/badge/Java-8%2B-orange?logo=openjdk)](https://www.oracle.com/java/)
 [![codecov](https://codecov.io/gh/zendodx/evalkit-framework/branch/master/graph/badge.svg)](https://codecov.io/gh/zendodx/evalkit-framework)
 [![GitHub Stars](https://img.shields.io/github/stars/zendodx/evalkit-framework?style=social)](https://github.com/zendodx/evalkit-framework/stargazers)

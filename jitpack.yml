@@ -1,0 +1,10 @@
+jdk:
+  - openjdk8
+
+before_install:
+  - sdk install java 8.0.392-zulu
+  - sdk use java 8.0.392-zulu
+
+install:
+  - mvn clean install -DskipTests -Dgpg.skip=true --no-transfer-progress
+

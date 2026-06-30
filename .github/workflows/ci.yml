@@ -5,12 +5,10 @@ on:
     branches:
       - main
       - master
-      - 1.5.x
   pull_request:
     branches:
       - main
       - master
-      - 1.5.x
 
 jobs:
   test:
@@ -29,7 +27,7 @@ jobs:
           cache: maven
 
       - name: Run Tests with JaCoCo
-        run: mvn -B test --no-transfer-progress -Dgpg.skip=true
+        run: mvn -B test --no-transfer-progress
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4

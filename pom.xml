@@ -60,11 +60,11 @@
         <project.build.resourceEncoding>${encoding}</project.build.resourceEncoding>
         <project.reporting.outputEncoding>${encoding}</project.reporting.outputEncoding>
         <!--插件版本-->
-        <central-publishing-maven-plugin.version>0.4.0</central-publishing-maven-plugin.version>
-        <maven-gpg-plugin.version>1.5</maven-gpg-plugin.version>
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
         <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
         <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
+        <!-- 兼容 Jacoco prepare-agent 未注入时的默认值，避免 ${argLine} 未定义报错 -->
+        <argLine></argLine>
     </properties>
 
     <dependencyManagement>
@@ -98,36 +98,6 @@
 
     <build>
         <plugins>
-            <!-- central发布插件 -->
-            <plugin>
-                <groupId>org.sonatype.central</groupId>
-                <artifactId>central-publishing-maven-plugin</artifactId>
-                <version>${central-publishing-maven-plugin.version}</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <publishingServerId>zendodx</publishingServerId>
-                    <tokenAuth>true</tokenAuth>
-                </configuration>
-            </plugin>
-            <!-- gpg插件 -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-gpg-plugin</artifactId>
-                <version>${maven-gpg-plugin.version}</version>
-                <configuration>
-                    <executable>${gpg.executable.path}</executable>
-                    <keyname>zendodx</keyname>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>sign-artifacts</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>sign</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
             <!-- 代码覆盖率插件 -->
             <plugin>
                 <groupId>org.jacoco</groupId>
@@ -220,4 +190,52 @@
             </plugin>
         </plugins>
     </build>
+
+    <!--
+        release profile：仅在需要发布到 Maven Central 时手动激活（mvn deploy -P release）。
+        正常开发和 JitPack 构建无需此 profile。
+    -->
+    <profiles>
+        <profile>
+            <id>release</id>
+            <properties>
+                <central-publishing-maven-plugin.version>0.4.0</central-publishing-maven-plugin.version>
+                <maven-gpg-plugin.version>1.5</maven-gpg-plugin.version>
+            </properties>
+            <build>
+                <plugins>
+                    <!-- central发布插件 -->
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>${central-publishing-maven-plugin.version}</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>zendodx</publishingServerId>
+                            <tokenAuth>true</tokenAuth>
+                        </configuration>
+                    </plugin>
+                    <!-- GPG 签名插件 -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>${maven-gpg-plugin.version}</version>
+                        <configuration>
+                            <executable>${gpg.executable.path}</executable>
+                            <keyname>zendodx</keyname>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
