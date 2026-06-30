@@ -6,6 +6,17 @@ nav_order: 4
 
 # ChangeLog
 
+## [1.6.0] - 2026-06-30
+
+### Added
+
+- 增加 RAG 评测三件套评估器：`FaithfulnessScorer`（忠实度）、`ContextRecallScorer`（上下文召回率）、`ContextPrecisionScorer`（上下文精度）
+- 增加 `RagScorer` RAG 综合评估器，将忠实度、上下文召回率、上下文精度打包为单节点，支持各子指标按需启用和自定义权重
+- `RagScorer` 内部三子评测器并行执行 LLM 调用（独立线程池隔离），最终分数支持加权平均
+- `RagScorerConfig` 支持独立配置三个子指标的权重、LLM 调用超时、重试次数及自定义 Prompt
+
+### Fixed
+
 ## [1.5.1] - 2026-06-29
 
 ### Added
