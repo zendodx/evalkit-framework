@@ -103,6 +103,11 @@ public abstract class RubricBasedScorer extends Scorer {
     public static final String EXTRA_KEY_CRITERIA_PASS_RATES = "rubric_criteria_pass_rates";
 
     /**
+     * 各维度打分指引，{@code Map<criteriaName, scoringGuide>}，用于报告层展示分级依据
+     */
+    public static final String EXTRA_KEY_CRITERIA_SCORING_GUIDES = "rubric_criteria_scoring_guides";
+
+    /**
      * 最终合并策略名称
      */
     public static final String EXTRA_KEY_MERGE_STRATEGY = "rubric_merge_strategy";
@@ -114,7 +119,15 @@ public abstract class RubricBasedScorer extends Scorer {
         super.scorerType = "rubricBasedScorer";
     }
 
-    private void validRubricConfig(RubricBasedScorerConfig config) {
+    /**
+     * 校验量规配置合法性（钩子方法，子类可覆盖以放宽约束）。
+     * <p>
+     * 默认实现要求 {@code criteria} 非空；动态 Rubric 子类可覆盖此方法，
+     * 跳过对 {@code criteria} 的非空校验（因为维度在运行时动态生成）。
+     *
+     * @param config 待校验的量规配置
+     */
+    protected void validRubricConfig(RubricBasedScorerConfig config) {
         if (config.getLlmService() == null) {
             throw new IllegalArgumentException("[RubricBasedScorer] LLMService must not be null");
         }
@@ -165,6 +178,22 @@ public abstract class RubricBasedScorer extends Scorer {
      */
     public abstract String prepareUserPrompt(InputData inputData, ApiCompletionResult apiCompletionResult);
 
+    /**
+     * 解析当前数据项应使用的评估维度列表（钩子方法，子类可覆盖）。
+     * <p>
+     * 默认实现直接返回配置中的静态维度列表（{@code config.getCriteria()}）。
+     * 动态 Rubric 子类可覆盖此方法，根据 {@code dataItem} 的 query/task 动态生成维度。
+     * <p>
+     * 框架在每次 {@link #eval(DataItem)} 时调用此方法，因此子类可以安全地在此方法内
+     * 发起 LLM 调用，返回针对当前数据项量身定制的评估维度列表。
+     *
+     * @param dataItem 当前评估数据项
+     * @return 本次评估应使用的维度列表，不能为 {@code null} 或空
+     */
+    protected List<RubricCriteria> resolveCriteria(DataItem dataItem) {
+        return config.getCriteria();
+    }
+
     // ==================== 核心评估流程 ====================
 
     @Override
@@ -173,7 +202,7 @@ public abstract class RubricBasedScorer extends Scorer {
         ApiCompletionResult apiCompletionResult = dataItem.getApiCompletionResult();
         String userPrompt = prepareUserPrompt(inputData, apiCompletionResult);
 
-        List<RubricCriteria> criteriaList = config.getCriteria();
+        List<RubricCriteria> criteriaList = resolveCriteria(dataItem);
 
         // 存储每个维度的评分结果
         Map<String, Double> rawScores = new LinkedHashMap<>();
@@ -257,6 +286,14 @@ public abstract class RubricBasedScorer extends Scorer {
             passRates.put(c.getName(), c.getPassRate());
         }
 
+        // 各维度打分指引（scoringGuide），供报告层展示分级依据
+        Map<String, String> scoringGuides = new LinkedHashMap<>();
+        for (RubricCriteria c : criteriaList) {
+            if (c.getScoringGuide() != null) {
+                scoringGuides.put(c.getName(), c.getScoringGuide());
+            }
+        }
+
         // 将各维度详情透传到 extra，供报告层使用
         ScorerResult scorerResult = new ScorerResult();
         scorerResult.setMetric(config.getMetricName());
@@ -268,6 +305,7 @@ public abstract class RubricBasedScorer extends Scorer {
         scorerResult.addExtraItem(EXTRA_KEY_CRITERIA_PASS_RATES, passRates);
         scorerResult.addExtraItem(EXTRA_KEY_CRITERIA_REASONS, reasons);
         scorerResult.addExtraItem(EXTRA_KEY_CRITERIA_REASONINGS, reasonings);
+        scorerResult.addExtraItem(EXTRA_KEY_CRITERIA_SCORING_GUIDES, scoringGuides);
         scorerResult.addExtraItem(EXTRA_KEY_MERGE_STRATEGY, config.getMergeStrategy().name());
         return scorerResult;
     }

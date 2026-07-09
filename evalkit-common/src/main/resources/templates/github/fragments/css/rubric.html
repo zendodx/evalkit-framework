@@ -163,9 +163,23 @@
         border: 1px solid var(--color-border);
     }
 
-    .rubric-card-badge.good    { background: #dafbe1; color: #1a7f37; border-color: #aceebb; }
-    .rubric-card-badge.warning { background: #fff8c5; color: #9e6a03; border-color: #f2cc60; }
-    .rubric-card-badge.bad     { background: #ffebe9; color: #cf222e; border-color: #ffbdbd; }
+    .rubric-card-badge.good {
+        background: #dafbe1;
+        color: #1a7f37;
+        border-color: #aceebb;
+    }
+
+    .rubric-card-badge.warning {
+        background: #fff8c5;
+        color: #9e6a03;
+        border-color: #f2cc60;
+    }
+
+    .rubric-card-badge.bad {
+        background: #ffebe9;
+        color: #cf222e;
+        border-color: #ffbdbd;
+    }
 
     .rubric-card-sub {
         font-size: 11px;
@@ -374,9 +388,20 @@
     /* ========================================
        颜色工具类（GitHub 配色）
        ======================================== */
-    .good    { color: #1a7f37; font-weight: 600; }
-    .warning { color: #9e6a03; font-weight: 600; }
-    .bad     { color: #cf222e; font-weight: 600; }
+    .good {
+        color: #1a7f37;
+        font-weight: 600;
+    }
+
+    .warning {
+        color: #9e6a03;
+        font-weight: 600;
+    }
+
+    .bad {
+        color: #cf222e;
+        font-weight: 600;
+    }
 
     /* ========================================
        样本明细筛选栏（GitHub 配色）
@@ -473,6 +498,57 @@
         font-size: 11px;
         color: #57606a;
         margin-top: 4px;
+    }
+
+    /* ========================================
+       打分标准（scoringGuide）列
+       ======================================== */
+    .rubric-guide-cell {
+        min-width: 120px;
+        max-width: 260px;
+    }
+
+    .rubric-scoring-guide {
+        font-size: 11px;
+    }
+
+    .rubric-scoring-guide-summary {
+        cursor: pointer;
+        color: var(--color-primary);
+        font-weight: 600;
+        user-select: none;
+        list-style: none;
+        outline: none;
+    }
+
+    .rubric-scoring-guide-summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .rubric-scoring-guide-summary::before {
+        content: "▶ ";
+        font-size: 10px;
+    }
+
+    details[open] .rubric-scoring-guide-summary::before {
+        content: "▼ ";
+    }
+
+    .rubric-scoring-guide-content {
+        margin-top: 4px;
+        padding: 6px 8px;
+        background: var(--color-bg-secondary);
+        border: 1px solid var(--color-border);
+        border-radius: var(--border-radius-base);
+        color: #57606a;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .rubric-no-guide {
+        color: var(--color-text-placeholder);
+        font-size: 11px;
     }
 </style>
 
