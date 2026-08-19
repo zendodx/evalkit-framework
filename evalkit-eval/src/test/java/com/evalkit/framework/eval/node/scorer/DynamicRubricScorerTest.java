@@ -28,7 +28,9 @@ class DynamicRubricScorerTest {
     
     // ==================== 工厂方法 ====================
 
-    /** 固定回复的 mock LLMService */
+    /**
+     * 固定回复的 mock LLMService
+     */
     private LLMService mockLLM(String fixedReply) {
         return new LLMService() {
             @Override

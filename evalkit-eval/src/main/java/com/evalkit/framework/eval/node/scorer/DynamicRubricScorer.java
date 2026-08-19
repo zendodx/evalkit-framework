@@ -28,7 +28,7 @@ import java.util.List;
  *       的标准打分流程，完成多维度并发评估。</li>
  * </ol>
  *
- * <h3>核心设计</h3>
+ * 核心设计
  * <ul>
  *   <li>通过覆盖 {@link #resolveCriteria(DataItem)} 钩子方法，将动态生成的维度注入父类评估流程，
  *       无需修改父类任何逻辑。</li>
@@ -40,7 +40,7 @@ import java.util.List;
  *       过度生成导致 Token 浪费。</li>
  * </ul>
  *
- * <h3>典型用法（纯动态模式）</h3>
+ * 典型用法（纯动态模式）
  * <pre>
  * public class AgentQualityScorer extends DynamicRubricScorer {
  *
@@ -72,7 +72,7 @@ import java.util.List;
  * }
  * </pre>
  *
- * <h3>混合模式（静态 + 动态）</h3>
+ * 混合模式（静态 + 动态）
  * <pre>
  * DynamicRubricScorerConfig.builder()
  *     .staticCriteria(Arrays.asList(
