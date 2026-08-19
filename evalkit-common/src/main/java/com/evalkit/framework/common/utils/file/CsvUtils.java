@@ -8,6 +8,8 @@ import org.apache.commons.csv.CSVRecord;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -69,16 +71,19 @@ public class CsvUtils {
      * 读取所有Csv文件
      */
     public static List<Map<String, Object>> readCsv(String fileName, String delimiter, boolean hasHeader) {
-        return readCsv(fileName, delimiter, hasHeader, 0, -1);
+        try (InputStream inputStream = FileUtils.getInputStream(fileName)) {
+            return readCsv(inputStream, delimiter, hasHeader, 0, -1);
+        } catch (Exception e) {
+            throw new RuntimeException("Reading CSV file error: " + e.getMessage(), e);
+        }
     }
 
     /**
      * 分页读取Csv文件
      */
-    public static List<Map<String, Object>> readCsv(String fileName, String delimiter, boolean hasHeader, int offset, int limit) {
-        Path path = getPath(fileName);
+    public static List<Map<String, Object>> readCsv(InputStream inputStream, String delimiter, boolean hasHeader, int offset, int limit) {
         List<Map<String, Object>> data = new ArrayList<>();
-        try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8);
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
              CSVParser parser = CSVFormat.DEFAULT.builder()
                      .setDelimiter(delimiter != null ? delimiter : ",")
                      .build().parse(reader)) {
