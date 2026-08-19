@@ -3,8 +3,16 @@
     /* ========================================
        用例列表渲染
        ======================================== */
+    // 记录上一次渲染时选中的用例，用于判断本次渲染是否发生了"用例切换"
+    let _lastRenderedCaseIndex = undefined;
+
     function renderCaseList() {
         const {caseList, caseCount} = AppState.elements;
+
+        // 判断选中用例是否发生变化（切换用例场景 vs 仅搜索/过滤重绘场景）
+        const currentCaseIndex = AppState.selectedCase ? AppState.selectedCase.dataIndex : null;
+        const caseChanged = currentCaseIndex !== _lastRenderedCaseIndex;
+        _lastRenderedCaseIndex = currentCaseIndex;
 
         // 根据过滤条件和搜索条件过滤数据
         const filteredData = filterCaseData();
@@ -23,6 +31,46 @@
 
         // 生成并渲染用例列表 HTML
         caseList.innerHTML = generateCaseListHTML(filteredData);
+
+        // 仅在选中用例发生切换时，将其滚动锚定到列表中间；
+        // 单纯的搜索/过滤重绘（选中用例未变）不触发滚动，避免打断用户浏览
+        if (caseChanged) {
+            scrollActiveCaseIntoView();
+        }
+    }
+
+    /* ========================================
+       选中用例滚动跟随 - 锚定到列表中间位置
+       ======================================== */
+    // 上次触发滚动锚定的时间戳，用于连续快速切换（如长按方向键）时自动降级为无动画滚动，避免动画排队卡顿
+    let _lastScrollAnchorTime = 0;
+
+    function scrollActiveCaseIntoView() {
+        const {caseList} = AppState.elements;
+        if (!caseList) return;
+
+        const now = Date.now();
+        const isRapidSwitch = now - _lastScrollAnchorTime < 200;
+        _lastScrollAnchorTime = now;
+
+        requestAnimationFrame(() => {
+            const activeItem = caseList.querySelector('.case-item.active');
+            if (!activeItem) return;
+
+            // 目标滚动位置：使选中项的中心与列表容器的中心对齐
+            const targetScrollTop = activeItem.offsetTop
+                - (caseList.clientHeight / 2)
+                + (activeItem.offsetHeight / 2);
+
+            // 限制在合法滚动范围内
+            const maxScrollTop = caseList.scrollHeight - caseList.clientHeight;
+            const clampedScrollTop = Math.max(0, Math.min(targetScrollTop, maxScrollTop));
+
+            caseList.scrollTo({
+                top: clampedScrollTop,
+                behavior: isRapidSwitch ? 'instant' : 'smooth'
+            });
+        });
     }
 
     /* ========================================
@@ -90,6 +138,7 @@
 
             return `
           <div class="case-item ${isSelected ? 'active' : ''}"
+               data-index="${item.dataIndex}"
                onclick="selectCase(${item.dataIndex})">
             <div class="case-title">${highlightedIndex}</div>
             <div class="case-status">

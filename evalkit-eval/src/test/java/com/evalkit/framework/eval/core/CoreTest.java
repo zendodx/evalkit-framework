@@ -126,7 +126,7 @@ public class CoreTest {
             @Override
             public List<InputData> prepareDataList() {
                 List<InputData> inputDatas = new ArrayList<>();
-                for (int i = 0; i < 10; i++) {
+                for (int i = 0; i < 200; i++) {
                     inputDatas.add(new InputData(1L, JsonUtils.fromJson("{\"query\":\"hello, world\",\"type\":\"1\"}", new TypeReference<Map<String, Object>>() {
                     })));
                 }
