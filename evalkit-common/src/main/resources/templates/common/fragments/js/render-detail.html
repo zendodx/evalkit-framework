@@ -112,9 +112,9 @@
        ======================================== */
     // sectionId -> button 的映射
     const _sectionBtnMap = {
-        'section-input':  0,
-        'section-api':    1,
-        'section-eval':   2,
+        'section-input': 0,
+        'section-api': 1,
+        'section-eval': 2,
         'section-scorer': 3,
     };
 
@@ -123,7 +123,10 @@
 
     function initSectionHighlight() {
         // 清理上一次的 observer
-        if (_sectionObserver) { _sectionObserver.disconnect(); _sectionObserver = null; }
+        if (_sectionObserver) {
+            _sectionObserver.disconnect();
+            _sectionObserver = null;
+        }
 
         const container = document.querySelector('.detail-content-scroll');
         const btns = document.querySelectorAll('.header-jumps .jump-btn:not(.jump-btn-top)');
@@ -137,7 +140,10 @@
             // 找可见比例最大的 section；若全为 0（未渲染完），不改变高亮
             let maxRatio = -1, activeId = null;
             Object.entries(visibleRatio).forEach(([id, r]) => {
-                if (r > maxRatio) { maxRatio = r; activeId = id; }
+                if (r > maxRatio) {
+                    maxRatio = r;
+                    activeId = id;
+                }
             });
             btns.forEach((btn, i) => btn.classList.remove('active'));
             if (activeId !== null && maxRatio > 0) {
@@ -429,9 +435,9 @@
                   </div>
                   <div style="font-size:12px;color:#606266;margin:5px 0">${s.reason}</div>
                   ${s.extra ? (() => {
-                      const map = wrapperScorerResultExtra(s.extra);
-                      return jsonDiv(map);
-                  })() : ''}
+            const map = wrapperScorerResultExtra(s.extra);
+            return jsonDiv(map);
+        })() : ''}
                 </div>`;
     }
 
@@ -443,16 +449,17 @@
         const extra = s.extra || {};
 
         // 从 extra 中解析各维度数据
-        const rawScores   = parseJsonField(extra['rubric_criteria_raw_scores']);
-        const normScores  = parseJsonField(extra['rubric_criteria_norm_scores']);
-        const passRates   = parseJsonField(extra['rubric_criteria_pass_rates']);
-        const reasons     = parseJsonField(extra['rubric_criteria_reasons']);
-        const reasonings  = parseJsonField(extra['rubric_criteria_reasonings']);
+        const rawScores = parseJsonField(extra['rubric_criteria_raw_scores']);
+        const normScores = parseJsonField(extra['rubric_criteria_norm_scores']);
+        const passRates = parseJsonField(extra['rubric_criteria_pass_rates']);
+        const reasons = parseJsonField(extra['rubric_criteria_reasons']);
+        const reasonings = parseJsonField(extra['rubric_criteria_reasonings']);
+        const scoringGuides = parseJsonField(extra['rubric_criteria_scoring_guides']);
 
         // 收集所有维度名称（保持顺序）
         const criteriaNames = Object.keys(rawScores || normScores || reasons || {});
         const tableHtml = criteriaNames.length > 0
-            ? buildRubricTable(criteriaNames, rawScores, normScores, passRates, reasons, reasonings)
+            ? buildRubricTable(criteriaNames, rawScores, normScores, passRates, reasons, reasonings, scoringGuides)
             : '';
 
         // 完整 extra 原始数据展示在表格下方（含 rubric 专属字段，方便调试）
@@ -475,17 +482,18 @@
     }
 
     /* 构建维度数据表格（全 inline style，不依赖主题 CSS） */
-    function buildRubricTable(criteriaNames, rawScores, normScores, passRates, reasons, reasonings) {
+    function buildRubricTable(criteriaNames, rawScores, normScores, passRates, reasons, reasonings, scoringGuides) {
         const tdBase = 'padding:4px 6px;border-bottom:1px solid rgba(0,0,0,0.06);vertical-align:top;font-size:11px;word-break:break-word;';
 
         const rows = criteriaNames.map(name => {
-            const raw      = rawScores  ? formatNumber(rawScores[name])  : '-';
-            const norm     = normScores ? formatNumber(normScores[name]) : '-';
-            const normVal  = normScores ? (normScores[name] || 0) : 0;
+            const raw = rawScores ? formatNumber(rawScores[name]) : '-';
+            const norm = normScores ? formatNumber(normScores[name]) : '-';
+            const normVal = normScores ? (normScores[name] || 0) : 0;
             // 优先使用后端透传的真实 passRate，如果没有则默认 1.0（即必须满分）
             const passRate = passRates ? (passRates[name] != null ? passRates[name] : 1.0) : 1.0;
-            const reason   = reasons   ? (reasons[name]  || '-') : '-';
+            const reason = reasons ? (reasons[name] || '-') : '-';
             const reasoning = reasonings ? (reasonings[name] || '') : '';
+            const guide = scoringGuides ? (scoringGuides[name] || '') : '';
 
             const isSkipped = reason === '[skipped]';
 
@@ -504,6 +512,14 @@
                                 <span style="font-size:11px;color:#606266;white-space:nowrap">${norm}</span>
                               </div>`;
 
+            // scoringGuide 折叠展示
+            const guideHtml = guide
+                ? `<details style="margin-top:3px">
+                     <summary style="cursor:pointer;color:#409eff;font-size:11px;font-weight:600;user-select:none">打分标准</summary>
+                     <div style="margin-top:3px;padding:4px 6px;background:rgba(64,158,255,0.06);border-left:2px solid #409eff;border-radius:2px;color:#555;font-size:11px;line-height:1.6;white-space:pre-wrap;word-break:break-word">${escapeHtml(guide)}</div>
+                   </details>`
+                : '';
+
             // reasoning 折叠展示
             const reasoningHtml = reasoning && !isSkipped
                 ? `<details style="margin-top:3px">
@@ -513,7 +529,10 @@
                 : '';
 
             return `<tr>
-                      <td style="${tdBase}font-weight:600;color:#303133">${escapeHtml(name)}</td>
+                      <td style="${tdBase}font-weight:600;color:#303133">
+                        ${escapeHtml(name)}
+                        ${guideHtml}
+                      </td>
                       <td style="${tdBase}color:#409eff;font-weight:600">${raw}</td>
                       <td style="${tdBase}">${normCell}</td>
                       <td style="${tdBase}text-align:center">${passCell}</td>
@@ -551,7 +570,11 @@
     function parseJsonField(val) {
         if (!val) return null;
         if (typeof val === 'object') return val;
-        try { return JSON.parse(val); } catch (_) { return null; }
+        try {
+            return JSON.parse(val);
+        } catch (_) {
+            return null;
+        }
     }
 
     /* ========================================

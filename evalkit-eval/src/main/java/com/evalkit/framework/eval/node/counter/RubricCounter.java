@@ -107,6 +107,7 @@ public class RubricCounter extends Counter {
                 Map<String, Double> normScores = sr.getExtraItem(RubricBasedScorer.EXTRA_KEY_CRITERIA_NORM_SCORES);
                 Map<String, Double> passRates = sr.getExtraItem(RubricBasedScorer.EXTRA_KEY_CRITERIA_PASS_RATES);
                 Map<String, String> reasons = sr.getExtraItem(RubricBasedScorer.EXTRA_KEY_CRITERIA_REASONS);
+                Map<String, String> scoringGuides = sr.getExtraItem(RubricBasedScorer.EXTRA_KEY_CRITERIA_SCORING_GUIDES);
 
                 if (rawScores == null) continue;
 
@@ -115,10 +116,11 @@ public class RubricCounter extends Counter {
                     double normScore = normScores != null ? normScores.getOrDefault(criteriaName, 0.0) : rawScore;
                     double passThreshold = passRates != null ? passRates.getOrDefault(criteriaName, 1.0) : 1.0;
                     String reason = reasons != null ? reasons.getOrDefault(criteriaName, "") : "";
+                    String scoringGuide = scoringGuides != null ? scoringGuides.getOrDefault(criteriaName, null) : null;
 
                     criteriaMap
                             .computeIfAbsent(criteriaName, k -> new ArrayList<>())
-                            .add(new CriteriaRawRecord(dataIndex, rawScore, normScore, passThreshold, reason));
+                            .add(new CriteriaRawRecord(dataIndex, rawScore, normScore, passThreshold, reason, scoringGuide));
                 }
             }
 
@@ -131,9 +133,10 @@ public class RubricCounter extends Counter {
                 RubricCountResult.CriteriaGroup cg = new RubricCountResult.CriteriaGroup();
                 cg.setCriteriaName(criteriaName);
 
-                // 取第一条记录的 passThreshold（同一维度应相同）
+                // 取第一条记录的 passThreshold 和 scoringGuide（同一维度应相同）
                 double passThreshold = records.isEmpty() ? 1.0 : records.get(0).passThreshold;
                 cg.setPassThreshold(passThreshold);
+                cg.setScoringGuide(records.isEmpty() ? null : records.get(0).scoringGuide);
 
                 double avgRaw = records.stream().mapToDouble(r -> r.rawScore).average().orElse(0);
                 double avgNorm = records.stream().mapToDouble(r -> r.normScore).average().orElse(0);
@@ -185,13 +188,15 @@ public class RubricCounter extends Counter {
         final double normScore;
         final double passThreshold;
         final String reason;
+        final String scoringGuide;
 
-        CriteriaRawRecord(Long dataIndex, double rawScore, double normScore, double passThreshold, String reason) {
+        CriteriaRawRecord(Long dataIndex, double rawScore, double normScore, double passThreshold, String reason, String scoringGuide) {
             this.dataIndex = dataIndex;
             this.rawScore = rawScore;
             this.normScore = normScore;
             this.passThreshold = passThreshold;
             this.reason = reason;
+            this.scoringGuide = scoringGuide;
         }
     }
 }

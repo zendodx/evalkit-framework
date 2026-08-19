@@ -56,8 +56,28 @@ public abstract class OrderedApiCompletion extends ApiCompletion {
     protected List<ApiCompletionResult> batchInvoke(List<DataItem> dataItems) {
         // 批量执行开始前预建分组索引，invoke 内部查询全部走 O(1) Map 查找
         buildGroupIndexIfAbsent(dataItems);
-        return OrderedBatchRunner.runOrderedBatch(dataItems, this::invokeWrapper, this::prepareOrderKey,
+        return OrderedBatchRunner.runOrderedBatch(dataItems, this::invokeAndSetResult, this::prepareOrderKey,
                 (o1, o2) -> prepareComparator().compare(o1, o2), config.getThreadNum(), size -> size * config.getBatchTimeoutSec());
+    }
+
+    /**
+     * 单条调用并立即将结果回填到 dataItem。
+     * <p>
+     * 普通 {@link ApiCompletion#doExecute()} 是在整批 batchInvoke 完成后统一回填，
+     * 但 {@link OrderedApiCompletion} 需要在同组第 N 条执行时，能通过
+     * {@link #getPrevDataItems} 拿到第 1~N-1 条已完成的 apiCompletionResult。
+     * 因此必须在单条 invoke 完成后立即回填，而不是等整批结束。
+     *
+     * @param dataItem 当前数据项
+     * @return 调用结果
+     */
+    private ApiCompletionResult invokeAndSetResult(DataItem dataItem) {
+        ApiCompletionResult result = invokeWrapper(dataItem);
+        // 立即回填到 dataItem，确保后续同组轮次的 getPrevDataItems 能拿到完整结果
+        if (result != null && dataItem.getApiCompletionResult() == null) {
+            dataItem.setApiCompletionResult(result);
+        }
+        return result;
     }
 
     // ===================================================================

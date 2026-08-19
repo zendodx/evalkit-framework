@@ -159,9 +159,20 @@
         color: #606266;
     }
 
-    .rubric-card-badge.good  { background: #f0f9eb; color: #67c23a; }
-    .rubric-card-badge.warning { background: #fdf6ec; color: #e6a23c; }
-    .rubric-card-badge.bad  { background: #fef0f0; color: #f56c6c; }
+    .rubric-card-badge.good {
+        background: #f0f9eb;
+        color: #67c23a;
+    }
+
+    .rubric-card-badge.warning {
+        background: #fdf6ec;
+        color: #e6a23c;
+    }
+
+    .rubric-card-badge.bad {
+        background: #fef0f0;
+        color: #f56c6c;
+    }
 
     .rubric-card-sub {
         font-size: 11px;
@@ -370,9 +381,20 @@
     /* ========================================
        颜色工具类
        ======================================== */
-    .good    { color: #67c23a; font-weight: 600; }
-    .warning { color: #e6a23c; font-weight: 600; }
-    .bad     { color: #f56c6c; font-weight: 600; }
+    .good {
+        color: #67c23a;
+        font-weight: 600;
+    }
+
+    .warning {
+        color: #e6a23c;
+        font-weight: 600;
+    }
+
+    .bad {
+        color: #f56c6c;
+        font-weight: 600;
+    }
 
     /* ========================================
        样本明细筛选栏
@@ -467,6 +489,57 @@
         font-size: 11px;
         color: #909399;
         margin-top: 4px;
+    }
+
+    /* ========================================
+       打分标准（scoringGuide）列
+       ======================================== */
+    .rubric-guide-cell {
+        min-width: 120px;
+        max-width: 260px;
+    }
+
+    .rubric-scoring-guide {
+        font-size: 11px;
+    }
+
+    .rubric-scoring-guide-summary {
+        cursor: pointer;
+        color: #409eff;
+        font-weight: 600;
+        user-select: none;
+        list-style: none;
+        outline: none;
+    }
+
+    .rubric-scoring-guide-summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .rubric-scoring-guide-summary::before {
+        content: "▶ ";
+        font-size: 10px;
+    }
+
+    details[open] .rubric-scoring-guide-summary::before {
+        content: "▼ ";
+    }
+
+    .rubric-scoring-guide-content {
+        margin-top: 4px;
+        padding: 6px 8px;
+        background: #f5f7fa;
+        border: 1px solid #e4e7ed;
+        border-radius: 3px;
+        color: #555;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .rubric-no-guide {
+        color: #c0c4cc;
+        font-size: 11px;
     }
 </style>
 

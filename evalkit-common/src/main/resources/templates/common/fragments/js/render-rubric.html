@@ -145,6 +145,7 @@
                                         <thead>
                                             <tr>
                                                 <th>维度名称</th>
+                                                <th>打分标准</th>
                                                 <th>均分(原始)</th>
                                                 <th>均分(归一化)</th>
                                                 <th>通过阈值</th>
@@ -182,9 +183,17 @@
     function renderCriteriaRow(metricGroup, criteria, gIdx, cIdx) {
         const passRateClass = (criteria.passRate || 0) >= 0.8 ? 'good' : (criteria.passRate || 0) >= 0.5 ? 'warning' : 'bad';
         const hasDataPoints = (criteria.dataPoints || []).length > 0;
+        const guide = criteria.scoringGuide;
+        const guideHtml = guide
+            ? `<details class="rubric-scoring-guide">
+                   <summary class="rubric-scoring-guide-summary">查看</summary>
+                   <div class="rubric-scoring-guide-content">${escapeHtml(guide)}</div>
+               </details>`
+            : '<span class="rubric-no-guide">-</span>';
         return `
             <tr>
                 <td><strong>${criteria.criteriaName || '-'}</strong></td>
+                <td class="rubric-guide-cell">${guideHtml}</td>
                 <td>${formatNumber(criteria.avgRawScore)}</td>
                 <td>${formatNumber(criteria.avgNormScore)}</td>
                 <td>${formatPercentage(criteria.passThreshold)}</td>
@@ -198,7 +207,7 @@
                 </td>
             </tr>
             <tr id="rubricDrillRow_${gIdx}_${cIdx}" style="display:none;">
-                <td colspan="8" class="rubric-drill-cell">
+                <td colspan="9" class="rubric-drill-cell">
                     ${renderDataPointsTable(criteria.dataPoints || [], gIdx, cIdx)}
                 </td>
             </tr>`;

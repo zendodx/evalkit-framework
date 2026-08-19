@@ -19,10 +19,14 @@ import java.util.List;
 @Data
 public class RubricCountResult implements CountResult {
 
-    /** 统计结果名称（用于上下文 key） */
+    /**
+     * 统计结果名称（用于上下文 key）
+     */
     private final String counterName = "rubricCountResult";
 
-    /** 评估器统计分组列表 */
+    /**
+     * 评估器统计分组列表
+     */
     private List<RubricMetricGroup> metricGroups = new ArrayList<>();
 
     // ==================== 内部类 ====================
@@ -33,34 +37,54 @@ public class RubricCountResult implements CountResult {
     @Data
     public static class RubricMetricGroup {
 
-        /** 评估器名称（metricName） */
+        /**
+         * 评估器名称（metricName）
+         */
         private String metricName;
 
-        /** 样本总数 */
+        /**
+         * 样本总数
+         */
         private int totalCount;
 
-        /** 通过数（ScorerResult.pass == true） */
+        /**
+         * 通过数（ScorerResult.pass == true）
+         */
         private int passCount;
 
-        /** 失败数 */
+        /**
+         * 失败数
+         */
         private int failCount;
 
-        /** 通过率 */
+        /**
+         * 通过率
+         */
         private double passRate;
 
-        /** 失败率 */
+        /**
+         * 失败率
+         */
         private double failRate;
 
-        /** 最终分均值（归一化后） */
+        /**
+         * 最终分均值（归一化后）
+         */
         private double avgScore;
 
-        /** 最终分最低值 */
+        /**
+         * 最终分最低值
+         */
         private double minScore;
 
-        /** 最终分最高值 */
+        /**
+         * 最终分最高值
+         */
         private double maxScore;
 
-        /** 各维度统计分组 */
+        /**
+         * 各维度统计分组
+         */
         private List<CriteriaGroup> criteriaGroups = new ArrayList<>();
     }
 
@@ -70,31 +94,54 @@ public class RubricCountResult implements CountResult {
     @Data
     public static class CriteriaGroup {
 
-        /** 维度名称 */
+        /**
+         * 维度名称
+         */
         private String criteriaName;
 
-        /** 原始分均值 */
+        /**
+         * 打分指引（分级依据标准），对应 {@code RubricCriteria.scoringGuide}
+         */
+        private String scoringGuide;
+
+        /**
+         * 原始分均值
+         */
         private double avgRawScore;
 
-        /** 归一化分均值 */
+        /**
+         * 归一化分均值
+         */
         private double avgNormScore;
 
-        /** 通过阈值（passScore / maxScore，来自 extra） */
+        /**
+         * 通过阈值（passScore / maxScore，来自 extra）
+         */
         private double passThreshold;
 
-        /** 该维度达标样本数（normScore >= passThreshold） */
+        /**
+         * 该维度达标样本数（normScore >= passThreshold）
+         */
         private int passCount;
 
-        /** 该维度未达标样本数 */
+        /**
+         * 该维度未达标样本数
+         */
         private int failCount;
 
-        /** 该维度通过率 */
+        /**
+         * 该维度通过率
+         */
         private double passRate;
 
-        /** 该维度失败率 */
+        /**
+         * 该维度失败率
+         */
         private double failRate;
 
-        /** 各样本在该维度的打分明细（用于报告层下钻） */
+        /**
+         * 各样本在该维度的打分明细（用于报告层下钻）
+         */
         private List<CriteriaDataPoint> dataPoints = new ArrayList<>();
     }
 
@@ -104,19 +151,29 @@ public class RubricCountResult implements CountResult {
     @Data
     public static class CriteriaDataPoint {
 
-        /** 样本序号（与 DataItem.dataIndex 对应） */
+        /**
+         * 样本序号（与 DataItem.dataIndex 对应）
+         */
         private Long dataIndex;
 
-        /** 该维度原始分 */
+        /**
+         * 该维度原始分
+         */
         private double rawScore;
 
-        /** 该维度归一化分 */
+        /**
+         * 该维度归一化分
+         */
         private double normScore;
 
-        /** 打分一句话理由 */
+        /**
+         * 打分一句话理由
+         */
         private String reason;
 
-        /** 是否通过（normScore >= passThreshold） */
+        /**
+         * 是否通过（normScore >= passThreshold）
+         */
         private boolean passed;
     }
 
