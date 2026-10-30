@@ -42,6 +42,35 @@
     };
 
     /* ========================================
+       嵌入宿主通信桥（iframe 嵌入场景）
+       跨域托管（如 S3）的报告无法被宿主平台注入脚本，
+       通过 postMessage 实现"嵌入页 → 平台"用例切换自动同步：
+       - 切换用例时上报 __AIEVAL_SAMPLE_CHANGE__（携带 dataIndex）
+       - 监听平台 __AIEVAL_NAVIGATE__ 实现免刷新反向切换
+       ======================================== */
+    const EmbedBridge = {
+        /* 上报当前用例切换给宿主平台（仅嵌入态生效，独立打开时静默跳过） */
+        notifySampleChange(dataIndex) {
+            if (window.parent === window || dataIndex == null) return;
+            window.parent.postMessage({type: '__AIEVAL_SAMPLE_CHANGE__', dataIndex}, '*');
+        },
+        /* 监听宿主平台的反向导航指令（免刷新切换用例） */
+        listen() {
+            window.addEventListener('message', (e) => {
+                const data = e && e.data;
+                if (!data || data.type !== '__AIEVAL_NAVIGATE__') return;
+                const idx = Number(data.dataIndex);
+                if (!Number.isFinite(idx)) return;
+                // 已展示该用例时跳过，避免无效重渲染
+                if (AppState.selectedCase && AppState.selectedCase.dataIndex === idx) return;
+                // 目标用例不存在时忽略，避免清空当前选择
+                if (!evaluationData.some(d => d.dataIndex === idx)) return;
+                if (typeof selectCase === 'function') selectCase(idx);
+            });
+        }
+    };
+
+    /* ========================================
        应用初始化入口
        ======================================== */
     function initializeApp() {
@@ -116,6 +145,9 @@
 
         // 归因菜单功能
         setupAttributeMenu();
+
+        // 嵌入宿主通信桥（平台 → 报告反向导航）
+        EmbedBridge.listen();
     }
 
     /* ========================================
