@@ -27,6 +27,8 @@
        ======================================== */
     function renderDetail() {
         if (!AppState.selectedCase) return;
+        // 上报用例切换给嵌入宿主（跨域 iframe 场景下平台无法注入脚本，见 EmbedBridge）
+        EmbedBridge.notifySampleChange(AppState.selectedCase.dataIndex);
         showPanel('detail');
         const d = AppState.selectedCase;
         const evalResult = d.evalResult || {};
