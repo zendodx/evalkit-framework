@@ -6,6 +6,18 @@ nav_order: 4
 
 # ChangeLog
 
+
+## [1.6.0] - 2026-11-02
+
+### Added
+
+- 支持基于agent的评估器
+- 支持基于会话agent的评估器
+
+### Fixed
+
+- html报告添加__AIEVAL_SAMPLE_CHANGE__ 上报、__AIEVAL_NAVIGATE__ 监听、EmbedBridge.listen() 挂载与 renderDetail 中的上报调用
+
 ## [1.5.3] - 2026-06-29
 
 ### Added
