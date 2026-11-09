@@ -40,7 +40,9 @@ case "$ENV" in
     ;;
   remote)
     echo "🚀 发布到 Maven 中央仓库${SKIP_TESTS/+，已跳过测试/...}"
-    mvn clean deploy -e -P release $MVN_ARGS
+    # 排除 evalkit-test：该模块配置了 skipPublishing=true，而 central-publishing 插件
+    # 只在 reactor 最后一个模块执行真正的 bundle 上传，若它排最后会导致整个发布被跳过
+    mvn clean deploy -e $MVN_ARGS -pl '!evalkit-test'
     ;;
   *)
     echo "❌ 无效参数: $ENV"
