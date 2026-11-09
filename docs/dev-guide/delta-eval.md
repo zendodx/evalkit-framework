@@ -15,18 +15,18 @@ nav_order: 1
 
 增量评测在全量评测（`FullEvalFacade`）的基础上引入了两个嵌入式中间件：
 
-| 中间件 | 类 | 作用 |
-|---|---|---|
-| 嵌入式消息队列 | `ActiveMQEmbeddedServer` | 持久化存储待评测数据，保证断点续评 |
-| 嵌入式关系数据库 | `SQLiteEmbeddedServer` | 持久化存储评测结果、幂等去重表、任务状态 |
+| 中间件      | 类                        | 作用                   |
+|----------|--------------------------|----------------------|
+| 嵌入式消息队列  | `ActiveMQEmbeddedServer` | 持久化存储待评测数据，保证断点续评    |
+| 嵌入式关系数据库 | `SQLiteEmbeddedServer`   | 持久化存储评测结果、幂等去重表、任务状态 |
 
 两者的数据文件均存储在 `eval_cache_data/{taskNameUuid}/` 目录下，以 `taskName` 的 UUID 作为隔离 key，支持同机多任务并行运行。
 
 ```
                  ┌───────────────────────────────────────────┐
-                 │             DeltaEvalFacade                │
+                 │             DeltaEvalFacade               │
                  │                                           │
-  DataLoader ──► │  loadData()  ──► ActiveMQ Queue          │
+  DataLoader ──► │  loadData()  ──► ActiveMQ Queue           │
                  │                        │                  │
                  │              eval() ◄──┘  (N threads)     │
                  │                │                          │
@@ -70,17 +70,17 @@ run()
 long queueSize = activeMQEmbeddedServer.getQueueMessageCount(taskNameUuid);
 int count = dataItemMapper.count();
 // 队列有消息 OR 数据库有结果 → 已加载，跳过
-if (queueSize > 0 || (queueSize == 0 && count > 0)) {
-    return;
-}
+if(queueSize >0||(queueSize ==0&&count >0)){
+        return;
+        }
 ```
 
-| 场景 | queueSize | DB count | 行为 |
-|---|---|---|---|
-| 首次运行 | 0 | 0 | 重新加载数据到 MQ |
-| 正常运行中 | > 0 | >= 0 | 跳过加载 |
-| 断点续评（部分完成） | > 0 | > 0 | 跳过加载，MQ 中剩余消息即为未处理数据 |
-| 已全部完成 | 0 | > 0 | 跳过加载 |
+| 场景         | queueSize | DB count | 行为                   |
+|------------|-----------|----------|----------------------|
+| 首次运行       | 0         | 0        | 重新加载数据到 MQ           |
+| 正常运行中      | > 0       | >= 0     | 跳过加载                 |
+| 断点续评（部分完成） | > 0       | > 0      | 跳过加载，MQ 中剩余消息即为未处理数据 |
+| 已全部完成      | 0         | > 0      | 跳过加载                 |
 
 ### 3.2 评测的幂等判断
 
@@ -92,10 +92,10 @@ if (queueSize > 0 || (queueSize == 0 && count > 0)) {
 
 ### 3.3 `enableResume` 开关
 
-| 值 | 行为 |
-|---|---|
-| `true`（默认） | 保留 MQ 和 DB 数据文件，断点后从上次进度继续 |
-| `false` | 每次启动前删除 `eval_cache_data/{taskNameUuid}/` 目录和 `.db` 文件，全量重跑 |
+| 值          | 行为                                                          |
+|------------|-------------------------------------------------------------|
+| `true`（默认） | 保留 MQ 和 DB 数据文件，断点后从上次进度继续                                  |
+| `false`    | 每次启动前删除 `eval_cache_data/{taskNameUuid}/` 目录和 `.db` 文件，全量重跑 |
 
 ---
 
@@ -128,10 +128,10 @@ eval()
 
 `batchReceiveInTx` 回调返回三态枚举，决定本批次的 JMS 事务行为：
 
-| 返回值 | 事务操作 | 适用场景 |
-|---|---|---|
-| `CONTINUE` | `session.commit()` | 正常处理完一批，继续拉取 |
-| `STOP` | `session.commit()` | 消费完毕或主动终止，本批提交 |
+| 返回值        | 事务操作                 | 适用场景            |
+|------------|----------------------|-----------------|
+| `CONTINUE` | `session.commit()`   | 正常处理完一批，继续拉取    |
+| `STOP`     | `session.commit()`   | 消费完毕或主动终止，本批提交  |
 | `ROLLBACK` | `session.rollback()` | 空批次或处理异常，消息重新入队 |
 
 > **关键设计**：消费完毕时必须返回 `STOP`（而非 `ROLLBACK`），确保最后一批消息被 commit，不会重复投递。
@@ -148,11 +148,13 @@ eval()
 MQ 因异常状态无法拉到消息时，通过 `emptyRounds` 计数器防止线程死循环：
 
 ```java
-if (consumed.get() < total && activeMQEmbeddedServer.getQueueMessageCount(taskNameUuid) == 0) {
-    emptyRounds++;  // MQ 已空但 consumed 未达标，累计空轮询次数
-} else {
-    emptyRounds = 0;
-}
+if(consumed.get() <total &&activeMQEmbeddedServer.
+
+getQueueMessageCount(taskNameUuid) ==0){
+emptyRounds++;  // MQ 已空但 consumed 未达标，累计空轮询次数
+        }else{
+emptyRounds =0;
+        }
 // 超过 10 次空轮询，强制退出，由 finally 兜底 latch.countDown()
 ```
 
@@ -162,7 +164,8 @@ if (consumed.get() < total && activeMQEmbeddedServer.getQueueMessageCount(taskNa
 
 ## 五、有序消费模型（OrderedDeltaEvalFacade）
 
-`OrderedDeltaEvalFacade` 继承 `DeltaEvalFacade`，重写 `eval()` 方法，实现**同 key 数据在同一线程中按顺序处理**，适合多轮对话评测（同一 session 的多轮必须按轮次顺序执行）。
+`OrderedDeltaEvalFacade` 继承 `DeltaEvalFacade`，重写 `eval()` 方法，实现**同 key 数据在同一线程中按顺序处理**，适合多轮对话评测（同一
+session 的多轮必须按轮次顺序执行）。
 
 ### 5.1 有序处理核心：`OrderedDispatcher`
 
@@ -176,17 +179,18 @@ if (consumed.get() < total && activeMQEmbeddedServer.getQueueMessageCount(taskNa
               └── 不同 key → 哈希分发到不同 EventLoop（并行）
 ```
 
-`OrderedDispatcher` 内部维护 `loopCount` 个 `EventLoop`（每个都是独立线程 + `LinkedBlockingQueue`），相同 key 的任务始终由同一个 EventLoop 串行执行。
+`OrderedDispatcher` 内部维护 `loopCount` 个 `EventLoop`（每个都是独立线程 + `LinkedBlockingQueue`），相同 key 的任务始终由同一个
+EventLoop 串行执行。
 
 ### 5.2 与父类 `eval()` 的差异
 
-| 对比项 | `DeltaEvalFacade` | `OrderedDeltaEvalFacade` |
-|---|---|---|
-| 并发模型 | N 个消费线程并行拉取 MQ | 单线程拉取 MQ，`OrderedDispatcher` 内部并发处理 |
-| 顺序保证 | 无顺序保证 | 同 key 内严格顺序 |
-| `consumed` 计数 | 只计真正处理的消息 | 计入本批所有消息（含失败），防止失败消息阻塞退出 |
-| 空批次处理 | 外层 `emptyRounds` 计数 | 内层 `AtomicInteger emptyRounds` 计数 |
-| 超时计算 | 无 | `size * messageProcessMaxTime`（秒） |
+| 对比项           | `DeltaEvalFacade`   | `OrderedDeltaEvalFacade`            |
+|---------------|---------------------|-------------------------------------|
+| 并发模型          | N 个消费线程并行拉取 MQ      | 单线程拉取 MQ，`OrderedDispatcher` 内部并发处理 |
+| 顺序保证          | 无顺序保证               | 同 key 内严格顺序                         |
+| `consumed` 计数 | 只计真正处理的消息           | 计入本批所有消息（含失败），防止失败消息阻塞退出            |
+| 空批次处理         | 外层 `emptyRounds` 计数 | 内层 `AtomicInteger emptyRounds` 计数   |
+| 超时计算          | 无                   | `size * messageProcessMaxTime`（秒）   |
 
 ### 5.3 `consumed` 计数为何包含失败消息
 
@@ -210,6 +214,7 @@ public abstract Comparator<InputData> prepareComparator();
 **示例**：多轮对话评测，按 `sessionId` 分组，按 `turnIndex` 排序：
 
 ```java
+
 @Override
 public String prepareOrderKey(InputData inputData) {
     return inputData.getFieldValue("sessionId");
@@ -239,34 +244,34 @@ doReport()
 
 ### 上报调度器生命周期
 
-| 阶段 | 操作 |
-|---|---|
-| `eval()` 调用后立刻 | `report()` 启动调度，`initialDelay=0`（立即执行第一次） |
-| `consumeFuture.get()` 返回后 | `stopReporter()` 取消调度，等待当前批次完成 |
-| `stopReporter()` 后 | `doReport()` 执行最终全量上报 |
+| 阶段                        | 操作                                        |
+|---------------------------|-------------------------------------------|
+| `eval()` 调用后立刻            | `report()` 启动调度，`initialDelay=0`（立即执行第一次） |
+| `consumeFuture.get()` 返回后 | `stopReporter()` 取消调度，等待当前批次完成            |
+| `stopReporter()` 后        | `doReport()` 执行最终全量上报                     |
 
 ---
 
 ## 七、SQLite 数据库表结构
 
-| 表名 | 字段 | 说明 |
-|---|---|---|
-| `eval_task` | `task_name_uuid`, `all_count`, `status`, `create_time`, `update_time` | 任务元信息和状态 |
-| `data_item` | `data_index`, `data_item_json` | 评测结果持久化（JSON 序列化的 `DataItem`） |
-| `mq_message_processed` | `message_id` | 幂等去重表，记录已处理的 MQ 消息 ID |
+| 表名                     | 字段                                                                    | 说明                            |
+|------------------------|-----------------------------------------------------------------------|-------------------------------|
+| `eval_task`            | `task_name_uuid`, `all_count`, `status`, `create_time`, `update_time` | 任务元信息和状态                      |
+| `data_item`            | `data_index`, `data_item_json`                                        | 评测结果持久化（JSON 序列化的 `DataItem`） |
+| `mq_message_processed` | `message_id`                                                          | 幂等去重表，记录已处理的 MQ 消息 ID         |
 
 ---
 
 ## 八、`DeltaEvalConfig` 关键配置
 
-| 配置项 | 默认值 | 说明 |
-|---|---|---|
-| `batchSize` | `10` | 每次从 MQ 拉取的消息数量 |
-| `reportInterval` | `30`（秒） | 周期上报间隔 |
-| `mqReceiveTimeout` | `10000`（毫秒） | 单次 `consumer.receive()` 的超时时间 |
-| `enableResume` | `true` | 是否开启断点续评 |
-| `messageProcessMaxTime` | `60`（秒） | `OrderedDeltaEvalFacade` 中每条消息的最大处理时间，用于计算 `OrderedBatchRunner` 的总超时 |
-| `threadNum` | 继承自 `EvalConfig` | 消费线程数（`DeltaEvalFacade`）/ `OrderedDispatcher` 的 EventLoop 数（`OrderedDeltaEvalFacade`） |
+| 配置项                     | 默认值              | 说明                                                                                    |
+|-------------------------|------------------|---------------------------------------------------------------------------------------|
+| `batchSize`             | `10`             | 每次从 MQ 拉取的消息数量                                                                        |
+| `reportInterval`        | `30`（秒）          | 周期上报间隔                                                                                |
+| `mqReceiveTimeout`      | `10000`（毫秒）      | 单次 `consumer.receive()` 的超时时间                                                         |
+| `enableResume`          | `true`           | 是否开启断点续评                                                                              |
+| `messageProcessMaxTime` | `60`（秒）          | `OrderedDeltaEvalFacade` 中每条消息的最大处理时间，用于计算 `OrderedBatchRunner` 的总超时                  |
+| `threadNum`             | 继承自 `EvalConfig` | 消费线程数（`DeltaEvalFacade`）/ `OrderedDispatcher` 的 EventLoop 数（`OrderedDeltaEvalFacade`） |
 
 > 以上配置均可通过 JVM 参数在运行时覆盖，如 `-DbatchSize=20`。
 
@@ -280,7 +285,8 @@ doReport()
 
 **现象**：消费完最后一批消息后，框架仍不退出，日志中反复出现"Message already processed"。
 
-**根因**：`batchReceiveInTx` 回调返回 `false`（当时语义为"停止"）会触发 `session.rollback()`，导致最后一批已处理的消息被重新投递回 MQ。
+**根因**：`batchReceiveInTx` 回调返回 `false`（当时语义为"停止"）会触发 `session.rollback()`，导致最后一批已处理的消息被重新投递回
+MQ。
 
 **修复**：引入 `BatchResult` 三态枚举（`CONTINUE` / `STOP` / `ROLLBACK`），消费完毕返回 `STOP`，确保最后一批 commit。
 
@@ -288,15 +294,18 @@ doReport()
 
 **现象**：所有数据处理完后，程序不退出，CPU 持续占用（线程空轮询）。
 
-**根因**：MQ 空后 `consumer.receive(timeout)` 立即返回 `null`，批次为空，旧代码直接 `return false`（rollback），循环条件 `consumed < total` 仍为 `true`（因为 `total` 是快照值，而 MQ 此时为空导致 `consumed` 无法递增），线程永远轮询空 MQ。
+**根因**：MQ 空后 `consumer.receive(timeout)` 立即返回 `null`，批次为空，旧代码直接 `return false`（rollback），循环条件
+`consumed < total` 仍为 `true`（因为 `total` 是快照值，而 MQ 此时为空导致 `consumed` 无法递增），线程永远轮询空 MQ。
 
-**修复**：空批次返回 `ROLLBACK`；外层增加 `emptyRounds` 计数器，超过 `MAX_EMPTY_ROUNDS=10` 次后强制退出；`finally` 块兜底 `latch.countDown()`。
+**修复**：空批次返回 `ROLLBACK`；外层增加 `emptyRounds` 计数器，超过 `MAX_EMPTY_ROUNDS=10` 次后强制退出；`finally` 块兜底
+`latch.countDown()`。
 
 ### Bug 3：`total=0` 时 latch 永不触发
 
 **现象**：断点续评且上次已全部完成时，程序启动后永久阻塞不退出。
 
-**根因**：`total = getRemainDataCount()` 返回 0，`for (int i = 0; i < threadNum && total > 0; i++)` 不提交任何线程，但 `latch` 初始值为 1，`latch.await()` 永远阻塞。
+**根因**：`total = getRemainDataCount()` 返回 0，`for (int i = 0; i < threadNum && total > 0; i++)` 不提交任何线程，但
+`latch` 初始值为 1，`latch.await()` 永远阻塞。
 
 **修复**：在 `eval()` 中提前判断 `total <= 0` 并执行 `latch.countDown()`，跳过消费阶段。
 

@@ -5,7 +5,9 @@ parent: 开发指南
 nav_order: 90
 ---
 
-Github Pages使用方法
+# Github Pages使用方法
+
+> Github Pages 是一个静态站点托管服务，可以用于搭建个人博客、文档站点等。
 
 ## 配置
 
@@ -26,6 +28,7 @@ end
 ## 本地调试流程
 
 (1)进入docs目录
+
 ```shell
 cd docs
 ```

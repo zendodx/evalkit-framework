@@ -12,10 +12,10 @@ has_toc: true
 
 **数据生成器（DataGenerator）** 是 EvalKit 框架中用于**程序化生成评测数据集**的组件。
 
-在实际评测中，你可能不总是有现成的数据集，而需要通过某种逻辑（如 Mock 规则、LLM 生成、知识图谱推导等）来自动构造评测数据。`DataGenerator` 就是为这类场景设计的。
+在实际评测中，你可能不总是有现成的数据集，而需要通过某种逻辑（如 Mock 规则、LLM 生成、知识图谱推导等）来自动构造评测数据。
+`DataGenerator` 就是为这类场景设计的。
 
 `DataGenerator` 继承自 `DataLoader`，也是工作流中的一个节点，它在执行时**生成数据**并将结果注入到工作流上下文，后续节点（如评估器）可以直接使用这些数据。
-
 
 ## 类继承关系
 
@@ -28,19 +28,17 @@ DataLoader（数据加载器）
     └── MultiDataGenerator            多源数据生成器（组合多个生成器）
 ```
 
-
 ## 公共配置（`DataGeneratorConfig`）
 
 所有数据生成器都继承自 `DataGeneratorConfig`，包含以下通用配置：
 
-| 参数 | 类型 | 默认值 | 说明 |
-|---|---|---|---|
-| `enableOutputFile` | boolean | false | 是否将生成结果导出到文件 |
-| `outputFilePath` | String | `attachments` | 导出文件的目录路径 |
-| `outputFileName` | String | `export_yyyyMMddHHmmss` | 导出文件名（不含扩展名） |
+| 参数                    | 类型                      | 默认值                      | 说明               |
+|-----------------------|-------------------------|--------------------------|------------------|
+| `enableOutputFile`    | boolean                 | false                    | 是否将生成结果导出到文件     |
+| `outputFilePath`      | String                  | `attachments`            | 导出文件的目录路径        |
+| `outputFileName`      | String                  | `export_yyyyMMddHHmmss`  | 导出文件名（不含扩展名）     |
 | `genDataExporterList` | `List<GenDataExporter>` | `[ExcelGenDataExporter]` | 导出器列表，默认导出 Excel |
-| `threadNum` | Integer | 1 | 并发生成的线程数 |
-
+| `threadNum`           | Integer                 | 1                        | 并发生成的线程数         |
 
 ## 数据导出器（GenDataExporter）
 
@@ -48,25 +46,24 @@ DataLoader（数据加载器）
 
 ### 内置导出器
 
-| 导出器 | 输出格式 | 说明 |
-|---|---|---|
-| `ExcelGenDataExporter` | `.xlsx` | 输出 Excel 文件（默认） |
-| `JsonFileGenDataExporter` | `.json` | 输出 JSON 文件 |
+| 导出器                       | 输出格式    | 说明              |
+|---------------------------|---------|-----------------|
+| `ExcelGenDataExporter`    | `.xlsx` | 输出 Excel 文件（默认） |
+| `JsonFileGenDataExporter` | `.json` | 输出 JSON 文件      |
 
 ### 同时导出多种格式
 
 ```java
 DataGeneratorConfig config = EvalCaseDataGeneratorConfig.builder()
-    .enableOutputFile(true)
-    .outputFilePath("attachments/generated")
-    .outputFileName("my_eval_data")
-    .genDataExporterList(ListUtils.of(
-        new ExcelGenDataExporter(),       // 同时导出Excel
-        new JsonFileGenDataExporter()     // 同时导出JSON
-    ))
-    .build();
+        .enableOutputFile(true)
+        .outputFilePath("attachments/generated")
+        .outputFileName("my_eval_data")
+        .genDataExporterList(ListUtils.of(
+                new ExcelGenDataExporter(),       // 同时导出Excel
+                new JsonFileGenDataExporter()     // 同时导出JSON
+        ))
+        .build();
 ```
-
 
 ## 内置实现详解
 
@@ -78,18 +75,18 @@ DataGeneratorConfig config = EvalCaseDataGeneratorConfig.builder()
 
 #### 配置说明（`EvalCaseDataGeneratorConfig`）
 
-| 参数 | 类型 | 默认值 | 说明 |
-|---|---|---|---|
-| `genCount` | int | 1 | 生成的会话数量 |
-| `roundCount` | int | 1 | 每个会话的最大轮次数 |
-| `randomRound` | boolean | false | 是否随机轮次（1~`roundCount`随机） |
-| `queryGenerator` | `QueryGenerator` | 无（**必填**） | Query 生成器实例 |
-| `sessionFieldKey` | String | `sessionId` | 输出数据中会话 ID 的字段名 |
-| `roundFieldKey` | String | `round` | 输出数据中轮次的字段名 |
-| `queryFieldKey` | String | `query` | 输出数据中 Query 的字段名 |
-| `groundTruthFieldKey` | String | `groundTruth` | 标准答案字段名 |
-| `intentFieldKey` | String | `intent` | 意图字段名 |
-| `contextDependencyFieldKey` | String | `contextDependency` | 上下文依赖字段名 |
+| 参数                          | 类型               | 默认值                 | 说明                       |
+|-----------------------------|------------------|---------------------|--------------------------|
+| `genCount`                  | int              | 1                   | 生成的会话数量                  |
+| `roundCount`                | int              | 1                   | 每个会话的最大轮次数               |
+| `randomRound`               | boolean          | false               | 是否随机轮次（1~`roundCount`随机） |
+| `queryGenerator`            | `QueryGenerator` | 无（**必填**）           | Query 生成器实例              |
+| `sessionFieldKey`           | String           | `sessionId`         | 输出数据中会话 ID 的字段名          |
+| `roundFieldKey`             | String           | `round`             | 输出数据中轮次的字段名              |
+| `queryFieldKey`             | String           | `query`             | 输出数据中 Query 的字段名         |
+| `groundTruthFieldKey`       | String           | `groundTruth`       | 标准答案字段名                  |
+| `intentFieldKey`            | String           | `intent`            | 意图字段名                    |
+| `contextDependencyFieldKey` | String           | `contextDependency` | 上下文依赖字段名                 |
 
 #### 输出数据格式
 
@@ -107,19 +104,20 @@ DataGeneratorConfig config = EvalCaseDataGeneratorConfig.builder()
 }
 ```
 
-> 💡 `groundTruth`、`intent` 字段默认为空字符串。如果需要填充这些字段，继承 `EvalCaseDataGenerator` 并覆盖 `prepareGroundTruth()` 和 `prepareIntent()` 方法即可。
+> 💡 `groundTruth`、`intent` 字段默认为空字符串。如果需要填充这些字段，继承 `EvalCaseDataGenerator` 并覆盖
+`prepareGroundTruth()` 和 `prepareIntent()` 方法即可。
 
 #### 生命周期钩子
 
 你可以通过继承 `EvalCaseDataGenerator` 来覆盖以下方法：
 
-| 方法 | 说明 |
-|---|---|
+| 方法                                | 说明                                          |
+|-----------------------------------|---------------------------------------------|
 | `prepareQuery(contextDependency)` | 生成当前轮次的 Query，`contextDependency` 是前几轮的对话历史 |
-| `prepareGroundTruth()` | 生成标准答案，默认返回空字符串 |
-| `prepareIntent()` | 生成意图标签，默认返回空字符串 |
-| `prepareExtra()` | 生成额外字段，默认返回 `{"extra": ""}` |
-| `genSessionId()` | 生成会话 ID，默认使用 UUID |
+| `prepareGroundTruth()`            | 生成标准答案，默认返回空字符串                             |
+| `prepareIntent()`                 | 生成意图标签，默认返回空字符串                             |
+| `prepareExtra()`                  | 生成额外字段，默认返回 `{"extra": ""}`                 |
+| `genSessionId()`                  | 生成会话 ID，默认使用 UUID                           |
 
 #### 使用示例
 
@@ -128,15 +126,15 @@ DataGeneratorConfig config = EvalCaseDataGeneratorConfig.builder()
 QueryGenerator queryGenerator = new MyMockQueryGenerator();
 
 EvalCaseDataGenerator generator = new EvalCaseDataGenerator(
-    EvalCaseDataGeneratorConfig.builder()
-        .genCount(100)          // 生成100个会话
-        .roundCount(3)          // 每个会话3轮
-        .randomRound(true)      // 随机轮次（1~3轮）
-        .queryGenerator(queryGenerator)
-        .threadNum(4)           // 4线程并发
-        .enableOutputFile(true) // 导出数据
-        .outputFileName("hotel_eval_data")
-        .build()
+        EvalCaseDataGeneratorConfig.builder()
+                .genCount(100)          // 生成100个会话
+                .roundCount(3)          // 每个会话3轮
+                .randomRound(true)      // 随机轮次（1~3轮）
+                .queryGenerator(queryGenerator)
+                .threadNum(4)           // 4线程并发
+                .enableOutputFile(true) // 导出数据
+                .outputFileName("hotel_eval_data")
+                .build()
 );
 ```
 
@@ -146,10 +144,10 @@ EvalCaseDataGenerator generator = new EvalCaseDataGenerator(
 public class HotelEvalCaseGenerator extends EvalCaseDataGenerator {
     public HotelEvalCaseGenerator() {
         super(EvalCaseDataGeneratorConfig.builder()
-            .genCount(200)
-            .roundCount(5)
-            .queryGenerator(new HotelQueryGenerator())
-            .build());
+                .genCount(200)
+                .roundCount(5)
+                .queryGenerator(new HotelQueryGenerator())
+                .build());
     }
 
     @Override
@@ -165,12 +163,12 @@ public class HotelEvalCaseGenerator extends EvalCaseDataGenerator {
 }
 ```
 
-
 ### 2. LoaderBasedDataGenerator — 基于数据加载器的生成器（抽象类）
 
 当你需要**先加载一批原始数据，再对每条数据进行二次加工**时，使用 `LoaderBasedDataGenerator`。
 
 **应用场景示例：**
+
 - 从数据库中加载一批商品数据，对每条商品数据调用 LLM 生成搜索 Query
 - 从 CSV 中读取用户历史记录，为每条记录扩展额外的评测字段
 
@@ -178,10 +176,10 @@ public class HotelEvalCaseGenerator extends EvalCaseDataGenerator {
 
 继承自 `DataGeneratorConfig`，额外配置：
 
-| 参数 | 类型 | 默认值 | 说明 |
-|---|---|---|---|
+| 参数           | 类型           | 默认值       | 说明      |
+|--------------|--------------|-----------|---------|
 | `dataLoader` | `DataLoader` | 无（**必填**） | 原始数据加载器 |
-| `threadNum` | Integer | 1 | 并发处理线程数 |
+| `threadNum`  | Integer      | 1         | 并发处理线程数 |
 
 #### 使用示例
 
@@ -191,10 +189,10 @@ public class ProductQueryGenerator extends LoaderBasedDataGenerator {
 
     public ProductQueryGenerator(LLMService llmService) {
         super(LoaderBasedDataGeneratorConfig.builder()
-            .dataLoader(new ExcelDataLoader("products.xlsx", ExcelDataLoaderConfig.builder().build()))
-            .threadNum(5)
-            .enableOutputFile(true)
-            .build());
+                .dataLoader(new ExcelDataLoader("products.xlsx", ExcelDataLoaderConfig.builder().build()))
+                .threadNum(5)
+                .enableOutputFile(true)
+                .build());
         this.llmService = llmService;
     }
 
@@ -213,10 +211,10 @@ public class ProductQueryGenerator extends LoaderBasedDataGenerator {
 }
 ```
 
-
 ### 3. KGBasedQueryGenerator — 基于知识图谱的数据生成器
 
-`KGBasedQueryGenerator` 是 EvalKit 框架中最强大的数据生成器，专门用于**基于知识图谱（Knowledge Graph）生成多轮对话评测数据**。
+`KGBasedQueryGenerator` 是 EvalKit 框架中最强大的数据生成器，专门用于**基于知识图谱（Knowledge Graph）生成多轮对话评测数据
+**。
 
 #### 核心工作流程
 
@@ -233,6 +231,7 @@ public class ProductQueryGenerator extends LoaderBasedDataGenerator {
 ```
 
 具体步骤：
+
 1. **加载场景配置**：从 JSON 文件中读取场景描述、SPARQL 查询模板和标杆用例（GoldenCase）
 2. **图谱数据抽取**：用 SPARQL 查询从 TTL 格式的知识图谱中抽取实体数据，并随机采样一条
 3. **LLM 生成对话**：将抽取的实体数据和标杆用例传给 LLM，生成新的多轮对话
@@ -261,19 +260,25 @@ public class ProductQueryGenerator extends LoaderBasedDataGenerator {
         "turn": 1,
         "query": "我想找北京东城区的酒店",
         "assertType": "KEYWORD_MATCH",
-        "expectedVars": ["location"]
+        "expectedVars": [
+          "location"
+        ]
       },
       {
         "turn": 2,
         "query": "有没有688元左右的",
         "assertType": "KEYWORD_MATCH",
-        "expectedVars": ["price"]
+        "expectedVars": [
+          "price"
+        ]
       },
       {
         "turn": 3,
         "query": "帮我预订故宫旁豪华大床房吧",
         "assertType": "KEYWORD_MATCH",
-        "expectedVars": ["hotelName"]
+        "expectedVars": [
+          "hotelName"
+        ]
       }
     ]
   }
@@ -282,18 +287,18 @@ public class ProductQueryGenerator extends LoaderBasedDataGenerator {
 
 **字段说明：**
 
-| 字段 | 说明 |
-|---|---|
-| `scenarioId` | 场景唯一标识 |
-| `sparqlTemplate` | 用于从知识图谱中抽取数据的 SPARQL 查询语句 |
-| `minSimilarity` | 生成对话与标杆对话的最小相似度（余弦相似度） |
-| `maxSimilarity` | 生成对话与标杆对话的最大相似度（超过此值视为过于相似，同样丢弃） |
-| `goldenCase.kgDataUsed` | 标杆用例使用的图谱数据（键值对） |
-| `goldenCase.dialogue` | 标杆对话轮次列表 |
-| `dialogue[].turn` | 轮次编号（从 1 开始） |
-| `dialogue[].query` | 该轮的标杆 Query |
-| `dialogue[].assertType` | 断言类型（如 `KEYWORD_MATCH`） |
-| `dialogue[].expectedVars` | 期望关键词对应的图谱变量名，运行时会替换为真实图谱数据 |
+| 字段                        | 说明                               |
+|---------------------------|----------------------------------|
+| `scenarioId`              | 场景唯一标识                           |
+| `sparqlTemplate`          | 用于从知识图谱中抽取数据的 SPARQL 查询语句        |
+| `minSimilarity`           | 生成对话与标杆对话的最小相似度（余弦相似度）           |
+| `maxSimilarity`           | 生成对话与标杆对话的最大相似度（超过此值视为过于相似，同样丢弃） |
+| `goldenCase.kgDataUsed`   | 标杆用例使用的图谱数据（键值对）                 |
+| `goldenCase.dialogue`     | 标杆对话轮次列表                         |
+| `dialogue[].turn`         | 轮次编号（从 1 开始）                     |
+| `dialogue[].query`        | 该轮的标杆 Query                      |
+| `dialogue[].assertType`   | 断言类型（如 `KEYWORD_MATCH`）          |
+| `dialogue[].expectedVars` | 期望关键词对应的图谱变量名，运行时会替换为真实图谱数据      |
 
 #### 知识图谱文件（Turtle 格式 .ttl）
 
@@ -313,18 +318,18 @@ ex:hotel2 a ex:Hotel ;
 
 #### 配置说明（`KGBasedQueryGeneratorConfig`）
 
-| 参数 | 类型 | 默认值 | 说明 |
-|---|---|---|---|
-| `kgFilePath` | String | 无（**必填**） | 知识图谱文件路径（文件系统路径或 classpath 路径） |
-| `scenarioConfigFilePath` | `List<String>` | 无（**必填**） | 场景配置文件路径列表 |
-| `llmService` | `LLMService` | 无（**必填**） | 调用的大模型服务 |
-| `enableSimilarityFilter` | Boolean | false | 是否开启相似度过滤 |
-| `generateCount` | Integer | 1 | 每个场景配置生成的会话数 |
-| `enableOneRawOneSession` | Boolean | false | true=每行数据代表一个完整会话；false=每行代表一轮 Query |
-| `caseIdPrefix` | String | `gen_case_` | 生成用例 ID 的前缀 |
-| `sessionIdFieldName` | String | `sessionId` | 输出中会话 ID 的字段名 |
-| `turnFieldName` | String | `turn` | 输出中轮次的字段名 |
-| `queryFieldName` | String | `query` | 输出中 Query 的字段名 |
+| 参数                       | 类型             | 默认值         | 说明                                   |
+|--------------------------|----------------|-------------|--------------------------------------|
+| `kgFilePath`             | String         | 无（**必填**）   | 知识图谱文件路径（文件系统路径或 classpath 路径）       |
+| `scenarioConfigFilePath` | `List<String>` | 无（**必填**）   | 场景配置文件路径列表                           |
+| `llmService`             | `LLMService`   | 无（**必填**）   | 调用的大模型服务                             |
+| `enableSimilarityFilter` | Boolean        | false       | 是否开启相似度过滤                            |
+| `generateCount`          | Integer        | 1           | 每个场景配置生成的会话数                         |
+| `enableOneRawOneSession` | Boolean        | false       | true=每行数据代表一个完整会话；false=每行代表一轮 Query |
+| `caseIdPrefix`           | String         | `gen_case_` | 生成用例 ID 的前缀                          |
+| `sessionIdFieldName`     | String         | `sessionId` | 输出中会话 ID 的字段名                        |
+| `turnFieldName`          | String         | `turn`      | 输出中轮次的字段名                            |
+| `queryFieldName`         | String         | `query`     | 输出中 Query 的字段名                       |
 
 #### 两种输出格式对比
 
@@ -334,9 +339,27 @@ ex:hotel2 a ex:Hotel ;
 
 ```json
 [
-  {"testCaseId": "gen_case_001", "scenarioId": "hotel_booking", "sessionId": "uuid-xxx", "turn": 1, "query": "帮我搜索一下杭州的酒店"},
-  {"testCaseId": "gen_case_001", "scenarioId": "hotel_booking", "sessionId": "uuid-xxx", "turn": 2, "query": "有528元的吗"},
-  {"testCaseId": "gen_case_001", "scenarioId": "hotel_booking", "sessionId": "uuid-xxx", "turn": 3, "query": "帮我预订西湖景观大床房"}
+  {
+    "testCaseId": "gen_case_001",
+    "scenarioId": "hotel_booking",
+    "sessionId": "uuid-xxx",
+    "turn": 1,
+    "query": "帮我搜索一下杭州的酒店"
+  },
+  {
+    "testCaseId": "gen_case_001",
+    "scenarioId": "hotel_booking",
+    "sessionId": "uuid-xxx",
+    "turn": 2,
+    "query": "有528元的吗"
+  },
+  {
+    "testCaseId": "gen_case_001",
+    "scenarioId": "hotel_booking",
+    "sessionId": "uuid-xxx",
+    "turn": 3,
+    "query": "帮我预订西湖景观大床房"
+  }
 ]
 ```
 
@@ -349,10 +372,21 @@ ex:hotel2 a ex:Hotel ;
   {
     "testCaseId": "gen_case_001",
     "scenarioId": "hotel_booking",
-    "kgSource": {"hotelName": "西湖景观大床房", "price": "528"},
+    "kgSource": {
+      "hotelName": "西湖景观大床房",
+      "price": "528"
+    },
     "queries": [
-      {"sessionId": "uuid-xxx", "turn": 1, "query": "帮我搜索一下杭州的酒店"},
-      {"sessionId": "uuid-xxx", "turn": 2, "query": "有528元的吗"}
+      {
+        "sessionId": "uuid-xxx",
+        "turn": 1,
+        "query": "帮我搜索一下杭州的酒店"
+      },
+      {
+        "sessionId": "uuid-xxx",
+        "turn": 2,
+        "query": "有528元的吗"
+      }
     ]
   }
 ]
@@ -363,40 +397,39 @@ ex:hotel2 a ex:Hotel ;
 ```java
 // 1. 配置LLM服务
 LLMService llmService = LLMServiceFactory.create(
-    LLMServiceConfig.builder()
-        .apiKey("your-api-key")
-        .model("gpt-4o")
-        .build()
-);
+                LLMServiceConfig.builder()
+                        .apiKey("your-api-key")
+                        .model("gpt-4o")
+                        .build()
+        );
 
 // 2. 构建KGBasedQueryGenerator配置
 KGBasedQueryGeneratorConfig config = KGBasedQueryGeneratorConfig.builder()
-    .kgFilePath("src/test/resources/knowledge_graph/hotel.ttl")  // KG文件路径
-    .scenarioConfigFilePath(ListUtils.of(
-        "src/test/resources/scenarios/hotel_booking.json",       // 场景配置1
-        "src/test/resources/scenarios/hotel_cancel.json"         // 场景配置2
-    ))
-    .llmService(llmService)
-    .generateCount(10)                  // 每个场景生成10个会话
-    .enableSimilarityFilter(true)       // 开启相似度过滤
-    .threadNum(3)                       // 3线程并发
-    .enableOutputFile(true)             // 导出生成数据
-    .outputFileName("hotel_kg_eval_data")
-    .genDataExporterList(ListUtils.of(
-        new ExcelGenDataExporter(),
-        new JsonFileGenDataExporter()
-    ))
-    .build();
+        .kgFilePath("src/test/resources/knowledge_graph/hotel.ttl")  // KG文件路径
+        .scenarioConfigFilePath(ListUtils.of(
+                "src/test/resources/scenarios/hotel_booking.json",       // 场景配置1
+                "src/test/resources/scenarios/hotel_cancel.json"         // 场景配置2
+        ))
+        .llmService(llmService)
+        .generateCount(10)                  // 每个场景生成10个会话
+        .enableSimilarityFilter(true)       // 开启相似度过滤
+        .threadNum(3)                       // 3线程并发
+        .enableOutputFile(true)             // 导出生成数据
+        .outputFileName("hotel_kg_eval_data")
+        .genDataExporterList(ListUtils.of(
+                new ExcelGenDataExporter(),
+                new JsonFileGenDataExporter()
+        ))
+        .build();
 
 // 3. 将生成器加入工作流
 KGBasedQueryGenerator generator = new KGBasedQueryGenerator(config);
 
 Workflow workflow = Workflow.builder()
-    .addNode(generator)
-    // ... 后续评测节点
-    .build();
+        .addNode(generator)
+        // ... 后续评测节点
+        .build();
 ```
-
 
 ### 4. MultiDataGenerator — 多源数据生成器
 
@@ -404,26 +437,24 @@ Workflow workflow = Workflow.builder()
 
 ```java
 MultiDataGeneratorConfig config = MultiDataGeneratorConfig.builder()
-    .dataGenerators(ListUtils.of(
-        new EvalCaseDataGenerator(config1),  // 来源1
-        new EvalCaseDataGenerator(config2),  // 来源2
-        new KGBasedQueryGenerator(kgConfig)  // 来源3
-    ))
-    .build();
+        .dataGenerators(ListUtils.of(
+                new EvalCaseDataGenerator(config1),  // 来源1
+                new EvalCaseDataGenerator(config2),  // 来源2
+                new KGBasedQueryGenerator(kgConfig)  // 来源3
+        ))
+        .build();
 
 MultiDataGenerator generator = new MultiDataGenerator(config);
 ```
 
-
 ## 数据生成器 vs 数据加载器
 
-| 对比维度 | DataLoader | DataGenerator |
-|---|---|---|
-| 数据来源 | 外部文件/数据库/API | 程序逻辑动态生成 |
-| 常见用途 | 加载已有的评测数据集 | 自动化构建新的评测数据集 |
-| 是否依赖外部存储 | 是（文件、数据库等） | 否（可完全通过代码生成） |
-| 支持断点续评 | 不直接支持 | 不直接支持（需配合 `DeltaEvalFacade`） |
-
+| 对比维度     | DataLoader   | DataGenerator                |
+|----------|--------------|------------------------------|
+| 数据来源     | 外部文件/数据库/API | 程序逻辑动态生成                     |
+| 常见用途     | 加载已有的评测数据集   | 自动化构建新的评测数据集                 |
+| 是否依赖外部存储 | 是（文件、数据库等）   | 否（可完全通过代码生成）                 |
+| 支持断点续评   | 不直接支持        | 不直接支持（需配合 `DeltaEvalFacade`） |
 
 ## 完整流程示例：自动构建评测数据集
 

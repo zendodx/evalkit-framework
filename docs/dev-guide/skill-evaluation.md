@@ -35,36 +35,36 @@ Skill 评测的核心流程可以概括为：
 
 **适用场景**：有明确正确答案或格式规范要求的场景，追求高速度、低成本、确定性结果。
 
-| 方案 | 说明 | EvalKit 对应类 |
-|------|------|---------------|
-| **关键词覆盖检查** | 输出中是否包含必要关键词 | 继承 `Scorer` 实现 `eval()` |
-| **TF-IDF 向量相似度** | 与标准答案做余弦相似度比较 | `VectorSimilarityScorer` |
-| **格式/正则校验** | 验证输出格式（JSON、手机号、日期等） | 继承 `Checker` + `MultiCheckerBasedScorer` |
-| **长度/字数检查** | 回复是否过短或超长 | 继承 `Scorer` 自定义 `eval()` |
+| 方案               | 说明                   | EvalKit 对应类                              |
+|------------------|----------------------|------------------------------------------|
+| **关键词覆盖检查**      | 输出中是否包含必要关键词         | 继承 `Scorer` 实现 `eval()`                  |
+| **TF-IDF 向量相似度** | 与标准答案做余弦相似度比较        | `VectorSimilarityScorer`                 |
+| **格式/正则校验**      | 验证输出格式（JSON、手机号、日期等） | 继承 `Checker` + `MultiCheckerBasedScorer` |
+| **长度/字数检查**      | 回复是否过短或超长            | 继承 `Scorer` 自定义 `eval()`                 |
 
 ```java
 // 示例：关键词必须全部覆盖（必过指标）
 Scorer keywordScorer = new Scorer(
-    ScorerConfig.builder()
-        .metricName("关键词覆盖")
-        .threshold(1.0)
-        .star(true)   // 一票否决：不通过则整体不通过
-        .build()
-) {
-    @Override
-    public ScorerResult eval(DataItem dataItem) {
-        String response = dataItem.getApiCompletionResult().get("response");
-        String[] required = {"价格", "座位", "出发时间"};
-        List<String> missing = Arrays.stream(required)
-                .filter(kw -> !response.contains(kw))
-                .collect(Collectors.toList());
-        ScorerResult result = new ScorerResult();
-        result.setMetric("关键词覆盖");
-        result.setScore(missing.isEmpty() ? 1.0 : 0.0);
-        result.setReason(missing.isEmpty() ? "全部关键词已覆盖" : "缺少关键词：" + String.join("、", missing));
-        return result;
-    }
-};
+                ScorerConfig.builder()
+                        .metricName("关键词覆盖")
+                        .threshold(1.0)
+                        .star(true)   // 一票否决：不通过则整体不通过
+                        .build()
+        ) {
+            @Override
+            public ScorerResult eval(DataItem dataItem) {
+                String response = dataItem.getApiCompletionResult().get("response");
+                String[] required = {"价格", "座位", "出发时间"};
+                List<String> missing = Arrays.stream(required)
+                        .filter(kw -> !response.contains(kw))
+                        .collect(Collectors.toList());
+                ScorerResult result = new ScorerResult();
+                result.setMetric("关键词覆盖");
+                result.setScore(missing.isEmpty() ? 1.0 : 0.0);
+                result.setReason(missing.isEmpty() ? "全部关键词已覆盖" : "缺少关键词：" + String.join("、", missing));
+                return result;
+            }
+        };
 ```
 
 **优点**：速度快、成本零、结果可复现
@@ -82,16 +82,16 @@ Scorer keywordScorer = new Scorer(
 
 ```java
 PromptBasedScorer scorer = new PromptBasedScorer(
-    PromptBasedScorerConfig.builder()
-        .metricName("回答准确性")
-        .llmService(myLLMService)
-        .threshold(0.6)
-        .build()
+        PromptBasedScorerConfig.builder()
+                .metricName("回答准确性")
+                .llmService(myLLMService)
+                .threshold(0.6)
+                .build()
 ) {
     @Override
     public String prepareSysPrompt() {
         return "你是评测专家。请评估候选答案是否准确回答了用户的问题。" +
-               "输出 JSON 格式：{\"score\": 0到1之间的小数, \"reason\": \"评判理由\"}";
+                "输出 JSON 格式：{\"score\": 0到1之间的小数, \"reason\": \"评判理由\"}";
     }
 
     @Override
@@ -114,31 +114,32 @@ PromptBasedScorer scorer = new PromptBasedScorer(
 
 框架内置了常用的专项评估器，可直接使用：
 
-| 评估器 | 评测维度 | 输出范围 | 适用场景 |
-|--------|----------|----------|---------|
-| `AnswerRelevancyScorer` | 答案是否切题，回答了核心诉求 | 0~1 | 通用问答类 Skill |
-| `SemanticConsistencyScorer` | 与标准答案语义是否完全一致 | 0 或 1 | 需精确语义等价判断 |
-| `SecurityScorer` | 内容安全（政治/暴力/色情/诈骗等） | 0 或 1 | 所有对外 Skill |
-| `GSBScorer` | 准确性+相关性+完整性+流畅性综合打分 | 0~1 | A/B 对比实验 |
+| 评估器                         | 评测维度                | 输出范围  | 适用场景        |
+|-----------------------------|---------------------|-------|-------------|
+| `AnswerRelevancyScorer`     | 答案是否切题，回答了核心诉求      | 0~1   | 通用问答类 Skill |
+| `SemanticConsistencyScorer` | 与标准答案语义是否完全一致       | 0 或 1 | 需精确语义等价判断   |
+| `SecurityScorer`            | 内容安全（政治/暴力/色情/诈骗等）  | 0 或 1 | 所有对外 Skill  |
+| `GSBScorer`                 | 准确性+相关性+完整性+流畅性综合打分 | 0~1   | A/B 对比实验    |
 
 ```java
 // 示例：答案相关性评估
 AnswerRelevancyScorer relevancyScorer = new AnswerRelevancyScorer(
-    PromptBasedScorerConfig.builder()
-        .metricName("答案相关性")
-        .llmService(myLLMService)
-        .threshold(0.7)
-        .build()
-) {
-    @Override
-    public String prepareQuery(InputData in, ApiCompletionResult out) {
-        return in.get("query");
-    }
-    @Override
-    public String prepareAnswer(InputData in, ApiCompletionResult out) {
-        return out.get("response");
-    }
-};
+                PromptBasedScorerConfig.builder()
+                        .metricName("答案相关性")
+                        .llmService(myLLMService)
+                        .threshold(0.7)
+                        .build()
+        ) {
+            @Override
+            public String prepareQuery(InputData in, ApiCompletionResult out) {
+                return in.get("query");
+            }
+
+            @Override
+            public String prepareAnswer(InputData in, ApiCompletionResult out) {
+                return out.get("response");
+            }
+        };
 ```
 
 #### 2.2.3 量规评估器 `RubricBasedScorer`（最系统化）
@@ -147,42 +148,42 @@ AnswerRelevancyScorer relevancyScorer = new AnswerRelevancyScorer(
 
 ```java
 RubricBasedScorer scorer = new RubricBasedScorer(
-    RubricBasedScorerConfig.builder()
-        .metricName("综合质量评估")
-        .llmService(myLLMService)
-        .criteria(Arrays.asList(
-            // 安全性：二元分，一票否决
-            RubricCriteria.builder()
-                .name("Safety")
-                .definition("回复是否包含有害、违规、歧视性内容")
-                .scoreType(RubricScoreType.BINARY)
-                .maxScore(1).minScore(0).passScore(1)
-                .scoringGuide("1=无任何有害内容; 0=包含有害内容")
-                .star(true)
-                .build(),
-            // 准确性：5 级阶梯，权重 2 倍
-            RubricCriteria.builder()
-                .name("Accuracy")
-                .definition("回复的事实准确程度，有无错误或捏造")
-                .scoreType(RubricScoreType.STEPPED)
-                .maxScore(5).minScore(0).passScore(3)
-                .scoringGuide("5=完全准确; 4=基本准确有小偏差; 3=整体可信有遗漏; 2=有明显错误; 1=大量虚构")
-                .weight(2.0)
-                .build(),
-            // 流畅性：5 级阶梯，权重 1 倍
-            RubricCriteria.builder()
-                .name("Fluency")
-                .definition("回复的语言流畅度和可读性")
-                .scoreType(RubricScoreType.STEPPED)
-                .maxScore(5).minScore(0).passScore(3)
-                .scoringGuide("5=表达精准流畅; 4=基本流畅; 3=可读但有语法问题; 2=较难理解; 1=不可读")
-                .weight(1.0)
+        RubricBasedScorerConfig.builder()
+                .metricName("综合质量评估")
+                .llmService(myLLMService)
+                .criteria(Arrays.asList(
+                        // 安全性：二元分，一票否决
+                        RubricCriteria.builder()
+                                .name("Safety")
+                                .definition("回复是否包含有害、违规、歧视性内容")
+                                .scoreType(RubricScoreType.BINARY)
+                                .maxScore(1).minScore(0).passScore(1)
+                                .scoringGuide("1=无任何有害内容; 0=包含有害内容")
+                                .star(true)
+                                .build(),
+                        // 准确性：5 级阶梯，权重 2 倍
+                        RubricCriteria.builder()
+                                .name("Accuracy")
+                                .definition("回复的事实准确程度，有无错误或捏造")
+                                .scoreType(RubricScoreType.STEPPED)
+                                .maxScore(5).minScore(0).passScore(3)
+                                .scoringGuide("5=完全准确; 4=基本准确有小偏差; 3=整体可信有遗漏; 2=有明显错误; 1=大量虚构")
+                                .weight(2.0)
+                                .build(),
+                        // 流畅性：5 级阶梯，权重 1 倍
+                        RubricCriteria.builder()
+                                .name("Fluency")
+                                .definition("回复的语言流畅度和可读性")
+                                .scoreType(RubricScoreType.STEPPED)
+                                .maxScore(5).minScore(0).passScore(3)
+                                .scoringGuide("5=表达精准流畅; 4=基本流畅; 3=可读但有语法问题; 2=较难理解; 1=不可读")
+                                .weight(1.0)
+                                .build()
+                ))
+                .mergeStrategy(RubricMergeStrategy.STAR_GATE)  // Safety 不过则整体为 0
+                .threshold(0.6)
+                .criteriaThreadNum(3)   // 3个维度并发调用 LLM
                 .build()
-        ))
-        .mergeStrategy(RubricMergeStrategy.STAR_GATE)  // Safety 不过则整体为 0
-        .threshold(0.6)
-        .criteriaThreadNum(3)   // 3个维度并发调用 LLM
-        .build()
 ) {
     @Override
     public String prepareUserPrompt(InputData in, ApiCompletionResult out) {
@@ -193,13 +194,13 @@ RubricBasedScorer scorer = new RubricBasedScorer(
 
 **RubricMergeStrategy 五种合并策略：**
 
-| 策略 | 公式 | 适用场景 |
-|------|------|---------|
-| `WEIGHTED_AVERAGE`（默认） | `Σ(score_i × weight_i) / Σ(weight_i)` | 各维度重要程度不同 |
-| `SIMPLE_AVERAGE` | `Σ(score_i) / N` | 各维度等权重 |
-| `LOGICAL_AND` | 任意维度未达标则取最差分 | 要求所有维度均达标 |
-| `STAR_GATE` | `star` 维度未达标则整体为 0 | 存在一票否决项（如安全合规） |
-| `COMPLETION_RATE` | 达标维度数 / 总维度数 | 关注"多少维度达标"而非具体分值 |
+| 策略                     | 公式                                    | 适用场景             |
+|------------------------|---------------------------------------|------------------|
+| `WEIGHTED_AVERAGE`（默认） | `Σ(score_i × weight_i) / Σ(weight_i)` | 各维度重要程度不同        |
+| `SIMPLE_AVERAGE`       | `Σ(score_i) / N`                      | 各维度等权重           |
+| `LOGICAL_AND`          | 任意维度未达标则取最差分                          | 要求所有维度均达标        |
+| `STAR_GATE`            | `star` 维度未达标则整体为 0                    | 存在一票否决项（如安全合规）   |
+| `COMPLETION_RATE`      | 达标维度数 / 总维度数                          | 关注"多少维度达标"而非具体分值 |
 
 ---
 
@@ -209,13 +210,13 @@ RubricBasedScorer scorer = new RubricBasedScorer(
 
 ```java
 DifyWorkflowScorer difyScorer = new DifyWorkflowScorer(
-    DifyWorkflowScorerConfig.builder()
-        .metricName("Dify评分")
-        .apiKey("app-xxxxxxxxxxxx")
-        .baseUrl("https://api.dify.ai")
-        .userName("evalkit-user")
-        .threshold(0.7)
-        .build()
+        DifyWorkflowScorerConfig.builder()
+                .metricName("Dify评分")
+                .apiKey("app-xxxxxxxxxxxx")
+                .baseUrl("https://api.dify.ai")
+                .userName("evalkit-user")
+                .threshold(0.7)
+                .build()
 ) {
     @Override
     public Map<String, Object> prepareInputParams(InputData in, ApiCompletionResult out) {
@@ -253,11 +254,11 @@ DifyWorkflowScorer difyScorer = new DifyWorkflowScorer(
     → DeltaEvalFacade（断点续评，ActiveMQ + SQLite）
 ```
 
-| 评测模式 | 类 | 适用场景 | 断点续评 |
-|---------|-----|---------|---------|
-| **全量评测** | `FullEvalFacade` | 小数据集（< 1000条），一次性评测 | ✗ |
-| **增量评测** | `DeltaEvalFacade` | 大数据集，需断点续评 | ✓ |
-| **有序增量评测** | `OrderedDeltaEvalFacade` | 多轮对话，同 session 需有序执行 | ✓ |
+| 评测模式       | 类                        | 适用场景                 | 断点续评 |
+|------------|--------------------------|----------------------|------|
+| **全量评测**   | `FullEvalFacade`         | 小数据集（< 1000条），一次性评测  | ✗    |
+| **增量评测**   | `DeltaEvalFacade`        | 大数据集，需断点续评           | ✓    |
+| **有序增量评测** | `OrderedDeltaEvalFacade` | 多轮对话，同 session 需有序执行 | ✓    |
 
 ---
 
@@ -279,42 +280,49 @@ Skill 评测维度组合（推荐）：
 ```java
 // 1. LLM 服务（用于 LLM-as-Judge 评估器）
 LLMService llmService = LLMServiceFactory.createDeepSeekService(
-    LLMServiceConfig.builder().model("deepseek-chat").temperature(0.1).build(),
-    System.getenv("DEEPSEEK_API_KEY")
-);
+                LLMServiceConfig.builder().model("deepseek-chat").temperature(0.1).build(),
+                System.getenv("DEEPSEEK_API_KEY")
+        );
 
 // 2. 评测工作流：调用 Skill + 并行打分
 Workflow evalWorkflow = Workflow.builder()
-    .addNode(new MyHotelSearchApiCompletion())          // 调用酒店搜索接口
-    .addNode(new SecurityScorer(PromptBasedScorerConfig.builder()
-        .metricName("内容安全").llmService(llmService)
-        .star(true).threshold(1.0).build()) { ... })    // 安全必过
-    .addNode(new AnswerRelevancyScorer(PromptBasedScorerConfig.builder()
-        .metricName("答案相关性").llmService(llmService)
-        .threshold(0.7).build()) { ... })               // 相关性
-    .addNode(new VectorSimilarityScorer(VectorSimilarityScorerConfig.builder()
-        .metricName("语义相似度").similarityThreshold(0.5).build()) { ... }) // 快速相似度
-    .build();
+        .addNode(new MyHotelSearchApiCompletion())          // 调用酒店搜索接口
+        .addNode(new SecurityScorer(PromptBasedScorerConfig.builder()
+                .metricName("内容安全").llmService(llmService)
+                .star(true).threshold(1.0).build()) { ...
+        })    // 安全必过
+        .addNode(new AnswerRelevancyScorer(PromptBasedScorerConfig.builder()
+                .metricName("答案相关性").llmService(llmService)
+                .threshold(0.7).build()) { ...
+        })               // 相关性
+        .addNode(new VectorSimilarityScorer(VectorSimilarityScorerConfig.builder()
+                .metricName("语义相似度").similarityThreshold(0.5).build()) { ...
+        }) // 快速相似度
+        .build();
 
 // 3. 上报工作流：统计 + 输出
 Workflow reportWorkflow = Workflow.builder()
-    .addNode(new BasicCounter())
-    .addNode(new ExcelReporter("hotel_eval_result"))
-    .addNode(new HtmlReporter("hotel_eval_report"))
-    .build();
+        .addNode(new BasicCounter())
+        .addNode(new ExcelReporter("hotel_eval_result"))
+        .addNode(new HtmlReporter("hotel_eval_report"))
+        .build();
 
 // 4. 运行评测（数据量大时改用 DeltaEvalFacade）
 FullEvalConfig config = FullEvalConfig.builder()
-    .taskName("酒店搜索质量评测-v2.0")
-    .dataLoader(new ExcelDataLoader(ExcelDataLoaderConfig.builder()
-        .filePath("hotel_testcases.xlsx").build()))
-    .evalWorkflow(evalWorkflow)
-    .reportWorkflow(reportWorkflow)
-    .threadNum(8)
-    .passScore(0.6)
-    .build();
+        .taskName("酒店搜索质量评测-v2.0")
+        .dataLoader(new ExcelDataLoader(ExcelDataLoaderConfig.builder()
+                .filePath("hotel_testcases.xlsx").build()))
+        .evalWorkflow(evalWorkflow)
+        .reportWorkflow(reportWorkflow)
+        .threadNum(8)
+        .passScore(0.6)
+        .build();
 
-new FullEvalFacade(config).run();
+new
+
+FullEvalFacade(config).
+
+run();
 ```
 
 ---
@@ -326,32 +334,37 @@ new FullEvalFacade(config).run();
 ```java
 // 接口调用器：同 sessionId 的请求按 round 顺序串行执行
 OrderedApiCompletion apiCompletion = new OrderedApiCompletion(
-    ApiCompletionConfig.builder().threadNum(8).build()
-) {
-    @Override
-    public String prepareOrderKey(DataItem dataItem) {
-        return dataItem.getInputData().get("sessionId");
-    }
-    @Override
-    public Comparator<DataItem> prepareComparator() {
-        return Comparator.comparingInt(d -> Integer.parseInt(d.getInputData().get("round")));
-    }
-    @Override
-    protected ApiCompletionResult invoke(DataItem dataItem) {
-        // 利用内置工具方法获取历史对话上下文
-        List<DataItem> prevItems = getPrevDataItems(dataItem);
-        // 构建历史消息并调用接口...
-    }
-};
+                ApiCompletionConfig.builder().threadNum(8).build()
+        ) {
+            @Override
+            public String prepareOrderKey(DataItem dataItem) {
+                return dataItem.getInputData().get("sessionId");
+            }
+
+            @Override
+            public Comparator<DataItem> prepareComparator() {
+                return Comparator.comparingInt(d -> Integer.parseInt(d.getInputData().get("round")));
+            }
+
+            @Override
+            protected ApiCompletionResult invoke(DataItem dataItem) {
+                // 利用内置工具方法获取历史对话上下文
+                List<DataItem> prevItems = getPrevDataItems(dataItem);
+                // 构建历史消息并调用接口...
+            }
+        };
 
 // 评测门面：有序增量评测
 public class MyOrderedEvalFacade extends OrderedDeltaEvalFacade {
-    public MyOrderedEvalFacade(DeltaEvalConfig config) { super(config); }
+    public MyOrderedEvalFacade(DeltaEvalConfig config) {
+        super(config);
+    }
 
     @Override
     public String prepareOrderKey(InputData inputData) {
         return (String) inputData.getInputItem().get("sessionId");
     }
+
     @Override
     public Comparator<InputData> prepareComparator() {
         return Comparator.comparingInt(d -> Integer.parseInt(d.getInputItem().get("round").toString()));
@@ -359,22 +372,23 @@ public class MyOrderedEvalFacade extends OrderedDeltaEvalFacade {
 }
 ```
 
-在评估器中，可以通过 `DataItem.extra` 读取 `ApiCompletion` 预先写入的历史对话信息（详见[接口调用器文档](../user-guide/api-completion.md)）。
+在评估器中，可以通过 `DataItem.extra` 读取 `ApiCompletion`
+预先写入的历史对话信息（详见[接口调用器文档](../user-guide/api-completion.md)）。
 
 ---
 
 ## 六、评测方案选型指南
 
-| 场景 | 推荐方案 | 说明 |
-|------|---------|------|
-| 有标准答案、追求速度低成本 | `VectorSimilarityScorer` + 规则 `Scorer` | 纯本地计算，无 LLM 调用费用 |
-| 需要语义理解、主观质量判断 | `PromptBasedScorer` / `AnswerRelevancyScorer` | LLM-as-Judge，理解语义等价 |
-| 多维度系统化评测，需要可解释性 | `RubricBasedScorer` | CoT 推理 + Few-shot 锚点，打分透明可审计 |
-| A/B 实验对比新旧版本 Skill | `GSBScorer` | Good/Same/Bad 三档，直观反映迭代效果 |
-| 内容安全强制门控 | 任意 `Scorer` 配置 `star=true` | 安全不过则整体不通过，无论其他指标分数多高 |
-| 多轮对话 Skill | `OrderedApiCompletion` + `OrderedDeltaEvalFacade` | 保证同 session 按轮次顺序执行 |
-| 大规模评测（断点续评） | `DeltaEvalFacade`（ActiveMQ + SQLite） | 支持中断恢复，不丢数据 |
-| 已有 Dify 评测流程 | `DifyWorkflowScorer` | 复用已搭建的工作流，降低迁移成本 |
+| 场景                 | 推荐方案                                              | 说明                           |
+|--------------------|---------------------------------------------------|------------------------------|
+| 有标准答案、追求速度低成本      | `VectorSimilarityScorer` + 规则 `Scorer`            | 纯本地计算，无 LLM 调用费用             |
+| 需要语义理解、主观质量判断      | `PromptBasedScorer` / `AnswerRelevancyScorer`     | LLM-as-Judge，理解语义等价          |
+| 多维度系统化评测，需要可解释性    | `RubricBasedScorer`                               | CoT 推理 + Few-shot 锚点，打分透明可审计 |
+| A/B 实验对比新旧版本 Skill | `GSBScorer`                                       | Good/Same/Bad 三档，直观反映迭代效果    |
+| 内容安全强制门控           | 任意 `Scorer` 配置 `star=true`                        | 安全不过则整体不通过，无论其他指标分数多高        |
+| 多轮对话 Skill         | `OrderedApiCompletion` + `OrderedDeltaEvalFacade` | 保证同 session 按轮次顺序执行          |
+| 大规模评测（断点续评）        | `DeltaEvalFacade`（ActiveMQ + SQLite）              | 支持中断恢复，不丢数据                  |
+| 已有 Dify 评测流程       | `DifyWorkflowScorer`                              | 复用已搭建的工作流，降低迁移成本             |
 
 ---
 
@@ -382,11 +396,11 @@ public class MyOrderedEvalFacade extends OrderedDeltaEvalFacade {
 
 使用 LLM-as-Judge 时，以下参数配置会显著影响评测稳定性：
 
-| 参数 | 推荐值 | 说明 |
-|------|--------|------|
-| `temperature` | `0.1~0.3` | 打分/判断类任务追求确定性，不宜过高 |
-| `retryTimes` | `3` | 解析失败时重试，防止偶发格式错误导致数据缺失 |
-| `RubricBasedScorer.criteriaThreadNum` | 与维度数相同 | 各维度 LLM 调用全并发，显著缩短评测耗时 |
-| `RubricBasedScorer.sampleTimes` | `0`（单次）或 `3`（多次采样） | 对稳定性要求高的场景可多次采样取均值 |
-| `RubricCriteria.anchors` | 强烈建议配置 | Few-shot 锚点显著校准中间分值漂移，提升打分一致性 |
+| 参数                                    | 推荐值                | 说明                            |
+|---------------------------------------|--------------------|-------------------------------|
+| `temperature`                         | `0.1~0.3`          | 打分/判断类任务追求确定性，不宜过高            |
+| `retryTimes`                          | `3`                | 解析失败时重试，防止偶发格式错误导致数据缺失        |
+| `RubricBasedScorer.criteriaThreadNum` | 与维度数相同             | 各维度 LLM 调用全并发，显著缩短评测耗时        |
+| `RubricBasedScorer.sampleTimes`       | `0`（单次）或 `3`（多次采样） | 对稳定性要求高的场景可多次采样取均值            |
+| `RubricCriteria.anchors`              | 强烈建议配置             | Few-shot 锚点显著校准中间分值漂移，提升打分一致性 |
 
