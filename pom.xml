@@ -60,7 +60,7 @@
         <project.build.resourceEncoding>${encoding}</project.build.resourceEncoding>
         <project.reporting.outputEncoding>${encoding}</project.reporting.outputEncoding>
         <!--插件版本-->
-        <central-publishing-maven-plugin.version>0.4.0</central-publishing-maven-plugin.version>
+        <central-publishing-maven-plugin.version>0.11.0</central-publishing-maven-plugin.version>
         <maven-gpg-plugin.version>1.5</maven-gpg-plugin.version>
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
         <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
@@ -106,7 +106,8 @@
                 <extensions>true</extensions>
                 <configuration>
                     <publishingServerId>zendodx</publishingServerId>
-                    <tokenAuth>true</tokenAuth>
+                    <!-- 上传后自动触发 Publish，免去手动登录门户点击发布 -->
+                    <autoPublish>true</autoPublish>
                 </configuration>
             </plugin>
             <!-- gpg插件 -->
