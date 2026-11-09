@@ -10,17 +10,20 @@ has_toc: true
 
 ## 框架简介
 
-EvalKit Framework 是一个基于 Java 的 **自动化 AI 评测框架**，以 DAG（有向无环图）工作流为核心，让你可以像搭积木一样把"加载数据 → 调用接口 → 评分 → 统计 → 上报"几个环节串联起来，快速完成对大模型或 AI 业务接口的自动化评测。
+EvalKit Framework 是一个基于 Java 的 **自动化 AI 评测框架**，以 DAG（有向无环图）工作流为核心，让你可以像搭积木一样把"加载数据 → 调用
+接口 → 评分 → 统计 → 上报"几个环节串联起来，快速完成对大模型或 AI 业务接口的自动化评测。
+
+![evalkit_dag.png](../files/evalkit_dag.png)
 
 **核心特性**
 
-| 特性 | 说明 |
-|------|------|
-| **DAG 工作流** | 基于有向无环图并行执行，多个评估器可以同时跑 |
-| **三种评测模式** | DAG 直接评测 / 全量评测 / 增量断点续评 |
-| **高扩展性** | 所有节点均可继承重写，不依赖 Spring |
+| 特性            | 说明                          |
+|---------------|-----------------------------|
+| **DAG 工作流**   | 基于有向无环图并行执行，多个评估器可以同时跑      |
+| **三种评测模式**    | DAG 直接评测 / 全量评测 / 增量断点续评    |
+| **高扩展性**      | 所有节点均可继承重写，不依赖 Spring       |
 | **内置 LLM 集成** | 一行代码接入 OpenAI、DeepSeek 等大模型 |
-| **轻量依赖** | 不引入 Spring，可嵌入任意 Java 项目 |
+| **轻量依赖**      | 不引入 Spring，可嵌入任意 Java 项目    |
 
 ## 环境要求
 
@@ -30,15 +33,15 @@ EvalKit Framework 是一个基于 Java 的 **自动化 AI 评测框架**，以 D
 ## Maven 引入
 
 ```xml
+
 <dependency>
     <groupId>io.github.zendodx</groupId>
     <artifactId>evalkit-eval</artifactId>
-    <version>1.2.2</version>
+    <version>${evalkit-eval.version}</version>
 </dependency>
 ```
 
 > 最新版本见 [发版历史](../changelog.md)
-
 
 ## 整体架构
 
@@ -55,7 +58,6 @@ Begin（全局配置）
                                 └─ Reporter × N（输出结果）
                                      └─ End（收尾操作）
 ```
-
 
 ## 快速开始
 
@@ -101,10 +103,10 @@ public class QuickStartDemo {
             @Override
             public List<InputData> prepareDataList() {
                 return ListUtils.of(
-                    new InputData(MapUtils.of(
-                        "query",       "帮我制定一份成都3日游攻略",
-                        "groundTruth", "成都3日游推荐：第一天宽窄巷子+锦里；第二天大熊猫基地；第三天都江堰"
-                    ))
+                        new InputData(MapUtils.of(
+                                "query", "帮我制定一份成都3日游攻略",
+                                "groundTruth", "成都3日游推荐：第一天宽窄巷子+锦里；第二天大熊猫基地；第三天都江堰"
+                        ))
                 );
             }
         };
@@ -133,7 +135,7 @@ public class QuickStartDemo {
             public org.apache.commons.lang3.tuple.Pair<String, String> prepareFieldPair(DataItem dataItem) {
                 // 指定要比较的两个字段
                 String groundTruth = dataItem.getInputData().get("groundTruth");
-                String response    = dataItem.getApiCompletionResult().get("response");
+                String response = dataItem.getApiCompletionResult().get("response");
                 return new ImmutablePair<>(groundTruth, response);
             }
         };
@@ -203,7 +205,6 @@ public class QuickStartDemo {
 
 {"passRate":1.0,"avgScore":1.0,"completionSuccessRate":1.0,...}
 ```
-
 
 ## 节点连接规则
 

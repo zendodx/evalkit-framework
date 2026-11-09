@@ -10,7 +10,6 @@ has_toc: true
 
 数据加载器负责将评测数据加载到工作流上下文中，是整个评测流程的第一个数据节点。
 
-
 ## 体系结构
 
 ```
@@ -24,25 +23,24 @@ DataLoader（抽象基类）
 └── MultiDataLoader     聚合多个加载器
 ```
 
-
 ## DataLoader（基类）
 
 所有加载器的基类，可以直接继承并实现 `prepareDataList()` 方法来提供任意来源的数据。
 
 ### 配置项
 
-| 配置项 | 说明 | 必填 | 默认值 |
-|--------|------|------|--------|
-| `offset` | 跳过前 N 条数据 | 否 | 0 |
-| `limit` | 最多加载多少条，`-1` 表示全部 | 否 | -1 |
-| `filters` | 过滤器列表，只加载满足条件的数据 | 否 | 无 |
-| `shuffle` | 是否打乱数据顺序 | 否 | false |
-| `openInjectData` | 是否开启数据注入（把已有的接口结果/评测结果直接注入上下文，跳过重复执行） | 否 | false |
-| `injectDataIndex` | 注入数据索引 | 否 | true |
-| `injectInputData` | 注入输入数据 | 否 | true |
-| `injectApiCompletionResult` | 注入接口调用结果 | 否 | true |
-| `injectEvalResult` | 注入评测结果 | 否 | true |
-| `injectExtra` | 注入额外数据 | 否 | true |
+| 配置项                         | 说明                                    | 必填 | 默认值   |
+|-----------------------------|---------------------------------------|----|-------|
+| `offset`                    | 跳过前 N 条数据                             | 否  | 0     |
+| `limit`                     | 最多加载多少条，`-1` 表示全部                     | 否  | -1    |
+| `filters`                   | 过滤器列表，只加载满足条件的数据                      | 否  | 无     |
+| `shuffle`                   | 是否打乱数据顺序                              | 否  | false |
+| `openInjectData`            | 是否开启数据注入（把已有的接口结果/评测结果直接注入上下文，跳过重复执行） | 否  | false |
+| `injectDataIndex`           | 注入数据索引                                | 否  | true  |
+| `injectInputData`           | 注入输入数据                                | 否  | true  |
+| `injectApiCompletionResult` | 注入接口调用结果                              | 否  | true  |
+| `injectEvalResult`          | 注入评测结果                                | 否  | true  |
+| `injectExtra`               | 注入额外数据                                | 否  | true  |
 
 ### 自定义数据加载器
 
@@ -71,15 +69,14 @@ DataLoader dataLoader = new DataLoader(
 ```java
 // 假设 JSON 文件里已经包含了 inputData + apiCompletionResult
 DataLoader dataLoader = new JsonFileDataLoader(
-        JsonFileDataLoaderConfig.builder()
-                .filePath("eval_result.json")
-                .openInjectData(true)           // 开启注入
-                .injectApiCompletionResult(true) // 注入接口调用结果
-                .injectEvalResult(false)         // 不注入历史评测结果（重新评）
-                .build()
-);
+                JsonFileDataLoaderConfig.builder()
+                        .filePath("eval_result.json")
+                        .openInjectData(true)           // 开启注入
+                        .injectApiCompletionResult(true) // 注入接口调用结果
+                        .injectEvalResult(false)         // 不注入历史评测结果（重新评）
+                        .build()
+        );
 ```
-
 
 ## ExcelDataLoader
 
@@ -89,16 +86,16 @@ DataLoader dataLoader = new JsonFileDataLoader(
 
 包含 `DataLoader` 所有配置，额外配置项：
 
-| 配置项 | 说明 | 必填 | 默认值 |
-|--------|------|------|--------|
-| `filePath` | 文件路径，支持：绝对路径 / 类路径（classpath） / 远程 HTTP 链接 | 是 | 无 |
-| `sheetIndex` | 读取哪个 Sheet（从 0 开始） | 否 | 0 |
+| 配置项          | 说明                                         | 必填 | 默认值 |
+|--------------|--------------------------------------------|----|-----|
+| `filePath`   | 文件路径，支持：绝对路径 / 类路径（classpath） / 远程 HTTP 链接 | 是  | 无   |
+| `sheetIndex` | 读取哪个 Sheet（从 0 开始）                         | 否  | 0   |
 
 ### 示例
 
 ```java
 // Excel 文件内容示例：
-// | query              | groundTruth        |
+// | query           | groundTruth        |
 // | 成都有什么好吃的？ | 火锅、串串、麻辣烫 |
 
 ExcelDataLoader loader = new ExcelDataLoader(
@@ -125,7 +122,6 @@ ExcelDataLoader loader3 = new ExcelDataLoader(
 );
 ```
 
-
 ## CsvDataLoader
 
 从 CSV 文件加载数据。
@@ -134,11 +130,11 @@ ExcelDataLoader loader3 = new ExcelDataLoader(
 
 包含 `DataLoader` 所有配置，额外配置项：
 
-| 配置项 | 说明 | 必填 | 默认值 |
-|--------|------|------|--------|
-| `filePath` | 文件路径，支持绝对路径 / 类路径 / 远程链接 | 是 | 无 |
-| `delimiter` | 分隔符 | 否 | `,` |
-| `hasHeader` | 第一行是否为字段名 | 否 | true |
+| 配置项         | 说明                       | 必填 | 默认值  |
+|-------------|--------------------------|----|------|
+| `filePath`  | 文件路径，支持绝对路径 / 类路径 / 远程链接 | 是  | 无    |
+| `delimiter` | 分隔符                      | 否  | `,`  |
+| `hasHeader` | 第一行是否为字段名                | 否  | true |
 
 ### 示例
 
@@ -156,7 +152,6 @@ CsvDataLoader loader = new CsvDataLoader(
 );
 ```
 
-
 ## JsonFileDataLoader
 
 从 JSON 文件加载数据，支持通过 JSONPath 指定数据所在的节点路径。
@@ -165,10 +160,10 @@ CsvDataLoader loader = new CsvDataLoader(
 
 包含 `DataLoader` 所有配置，额外配置项：
 
-| 配置项 | 说明 | 必填 | 默认值 |
-|--------|------|------|--------|
-| `filePath` | 文件路径，支持绝对路径 / 类路径 / 远程链接 | 是 | 无 |
-| `jsonPath` | JSONPath 表达式，指向数据数组 | 否 | `$`（根节点） |
+| 配置项        | 说明                       | 必填 | 默认值      |
+|------------|--------------------------|----|----------|
+| `filePath` | 文件路径，支持绝对路径 / 类路径 / 远程链接 | 是  | 无        |
+| `jsonPath` | JSONPath 表达式，指向数据数组      | 否  | `$`（根节点） |
 
 ### 示例
 
@@ -176,11 +171,11 @@ CsvDataLoader loader = new CsvDataLoader(
 // JSON 文件格式1：根节点是数组
 // [{"query":"...","groundTruth":"..."},{"query":"..."}]
 JsonFileDataLoader loader1 = new JsonFileDataLoader(
-        JsonFileDataLoaderConfig.builder()
-                .filePath("testcases.json")
-                .jsonPath("$")
-                .build()
-);
+                JsonFileDataLoaderConfig.builder()
+                        .filePath("testcases.json")
+                        .jsonPath("$")
+                        .build()
+        );
 
 // JSON 文件格式2：数组嵌套在某个字段下
 // {"total":10,"data":[{"query":"..."},{"query":"..."}]}
@@ -191,7 +186,6 @@ JsonFileDataLoader loader2 = new JsonFileDataLoader(
                 .build()
 );
 ```
-
 
 ## JsonTextDataLoader
 
@@ -216,7 +210,6 @@ JsonTextDataLoader loader = new JsonTextDataLoader() {
 };
 ```
 
-
 ## ApiDataLoader
 
 通过调用 HTTP API 接口来获取评测数据，适合从测试平台或数据管理系统动态拉取用例。
@@ -227,13 +220,13 @@ JsonTextDataLoader loader = new JsonTextDataLoader() {
 
 包含 `DataLoader` 所有配置，额外配置项：
 
-| 配置项 | 说明 | 必填 | 默认值 |
-|--------|------|------|--------|
-| `host` | 请求域名（含协议，如 `https://api.example.com`） | 是 | 无 |
-| `api` | 接口路径（如 `/v1/testcases`） | 是 | 无 |
-| `method` | HTTP 方法（`get` / `post`） | 是 | 无 |
-| `timeout` | 超时时间 | 否 | 120 |
-| `timeUnit` | 超时时间单位 | 否 | 秒 |
+| 配置项        | 说明                                    | 必填 | 默认值 |
+|------------|---------------------------------------|----|-----|
+| `host`     | 请求域名（含协议，如 `https://api.example.com`） | 是  | 无   |
+| `api`      | 接口路径（如 `/v1/testcases`）               | 是  | 无   |
+| `method`   | HTTP 方法（`get` / `post`）               | 是  | 无   |
+| `timeout`  | 超时时间                                  | 否  | 120 |
+| `timeUnit` | 超时时间单位                                | 否  | 秒   |
 
 ### 示例
 
@@ -273,7 +266,6 @@ ApiDataLoader loader = new ApiDataLoader(
 };
 ```
 
-
 ## JdbcDataLoader
 
 从关系型数据库（MySQL、PostgreSQL 等）加载数据。
@@ -284,36 +276,35 @@ ApiDataLoader loader = new ApiDataLoader(
 
 包含 `DataLoader` 所有配置，额外配置项：
 
-| 配置项 | 说明 | 必填 | 默认值 |
-|--------|------|------|--------|
-| `driver` | JDBC 驱动类名 | 是 | 无 |
-| `url` | 数据库连接 URL | 是 | 无 |
-| `user` | 用户名 | 是 | 无 |
-| `password` | 密码 | 是 | 无 |
-| `maximumPoolSize` | 连接池最大连接数 | 否 | 10 |
-| `minimumIdle` | 最小空闲连接数 | 否 | 2 |
-| `connectionTimeout` | 连接超时（毫秒） | 否 | 5000 |
+| 配置项                 | 说明        | 必填 | 默认值  |
+|---------------------|-----------|----|------|
+| `driver`            | JDBC 驱动类名 | 是  | 无    |
+| `url`               | 数据库连接 URL | 是  | 无    |
+| `user`              | 用户名       | 是  | 无    |
+| `password`          | 密码        | 是  | 无    |
+| `maximumPoolSize`   | 连接池最大连接数  | 否  | 10   |
+| `minimumIdle`       | 最小空闲连接数   | 否  | 2    |
+| `connectionTimeout` | 连接超时（毫秒）  | 否  | 5000 |
 
 ### 示例
 
 ```java
 // 需要在 pom.xml 中引入对应的 JDBC 驱动依赖
 JdbcDataLoader loader = new JdbcDataLoader(
-        JdbcDataLoaderConfig.builder()
-                .driver("com.mysql.cj.jdbc.Driver")
-                .url("jdbc:mysql://127.0.0.1:3306/evalkit?useSSL=false&serverTimezone=Asia/Shanghai")
-                .user("root")
-                .password("root123")
-                .build()
-) {
-    @Override
-    public String prepareSql() {
-        // SQL 查询结果的列名会直接作为字段名
-        return "SELECT query, ground_truth AS groundTruth FROM test_cases WHERE status = 'active'";
-    }
-};
+                JdbcDataLoaderConfig.builder()
+                        .driver("com.mysql.cj.jdbc.Driver")
+                        .url("jdbc:mysql://127.0.0.1:3306/evalkit?useSSL=false&serverTimezone=Asia/Shanghai")
+                        .user("root")
+                        .password("root123")
+                        .build()
+        ) {
+            @Override
+            public String prepareSql() {
+                // SQL 查询结果的列名会直接作为字段名
+                return "SELECT query, ground_truth AS groundTruth FROM test_cases WHERE status = 'active'";
+            }
+        };
 ```
-
 
 ## MultiDataLoader
 
@@ -337,12 +328,12 @@ MultiDataLoader multiLoader = new MultiDataLoader(
 );
 ```
 
-
 ## 常见问题
 
 **Q：文件路径怎么填？**
 
 框架按以下顺序查找：
+
 1. 作为文件系统绝对/相对路径（如 `/data/test.xlsx` 或 `./test.xlsx`）
 2. 作为 Classpath 路径（如 `testcases.xlsx`，文件放在 `src/main/resources/` 下）
 3. 作为远程 HTTP 链接（如 `https://...`）

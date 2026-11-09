@@ -10,7 +10,8 @@ has_toc: true
 
 ## 概述
 
-`QueryGenerator`（Query 生成器）是一个独立的**工具接口**，专门用于生成测试用的查询语句（Query）。它通常作为**数据生成器**（`EvalCaseDataGenerator`）的一个组件，负责提供每一轮对话的用户 Query 内容。
+`QueryGenerator`（Query 生成器）是一个独立的**工具接口**，专门用于生成测试用的查询语句（Query）。它通常作为**数据生成器**（
+`EvalCaseDataGenerator`）的一个组件，负责提供每一轮对话的用户 Query 内容。
 
 与数据生成器不同，`QueryGenerator` 是一个轻量的接口，只有一个方法：
 
@@ -20,7 +21,6 @@ List<String> generate();
 
 调用后返回一批生成好的 Query 字符串列表。
 
-
 ## 接口定义
 
 ```java
@@ -28,7 +28,6 @@ public interface QueryGenerator {
     List<String> generate();
 }
 ```
-
 
 ## 内置实现
 
@@ -52,9 +51,9 @@ public interface QueryGenerator {
 public class TravelQueryGenerator extends MockQueryGenerator {
     public TravelQueryGenerator() {
         super(MockerQueryGeneratorConfig.builder()
-            .genCount(5)                    // 每次生成5条Query
-            .fillEmptyStringOnMockFail(true) // Mock失败时用空字符串填充（而非报错）
-            .build());
+                .genCount(5)                    // 每次生成5条Query
+                .fillEmptyStringOnMockFail(true) // Mock失败时用空字符串填充（而非报错）
+                .build());
     }
 
     @Override
@@ -65,7 +64,8 @@ public class TravelQueryGenerator extends MockQueryGenerator {
 }
 ```
 
-> 💡 `#{...}` 中的规则是 SpEL 表达式，框架会调用内置的 Mock 方法填充随机数据。常用 Mock 方法见 [数据装饰器文档](./dataloader-wrapper.md)。
+> 💡 `#{...}` 中的规则是 SpEL 表达式，框架会调用内置的 Mock 方法填充随机数据。常用 Mock
+> 方法见 [数据装饰器文档](./dataloader-wrapper.md)。
 
 **步骤二：在数据生成器中使用**
 
@@ -73,21 +73,20 @@ public class TravelQueryGenerator extends MockQueryGenerator {
 QueryGenerator queryGenerator = new TravelQueryGenerator();
 
 EvalCaseDataGeneratorConfig config = EvalCaseDataGeneratorConfig.builder()
-    .genCount(100)          // 生成100个会话
-    .roundCount(3)          // 每个会话3轮对话
-    .queryGenerator(queryGenerator)
-    .build();
+        .genCount(100)          // 生成100个会话
+        .roundCount(3)          // 每个会话3轮对话
+        .queryGenerator(queryGenerator)
+        .build();
 
 EvalCaseDataGenerator generator = new EvalCaseDataGenerator(config);
 ```
 
 #### 配置说明（`MockerQueryGeneratorConfig`）
 
-| 参数 | 类型 | 默认值 | 说明 |
-|---|---|---|---|
-| `genCount` | int | 1 | 每次生成 Query 的数量 |
+| 参数                          | 类型      | 默认值   | 说明                                 |
+|-----------------------------|---------|-------|------------------------------------|
+| `genCount`                  | int     | 1     | 每次生成 Query 的数量                     |
 | `fillEmptyStringOnMockFail` | boolean | false | Mock 规则执行失败时，是否用空字符串填充（false 则抛异常） |
-
 
 ### 2. PromptBasedQueryGenerator（基于大模型生成）
 
@@ -104,40 +103,40 @@ EvalCaseDataGenerator generator = new EvalCaseDataGenerator(config);
 ```java
 // 配置大模型服务
 LLMService llmService = LLMServiceFactory.create(
-    LLMServiceConfig.builder()
-        .apiKey("your-api-key")
-        .model("gpt-4o")
-        .build()
-);
+                LLMServiceConfig.builder()
+                        .apiKey("your-api-key")
+                        .model("gpt-4o")
+                        .build()
+        );
 
 // 构建基于Prompt的Query生成器
 PromptBasedQueryGeneratorConfig config = PromptBasedQueryGeneratorConfig.builder()
-    .llmService(llmService)
-    .genCount(10)           // 一次生成10条Query
-    .userPrompt("请生成10条关于酒店搜索的用户查询语句，要求包含城市、价格、日期等信息")
-    .langStyle("口语化，像真实用户发送的搜索请求")
-    // sysPrompt 有默认值，通常不需要设置
-    .build();
+        .llmService(llmService)
+        .genCount(10)           // 一次生成10条Query
+        .userPrompt("请生成10条关于酒店搜索的用户查询语句，要求包含城市、价格、日期等信息")
+        .langStyle("口语化，像真实用户发送的搜索请求")
+        // sysPrompt 有默认值，通常不需要设置
+        .build();
 
 QueryGenerator queryGenerator = new PromptBasedQueryGenerator(config);
 ```
 
 #### 配置说明（`PromptBasedQueryGeneratorConfig`）
 
-| 参数 | 类型 | 默认值 | 说明 |
-|---|---|---|---|
-| `llmService` | `LLMService` | 无（**必填**） | 调用的大模型服务实例 |
-| `genCount` | int | 1 | 要生成的 Query 数量 |
-| `userPrompt` | String | 无 | 用户需求描述（自定义部分） |
-| `sysPrompt` | String | 内置默认提示词 | 系统提示词，通常无需修改 |
-| `langStyle` | String | `"逻辑正确,语气自然"` | 语言风格描述 |
+| 参数           | 类型           | 默认值           | 说明            |
+|--------------|--------------|---------------|---------------|
+| `llmService` | `LLMService` | 无（**必填**）     | 调用的大模型服务实例    |
+| `genCount`   | int          | 1             | 要生成的 Query 数量 |
+| `userPrompt` | String       | 无             | 用户需求描述（自定义部分） |
+| `sysPrompt`  | String       | 内置默认提示词       | 系统提示词，通常无需修改  |
+| `langStyle`  | String       | `"逻辑正确,语气自然"` | 语言风格描述        |
 
 **默认系统提示词包含以下要求：**
+
 - 每条 Query 不少于 8 个汉字，不超过 20 个汉字
 - 覆盖信息型、导航型、交易型、本地型、疑问型五种搜索意图
 - 不得出现符号、emoji
 - 输出纯文本，一行一条，不加序号
-
 
 ## 自定义 QueryGenerator
 
@@ -175,21 +174,19 @@ public class FileBasedQueryGenerator implements QueryGenerator {
     public List<String> generate() {
         // 每次随机返回一条
         return Collections.singletonList(
-            queries.get(new Random().nextInt(queries.size()))
+                queries.get(new Random().nextInt(queries.size()))
         );
     }
 }
 ```
 
-
 ## 使用场景对比
 
-| 生成器 | 适用场景 | 特点 |
-|---|---|---|
-| `MockQueryGenerator` | 需要大量规则化随机 Query | 速度快，不依赖外部服务，适合批量生成 |
+| 生成器                         | 适用场景                 | 特点                 |
+|-----------------------------|----------------------|--------------------|
+| `MockQueryGenerator`        | 需要大量规则化随机 Query      | 速度快，不依赖外部服务，适合批量生成 |
 | `PromptBasedQueryGenerator` | 需要语义自然、贴近真实用户的 Query | 质量高，但需要调用 LLM，耗时较长 |
-| 自定义实现 | 从现有数据集中采样，或有特殊生成逻辑 | 灵活，完全自定义 |
-
+| 自定义实现                       | 从现有数据集中采样，或有特殊生成逻辑   | 灵活，完全自定义           |
 
 ## 完整使用示例
 

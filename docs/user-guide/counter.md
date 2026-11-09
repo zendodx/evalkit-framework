@@ -10,7 +10,6 @@ has_toc: true
 
 统计器在所有评估器执行完毕后运行，负责对所有数据的评测结果进行**汇总统计**，并将统计结果存入上下文，供 Reporter 使用。
 
-
 ## 体系结构
 
 ```
@@ -22,46 +21,45 @@ Counter（抽象基类）
 └── AttributeCounterV2   LLM归因分析 V2（带类别、情感极性、置信度）
 ```
 
-
 ## BasicCounter
 
 最常用的统计器，自动计算以下指标：
 
 ### 通过率指标
 
-| 指标 | 说明 |
-|------|------|
-| `passRate` | 整体通过率 |
-| `unPassRate` | 不通过率 |
-| `totalCount` | 总数据量 |
-| `passCount` | 通过条数 |
-| `unPassCount` | 不通过条数 |
-| `evalSuccessRate` | 评测成功率（评估器执行未报错） |
-| `evalErrorRate` | 评测异常率 |
-| `completionSuccessRate` | 接口调用成功率 |
-| `completionErrorRate` | 接口调用失败率 |
+| 指标                      | 说明              |
+|-------------------------|-----------------|
+| `passRate`              | 整体通过率           |
+| `unPassRate`            | 不通过率            |
+| `totalCount`            | 总数据量            |
+| `passCount`             | 通过条数            |
+| `unPassCount`           | 不通过条数           |
+| `evalSuccessRate`       | 评测成功率（评估器执行未报错） |
+| `evalErrorRate`         | 评测异常率           |
+| `completionSuccessRate` | 接口调用成功率         |
+| `completionErrorRate`   | 接口调用失败率         |
 
 ### 接口耗时指标
 
-| 指标 | 说明 |
-|------|------|
-| `completionAvgTimeCost` | 接口调用平均耗时（ms） |
-| `completionMinTimeCost` | 最小耗时 |
-| `completionMaxTimeCost` | 最大耗时 |
-| `completionTP99TimeCost` | P99 耗时 |
-| `completionTP95TimeCost` | P95 耗时 |
-| `completionTP90TimeCost` | P90 耗时 |
+| 指标                       | 说明           |
+|--------------------------|--------------|
+| `completionAvgTimeCost`  | 接口调用平均耗时（ms） |
+| `completionMinTimeCost`  | 最小耗时         |
+| `completionMaxTimeCost`  | 最大耗时         |
+| `completionTP99TimeCost` | P99 耗时       |
+| `completionTP95TimeCost` | P95 耗时       |
+| `completionTP90TimeCost` | P90 耗时       |
 
 ### 评测分数指标
 
-| 指标 | 说明 |
-|------|------|
-| `avgScore` | 平均分 |
-| `minScore` | 最低分 |
-| `maxScore` | 最高分 |
-| `tp99Score` | P99 分数 |
-| `tp95Score` | P95 分数 |
-| `scoreStdDev` | 分数标准差 |
+| 指标               | 说明                      |
+|------------------|-------------------------|
+| `avgScore`       | 平均分                     |
+| `minScore`       | 最低分                     |
+| `maxScore`       | 最高分                     |
+| `tp99Score`      | P99 分数                  |
+| `tp95Score`      | P95 分数                  |
+| `scoreStdDev`    | 分数标准差                   |
 | `llmTokenCounts` | 各 LLM 模型的 Token 消耗和费用明细 |
 
 ### 用法
@@ -72,7 +70,6 @@ BasicCounter counter = new BasicCounter();
 
 就这一行！无需任何配置，把它放在所有 Scorer 之后即可。
 
-
 ## MetricCounter
 
 按照**指标名称**分组统计，适合同时运行多个 Scorer 的场景，可以清晰地看到每个指标的通过率。
@@ -81,11 +78,11 @@ BasicCounter counter = new BasicCounter();
 
 ### MetricItem 字段
 
-| 字段 | 说明 |
-|------|------|
-| `metricName` | 指标名称（对应 `ScorerConfig.metricName`） |
-| `metricValue` | 指标值（分数） |
-| `metricThreshold` | 通过阈值 |
+| 字段                | 说明                                 |
+|-------------------|------------------------------------|
+| `metricName`      | 指标名称（对应 `ScorerConfig.metricName`） |
+| `metricValue`     | 指标值（分数）                            |
+| `metricThreshold` | 通过阈值                               |
 
 ### 示例
 
@@ -109,7 +106,6 @@ MetricCounter metricCounter = new MetricCounter() {
     }
 };
 ```
-
 
 ## RubricCounter
 
@@ -159,14 +155,22 @@ RubricCounter rubricCounter = new RubricCounter();
 ### 典型工作流
 
 ```java
-RubricBasedScorer rubricScorer = new RubricBasedScorer(...) { ... };
+RubricBasedScorer rubricScorer = new RubricBasedScorer(...){...};
 RubricCounter rubricCounter = new RubricCounter();
 HtmlReporter reporter = new HtmlReporter("rubric_report");
 
-new WorkflowBuilder()
-    .link(begin, dataLoader, rubricScorer, rubricCounter, reporter)
-    .build()
-    .execute();
+new
+
+WorkflowBuilder()
+    .
+
+link(begin, dataLoader, rubricScorer, rubricCounter, reporter)
+    .
+
+build()
+    .
+
+execute();
 ```
 
 ### 输出结果（RubricCountResult）
@@ -230,14 +234,25 @@ BasicCounter basicCounter = new BasicCounter();
 RubricCounter rubricCounter = new RubricCounter();
 HtmlReporter reporter = new HtmlReporter("rubric_full_report");
 
-new WorkflowBuilder()
-    .link(rubricScorer, basicCounter)
-    .link(basicCounter, rubricCounter)
-    .link(rubricCounter, reporter)
-    .build()
-    .execute();
-```
+new
 
+WorkflowBuilder()
+    .
+
+link(rubricScorer, basicCounter)
+    .
+
+link(basicCounter, rubricCounter)
+    .
+
+link(rubricCounter, reporter)
+    .
+
+build()
+    .
+
+execute();
+```
 
 ## AttributeCounter（归因分析 V1）
 
@@ -264,20 +279,32 @@ AttributeCounter attributeCounter = new AttributeCounter(myLLMService);
   "overallAttribution": [
     {
       "issueName": "位置信息不准确",
-      "caseIds": [1, 5, 12, 23, 45]
+      "caseIds": [
+        1,
+        5,
+        12,
+        23,
+        45
+      ]
     },
     {
       "issueName": "时间理解错误",
-      "caseIds": [3, 8, 17]
+      "caseIds": [
+        3,
+        8,
+        17
+      ]
     },
     {
       "issueName": "无法处理多目的地查询",
-      "caseIds": [6, 9]
+      "caseIds": [
+        6,
+        9
+      ]
     }
   ]
 }
 ```
-
 
 ## AttributeCounterV2（归因分析 V2）
 
@@ -285,13 +312,13 @@ AttributeCounter attributeCounter = new AttributeCounter(myLLMService);
 
 ### 新增维度
 
-| 维度 | 说明 |
-|------|------|
-| `category`（根因类别） | 问题所属的大类（如"位置识别"、"时间推理"） |
-| `issue`（具体问题） | 具体的问题描述 |
-| `confidence`（置信度） | 0~1，LLM 判断的确定程度 |
-| `sentiment`（情感极性） | `NEG`（负面问题）/ `NEUTRAL`（中性）|
-| `representative`（代表描述） | LLM 对该类问题的 50 字摘要 |
+| 维度                     | 说明                         |
+|------------------------|----------------------------|
+| `category`（根因类别）       | 问题所属的大类（如"位置识别"、"时间推理"）    |
+| `issue`（具体问题）          | 具体的问题描述                    |
+| `confidence`（置信度）      | 0~1，LLM 判断的确定程度            |
+| `sentiment`（情感极性）      | `NEG`（负面问题）/ `NEUTRAL`（中性） |
+| `representative`（代表描述） | LLM 对该类问题的 50 字摘要          |
 
 ### 用法
 
@@ -314,7 +341,11 @@ AttributeCounterV2 attributeCounterV2 = new AttributeCounterV2(myLLMService);
           "confidence": 0.92,
           "sentiment": "NEG",
           "representative": "用户询问某城市的某景区时，AI返回了另一个同名景区的信息",
-          "caseIds": [1, 5, 12]
+          "caseIds": [
+            1,
+            5,
+            12
+          ]
         }
       ]
     },
@@ -325,14 +356,16 @@ AttributeCounterV2 attributeCounterV2 = new AttributeCounterV2(myLLMService);
           "issueName": "无法正确处理'下周'等相对日期",
           "confidence": 0.88,
           "sentiment": "NEG",
-          "caseIds": [3, 8]
+          "caseIds": [
+            3,
+            8
+          ]
         }
       ]
     }
   ]
 }
 ```
-
 
 ## 自定义统计器
 
@@ -361,7 +394,6 @@ Counter customCounter = new Counter() {
     }
 };
 ```
-
 
 ## 典型用法：组合多个统计器
 

@@ -8,49 +8,49 @@ permalink: /user-guide/
 
 # EvalKit Framework 用户指南
 
-> 版本：1.4.x | 语言：Java 8+ | 构建：Maven 3.6+
+> 版本：1.6.x | 语言：Java 8+ | 构建：Maven 3.6+
 
 ## 文档目录
 
 ### 入门
 
-| 文档 | 说明 |
-|------|------|
-| [概述与快速开始](./overview) | 框架简介、Maven 引入、整体架构、Hello World 示例 |
-| [大模型服务（LLMService）](./llm-service) | 接入 LLM，配置模型参数、重试策略、Token 计费 |
+| 文档                                 | 说明                                |
+|------------------------------------|-----------------------------------|
+| [概述与快速开始](./overview)              | 框架简介、Maven 引入、整体架构、Hello World 示例 |
+| [大模型服务（LLMService）](./llm-service) | 接入 LLM，配置模型参数、重试策略、Token 计费       |
 
 ### 数据准备
 
-| 文档 | 说明 |
-|------|------|
-| [数据加载器（DataLoader）](./dataloader) | 从 Excel/CSV/JSON/JDBC/API 加载评测数据 |
-| [数据装饰器（DataLoaderWrapper）](./dataloader-wrapper) | Mock 占位符替换、Prompt 润色、数据增强 |
-| [Mock 规则引擎（Mocker）](./mocker) | 内置 6 种 Mocker 完整规则详解：精确日期、模糊日期、节假日、行政区划、景区 POI、数字；自定义 Mocker |
-| [Query 生成器（QueryGenerator）](./querygen) | 生成测试 Query，支持 Mock 规则和 LLM 生成 |
-| [数据生成器（DataGenerator）](./data-generator) | 自动生成多轮对话评测数据集，含知识图谱驱动方式（KGBased） |
+| 文档                                               | 说明                                                           |
+|--------------------------------------------------|--------------------------------------------------------------|
+| [数据加载器（DataLoader）](./dataloader)                | 从 Excel/CSV/JSON/JDBC/API 加载评测数据                             |
+| [数据装饰器（DataLoaderWrapper）](./dataloader-wrapper) | Mock 占位符替换、Prompt 润色、数据增强                                    |
+| [Mock 规则引擎（Mocker）](./mocker)                    | 内置 6 种 Mocker 完整规则详解：精确日期、模糊日期、节假日、行政区划、景区 POI、数字；自定义 Mocker |
+| [Query 生成器（QueryGenerator）](./querygen)          | 生成测试 Query，支持 Mock 规则和 LLM 生成                                |
+| [数据生成器（DataGenerator）](./data-generator)         | 自动生成多轮对话评测数据集，含知识图谱驱动方式（KGBased）                             |
 
 ### 评测核心
 
-| 文档 | 说明 |
-|------|------|
-| [接口调用器（ApiCompletion）](./api-completion) | 调用被测业务接口，支持 HTTP、有序多轮调用 |
-| [接口结果装饰器（ApiCompletionWrapper）](./api-completion-wrapper) | 在评估前对接口返回结果进行转化、清洗或 LLM 二次处理 |
-| [评估器（Scorer）](./scorer) | 对接口返回结果进行打分，内置向量相似度、LLM 评分等多种策略 |
-| [检查器（Checker）](./checker) | 细粒度规则检查，配合 MultiCheckerBasedScorer 使用 |
+| 文档                                                        | 说明                                    |
+|-----------------------------------------------------------|---------------------------------------|
+| [接口调用器（ApiCompletion）](./api-completion)                  | 调用被测业务接口，支持 HTTP、有序多轮调用               |
+| [接口结果装饰器（ApiCompletionWrapper）](./api-completion-wrapper) | 在评估前对接口返回结果进行转化、清洗或 LLM 二次处理          |
+| [评估器（Scorer）](./scorer)                                   | 对接口返回结果进行打分，内置向量相似度、LLM 评分等多种策略       |
+| [检查器（Checker）](./checker)                                 | 细粒度规则检查，配合 MultiCheckerBasedScorer 使用 |
 
 ### 结果处理
 
-| 文档 | 说明 |
-|------|------|
-| [统计器（Counter）](./counter) | 汇总评测指标，含 LLM 驱动的问题归因分析 |
+| 文档                          | 说明                                         |
+|-----------------------------|--------------------------------------------|
+| [统计器（Counter）](./counter)   | 汇总评测指标，含 LLM 驱动的问题归因分析                     |
 | [上报器（Reporter）](./reporter) | 将评测结果输出到文件（Excel/CSV/JSON/HTML）、数据库或远程 API |
 
 ### 进阶使用
 
-| 文档 | 说明 |
-|------|------|
+| 文档                           | 说明                       |
+|------------------------------|--------------------------|
 | [评测门面（EvalFacade）](./facade) | 全量评测、增量断点续评、有序增量评测三种模式详解 |
-| [调试器（Debugger）](./debugger) | 注入已有数据跳过部分节点，加速开发调试和重新统计 |
+| [调试器（Debugger）](./debugger)  | 注入已有数据跳过部分节点，加速开发调试和重新统计 |
 
 ---
 
@@ -70,13 +70,13 @@ Counter → Reporter
 
 每条评测数据在框架内以 `DataItem` 的形式流转，包含：
 
-| 字段 | 说明 |
-|---|---|
-| `dataIndex` | 数据索引（编号） |
-| `inputData` | 输入数据（原始评测数据 + 字段 Map） |
-| `apiCompletionResult` | 接口调用结果 |
-| `evalResult` | 评测结果（分数、是否通过、评分器结果列表） |
-| `extra` | 额外扩展字段 |
+| 字段                    | 说明                    |
+|-----------------------|-----------------------|
+| `dataIndex`           | 数据索引（编号）              |
+| `inputData`           | 输入数据（原始评测数据 + 字段 Map） |
+| `apiCompletionResult` | 接口调用结果                |
+| `evalResult`          | 评测结果（分数、是否通过、评分器结果列表） |
+| `extra`               | 额外扩展字段                |
 
 ### 快速选择指南
 

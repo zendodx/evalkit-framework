@@ -12,8 +12,8 @@ has_toc: true
 
 评测完成后，所有的评测结果（每条数据的评分、统计汇总等）需要一个"出口"来输出或保存，这个"出口"就是**上报器（Reporter）**。
 
-`Reporter` 是 EvalKit 框架工作流中的最后一个处理节点，负责将评测结果以各种形式输出：打印到控制台、写入文件（Excel/CSV/JSON/HTML）、存入数据库、或发送到远程 API。
-
+`Reporter` 是 EvalKit 框架工作流中的最后一个处理节点，负责将评测结果以各种形式输出：打印到控制台、写入文件（Excel/CSV/JSON/HTML）、存入数据库、或发送到远程
+API。
 
 ## 类继承关系
 
@@ -29,30 +29,27 @@ Reporter（抽象基类）
 └── ApiReporter（抽象）          HTTP API 上报基类
 ```
 
-
 ## 生命周期钩子
 
 `Reporter` 提供了完整的生命周期钩子，允许你在上报前后插入自定义逻辑：
 
-| 钩子方法 | 执行时机 | 默认行为 |
-|---|---|---|
-| `beforeReport(reportData)` | 上报前 | 空实现，可覆盖 |
-| `report(reportData)` | 核心上报逻辑 | **抽象方法，必须实现** |
-| `afterReport(reportData)` | 上报后 | 空实现，可覆盖 |
-| `onErrorReport(reportData, e)` | 上报出错时 | 空实现，可覆盖 |
+| 钩子方法                           | 执行时机   | 默认行为          |
+|--------------------------------|--------|---------------|
+| `beforeReport(reportData)`     | 上报前    | 空实现，可覆盖       |
+| `report(reportData)`           | 核心上报逻辑 | **抽象方法，必须实现** |
+| `afterReport(reportData)`      | 上报后    | 空实现，可覆盖       |
+| `onErrorReport(reportData, e)` | 上报出错时  | 空实现，可覆盖       |
 
 > ⚠️ 重要：上报过程中抛出的异常**不会阻塞**整个工作流的运行，框架会记录错误日志后继续执行。
-
 
 ## 上报数据结构（ReportData）
 
 每次调用 `report()` 时，框架会把以下数据打包成 `ReportData` 传入：
 
-| 字段 | 类型 | 说明 |
-|---|---|---|
-| `dataItems` | `List<DataItem>` | 所有评测数据项，包含输入、接口返回结果、评分等 |
+| 字段               | 类型                    | 说明                                    |
+|------------------|-----------------------|---------------------------------------|
+| `dataItems`      | `List<DataItem>`      | 所有评测数据项，包含输入、接口返回结果、评分等               |
 | `countResultMap` | `Map<String, String>` | 各统计器的输出结果，key 为统计器名称，value 为 JSON 字符串 |
-
 
 ## 内置实现详解
 
@@ -75,15 +72,15 @@ Reporter（抽象基类）
 
 ```java
 Workflow reportWorkflow = Workflow.builder()
-    .addNode(new StdReporter())
-    .addNode(new BasicCounter())
-    .build();
+        .addNode(new StdReporter())
+        .addNode(new BasicCounter())
+        .build();
 ```
-
 
 ### 2. ExcelReporter — Excel 文件上报
 
 将评测结果输出为 `.xlsx` 格式的 Excel 文件。会生成两个文件：
+
 - `{文件名}.xlsx`：每条评测数据的详情
 - `{文件名}.count.xlsx`：统计汇总结果
 
@@ -94,13 +91,15 @@ Workflow reportWorkflow = Workflow.builder()
 new ExcelReporter("my_eval_report");
 
 // 指定输出文件夹
-new ExcelReporter("my_eval_report", "output/reports");
+new
+
+ExcelReporter("my_eval_report","output/reports");
 ```
 
-| 参数 | 说明 | 默认值 |
-|---|---|---|
-| `fileName` | 输出文件名（不含扩展名） | 当前时间字符串 |
-| `parentDir` | 输出文件夹路径 | `attachments` |
+| 参数          | 说明           | 默认值           |
+|-------------|--------------|---------------|
+| `fileName`  | 输出文件名（不含扩展名） | 当前时间字符串       |
+| `parentDir` | 输出文件夹路径      | `attachments` |
 
 **使用示例：**
 
@@ -109,11 +108,10 @@ new ExcelReporter("my_eval_report", "output/reports");
 ExcelReporter excelReporter = new ExcelReporter("my_eval_report");
 
 Workflow reportWorkflow = Workflow.builder()
-    .addNode(new BasicCounter())
-    .addNode(excelReporter)
-    .build();
+        .addNode(new BasicCounter())
+        .addNode(excelReporter)
+        .build();
 ```
-
 
 ### 3. CsvReporter — CSV 文件上报
 
@@ -126,15 +124,16 @@ Workflow reportWorkflow = Workflow.builder()
 new CsvReporter("my_eval_report");
 
 // 指定分隔符（如制表符）
-new CsvReporter("my_eval_report", "\t", "output/");
+new
+
+CsvReporter("my_eval_report","\t","output/");
 ```
 
-| 参数 | 说明 | 默认值 |
-|---|---|---|
-| `filename` | 输出文件名 | 当前时间字符串 |
-| `delimiter` | 分隔符 | `,`（逗号） |
+| 参数          | 说明      | 默认值           |
+|-------------|---------|---------------|
+| `filename`  | 输出文件名   | 当前时间字符串       |
+| `delimiter` | 分隔符     | `,`（逗号）       |
 | `parentDir` | 输出文件夹路径 | `attachments` |
-
 
 ### 4. JsonReporter — JSON 文件上报
 
@@ -142,7 +141,9 @@ new CsvReporter("my_eval_report", "\t", "output/");
 
 ```json
 {
-  "dataItems": [...],
+  "dataItems": [
+    ...
+  ],
   "countResult": {
     "BasicCounter": "{\"passCount\":8,...}"
   }
@@ -153,11 +154,12 @@ new CsvReporter("my_eval_report", "\t", "output/");
 
 ```java
 new JsonReporter("my_eval_report");
-new JsonReporter("my_eval_report", "output/json");
+new
+
+JsonReporter("my_eval_report","output/json");
 ```
 
 > 💡 `JsonReporter` 的输出格式与 `JsonFileDebugger` 的输入格式完全匹配，可以配合使用实现"生产数据→保存→调试重播"的工作流。
-
 
 ### 5. HtmlReporter — HTML 可视化报告
 
@@ -165,10 +167,10 @@ new JsonReporter("my_eval_report", "output/json");
 
 **支持两种风格：**
 
-| 风格 | 常量 | 说明 |
-|---|---|---|
-| 默认风格 | `HtmlReportStyle.DEFAULT` | 标准报告样式 |
-| GitHub 风格 | `HtmlReportStyle.GITHUB` | GitHub 风格样式 |
+| 风格        | 常量                        | 说明          |
+|-----------|---------------------------|-------------|
+| 默认风格      | `HtmlReportStyle.DEFAULT` | 标准报告样式      |
+| GitHub 风格 | `HtmlReportStyle.GITHUB`  | GitHub 风格样式 |
 
 **构造方法：**
 
@@ -177,24 +179,29 @@ new JsonReporter("my_eval_report", "output/json");
 new HtmlReporter("my_eval_report");
 
 // 指定风格
-new HtmlReporter("my_eval_report", HtmlReportStyle.GITHUB);
+new
+
+HtmlReporter("my_eval_report",HtmlReportStyle.GITHUB);
 
 // 指定文件夹和风格
-new HtmlReporter("my_eval_report", "output/html", HtmlReportStyle.DEFAULT);
+new
+
+HtmlReporter("my_eval_report","output/html",HtmlReportStyle.DEFAULT);
 ```
 
 **使用示例：**
 
 ```java
 HtmlReporter htmlReporter = new HtmlReporter("搜索质量评测_2024");
-htmlReporter.setCdn("https://cdn.example.com"); // 可选：指定静态资源CDN
+htmlReporter.
+
+setCdn("https://cdn.example.com"); // 可选：指定静态资源CDN
 
 Workflow reportWorkflow = Workflow.builder()
-    .addNode(new BasicCounter())
-    .addNode(htmlReporter)
-    .build();
+        .addNode(new BasicCounter())
+        .addNode(htmlReporter)
+        .build();
 ```
-
 
 ### 6. JdbcReport — 数据库上报（抽象类）
 
@@ -204,15 +211,15 @@ Workflow reportWorkflow = Workflow.builder()
 
 **数据表结构：**
 
-| 列名 | 类型 | 说明 |
-|---|---|---|
-| `id` | bigint | 自增主键 |
-| `group_id` | varchar(100) | 本次上报的批次 ID（UUID） |
-| `data_index` | bigint | 数据索引 |
-| `input_data` | json | 输入数据 |
-| `api_completion_result` | json | 接口调用结果 |
-| `scorer_results` | json | 评分器结果 |
-| `extra` | json | 额外数据 |
+| 列名                      | 类型           | 说明               |
+|-------------------------|--------------|------------------|
+| `id`                    | bigint       | 自增主键             |
+| `group_id`              | varchar(100) | 本次上报的批次 ID（UUID） |
+| `data_index`            | bigint       | 数据索引             |
+| `input_data`            | json         | 输入数据             |
+| `api_completion_result` | json         | 接口调用结果           |
+| `scorer_results`        | json         | 评分器结果            |
+| `extra`                 | json         | 额外数据             |
 
 **使用示例（继承 `JdbcReport` 实现自定义上报）：**
 
@@ -220,10 +227,10 @@ Workflow reportWorkflow = Workflow.builder()
 public class MyMysqlReporter extends JdbcReport {
     public MyMysqlReporter() {
         super(
-            "com.mysql.cj.jdbc.Driver",            // 驱动类
-            "jdbc:mysql://localhost:3306/eval_db",  // JDBC URL
-            "root",                                // 用户名
-            "password"                             // 密码
+                "com.mysql.cj.jdbc.Driver",            // 驱动类
+                "jdbc:mysql://localhost:3306/eval_db",  // JDBC URL
+                "root",                                // 用户名
+                "password"                             // 密码
         );
     }
 
@@ -235,17 +242,16 @@ public class MyMysqlReporter extends JdbcReport {
 }
 ```
 
-
 ### 7. ApiReporter — HTTP API 上报（抽象类）
 
 将每条评测结果逐条通过 HTTP 请求发送到自定义后台服务，适合接入自研的评测管理平台。
 
 **需要实现的抽象方法：**
 
-| 方法 | 说明 |
-|---|---|
-| `prepareBody(item)` | 构造请求体 Map |
-| `prepareHeader(item)` | 构造请求头 Map |
+| 方法                    | 说明          |
+|-----------------------|-------------|
+| `prepareBody(item)`   | 构造请求体 Map   |
+| `prepareHeader(item)` | 构造请求头 Map   |
 | `prepareParams(item)` | 构造 URL 查询参数 |
 
 **使用示例：**
@@ -254,9 +260,9 @@ public class MyMysqlReporter extends JdbcReport {
 public class MyApiReporter extends ApiReporter {
     public MyApiReporter() {
         super(
-            "https://my-eval-platform.com",  // host
-            "/api/v1/eval/report",           // API路径
-            "POST"                           // HTTP方法
+                "https://my-eval-platform.com",  // host
+                "/api/v1/eval/report",           // API路径
+                "POST"                           // HTTP方法
         );
         // 可选：设置超时时间
         setTimeout(30, TimeUnit.SECONDS);
@@ -286,7 +292,6 @@ public class MyApiReporter extends ApiReporter {
     }
 }
 ```
-
 
 ## 自定义上报器
 
@@ -325,20 +330,18 @@ public class MyCustomReporter extends Reporter {
 }
 ```
 
-
 ## 多个上报器同时使用
 
 在工作流中可以依次串联多个上报器，实现"同时输出到多个目标"：
 
 ```java
 Workflow reportWorkflow = Workflow.builder()
-    .addNode(new BasicCounter())          // 先统计
-    .addNode(new StdReporter())           // 打印到控制台
-    .addNode(new ExcelReporter("result")) // 保存 Excel
-    .addNode(new HtmlReporter("result"))  // 生成 HTML 报告
-    .build();
+        .addNode(new BasicCounter())          // 先统计
+        .addNode(new StdReporter())           // 打印到控制台
+        .addNode(new ExcelReporter("result")) // 保存 Excel
+        .addNode(new HtmlReporter("result"))  // 生成 HTML 报告
+        .build();
 ```
-
 
 ## 与统计器（Counter）配合使用
 
@@ -347,21 +350,20 @@ Workflow reportWorkflow = Workflow.builder()
 ```java
 // 正确顺序：先统计，再上报
 Workflow reportWorkflow = Workflow.builder()
-    .addNode(new BasicCounter())   // ① 先统计
-    .addNode(new MetricCounter())  // ① 先统计
-    .addNode(new ExcelReporter("result")) // ② 再上报（报告中会包含统计结果）
-    .build();
+                .addNode(new BasicCounter())   // ① 先统计
+                .addNode(new MetricCounter())  // ① 先统计
+                .addNode(new ExcelReporter("result")) // ② 再上报（报告中会包含统计结果）
+                .build();
 ```
-
 
 ## 文件输出路径说明
 
 所有 `FileReporter` 子类（Excel、CSV、JSON、HTML）默认将文件输出到当前工作目录的 `attachments/` 文件夹下。如果文件夹不存在，框架会自动创建。
 
-| 上报器 | 输出文件示例 |
-|---|---|
+| 上报器                       | 输出文件示例                                                      |
+|---------------------------|-------------------------------------------------------------|
 | `ExcelReporter("result")` | `attachments/result.xlsx` 和 `attachments/result.count.xlsx` |
-| `CsvReporter("result")` | `attachments/result.csv` 和 `attachments/result.count.csv` |
-| `JsonReporter("result")` | `attachments/result.json` |
-| `HtmlReporter("result")` | `attachments/result.html` |
+| `CsvReporter("result")`   | `attachments/result.csv` 和 `attachments/result.count.csv`   |
+| `JsonReporter("result")`  | `attachments/result.json`                                   |
+| `HtmlReporter("result")`  | `attachments/result.html`                                   |
 

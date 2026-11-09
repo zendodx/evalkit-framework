@@ -10,7 +10,6 @@ has_toc: true
 
 接口结果装饰器在**接口调用完成后、评估器执行前**运行，用于对 `ApiCompletionResult` 进行转化、清洗或补充，将接口原始输出变换为评估器所需的格式。
 
-
 ## 体系结构
 
 ```
@@ -18,25 +17,24 @@ ApiCompletionWrapper（抽象基类）
 └── LLMBasedApiCompletionWrapper（抽象）  使用大模型转化接口输出
 ```
 
-
 ## ApiCompletionWrapper（基类）
 
 最通用的装饰器基类，实现 `wrapper(DataItem)` 方法即可。
 
 ### 配置项
 
-| 配置项 | 说明 | 必填 | 默认值 |
-|--------|------|------|--------|
-| `threadNum` | 并发处理线程数 | 否 | 1 |
+| 配置项         | 说明      | 必填 | 默认值 |
+|-------------|---------|----|-----|
+| `threadNum` | 并发处理线程数 | 否  | 1   |
 
 ### 生命周期钩子
 
-| 方法 | 说明 |
-|------|------|
-| `beforeWrapper(DataItem)` | 装饰前钩子 |
-| `wrapper(DataItem)` | **核心方法**，实现对 `ApiCompletionResult` 的转化逻辑 |
-| `afterWrapper(DataItem)` | 装饰后钩子 |
-| `onWrapperError(DataItem, Throwable)` | 装饰异常时的处理钩子 |
+| 方法                                    | 说明                                       |
+|---------------------------------------|------------------------------------------|
+| `beforeWrapper(DataItem)`             | 装饰前钩子                                    |
+| `wrapper(DataItem)`                   | **核心方法**，实现对 `ApiCompletionResult` 的转化逻辑 |
+| `afterWrapper(DataItem)`              | 装饰后钩子                                    |
+| `onWrapperError(DataItem, Throwable)` | 装饰异常时的处理钩子                               |
 
 > 单条数据装饰失败不会中断整体流程，框架会记录失败状态并继续处理其他数据。
 
@@ -59,6 +57,7 @@ ApiCompletionWrapper wrapper = new ApiCompletionWrapper() {
 在 `wrapper()` 方法中，通过 `dataItem.getApiCompletionResult()` 获取接口调用结果，可以读取已有字段，也可以写入新字段：
 
 ```java
+
 @Override
 protected void wrapper(DataItem dataItem) {
     ApiCompletionResult result = dataItem.getApiCompletionResult();
@@ -72,24 +71,24 @@ protected void wrapper(DataItem dataItem) {
 }
 ```
 
-
 ## LLMBasedApiCompletionWrapper
 
-使用大模型对接口返回结果进行二次转化，适合需要**语义理解或格式转换**的场景，例如：把流式拼接的 Markdown 转换为纯文本、从多段话中提取关键结论等。
+使用大模型对接口返回结果进行二次转化，适合需要**语义理解或格式转换**的场景，例如：把流式拼接的 Markdown
+转换为纯文本、从多段话中提取关键结论等。
 
 ### 配置项
 
 包含 `ApiCompletionWrapper` 所有配置，额外配置项：
 
-| 配置项 | 说明 | 必填 |
-|--------|------|------|
-| `llmService` | 大模型服务 | 是 |
+| 配置项          | 说明    | 必填 |
+|--------------|-------|----|
+| `llmService` | 大模型服务 | 是  |
 
 ### 需要实现的方法
 
-| 方法 | 说明 |
-|------|------|
-| `preparePrompt(DataItem)` | 构造发送给大模型的提示词（可同时读取输入数据和接口结果） |
+| 方法                                            | 说明                                |
+|-----------------------------------------------|-----------------------------------|
+| `preparePrompt(DataItem)`                     | 构造发送给大模型的提示词（可同时读取输入数据和接口结果）      |
 | `applyLLMOutput(ApiCompletionResult, String)` | 将大模型返回的内容写回 `ApiCompletionResult` |
 
 ### 示例：用大模型提取接口回答中的关键结论
@@ -119,7 +118,6 @@ LLMBasedApiCompletionWrapper wrapper = new LLMBasedApiCompletionWrapper(
 };
 ```
 
-
 ## 在工作流中使用
 
 `ApiCompletionWrapper` 是工作流中的一个节点，放在 `ApiCompletion` 之后、`Scorer` 之前：
@@ -134,11 +132,10 @@ new WorkflowBuilder()
         scorer,                 // 3. 评估装饰后的结果
         reporter,
         end
-    )
+        )
     .build()
     .execute();
 ```
-
 
 ## 注意事项
 
