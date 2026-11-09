@@ -17,6 +17,8 @@ source "https://rubygems.org"
 gem "just-the-docs"
 
 group :jekyll_plugins do
+  # _config.yml 中 remote_theme 配置所需
+  gem "jekyll-remote-theme"
   gem "jekyll-seo-tag"
 end
 ```
@@ -29,18 +31,25 @@ cd docs
 ```
 
 (2)安装依赖
+
+> 注意：Bundler 2.1+ 已移除 `bundle install --path` 参数，需先用 `bundle config set` 指定安装路径。
+
 ```shell
-bundle install --path vendor/bundle
+# 指定依赖安装到本地 docs/vendor/bundle（--local 仅对当前目录生效，不污染全局配置）
+bundle config set --local path vendor/bundle
+
+# 安装依赖
+bundle install
 ```
 
 如果一直卡在安装步骤,需要配置国内镜像源
 
-```text
-# 使用腾讯云镜像
-bundle config mirror.https://rubygems.org https://gems.ruby-china.com
+```shell
+# 使用清华 TUNA 镜像（gems.ruby-china.com 已不可用）
+bundle config set --local mirror.https://rubygems.org https://mirrors.tuna.tsinghua.edu.cn/rubygems/
 
 # 或者直接修改 Gemfile，第一行改为：
-source "https://gems.ruby-china.com"
+# source "https://mirrors.tuna.tsinghua.edu.cn/rubygems/"
 ```
 
 (3) 执行预览

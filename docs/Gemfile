@@ -3,5 +3,7 @@ source "https://rubygems.org"
 gem "just-the-docs"
 
 group :jekyll_plugins do
+  # GitHub Pages 构建 _config.yml 中 remote_theme 配置所需
+  gem "jekyll-remote-theme"
   gem "jekyll-seo-tag"
 end
