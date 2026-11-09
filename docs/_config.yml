@@ -4,7 +4,11 @@ baseurl: "/evalkit-framework"
 url: "https://zendodx.github.io"
 
 # just-the-docs 主题
+# 本地构建：使用 Gemfile 中安装的 just-the-docs gem
+# GitHub Pages：just-the-docs 不在内置主题白名单，
+# 部署时由 jekyll-remote-theme 插件改用 remote_theme 拉取
 theme: just-the-docs
+remote_theme: just-the-docs/just-the-docs
 
 # 导航：默认展开所有子菜单，不折叠
 nav_fold: false
@@ -66,6 +70,7 @@ kramdown:
 
 # Jekyll 插件
 plugins:
+  - jekyll-remote-theme
   - jekyll-seo-tag
 
 # 排除不需要渲染的目录
